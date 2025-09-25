@@ -15,7 +15,7 @@ interface Token {
 }
 
 interface Star { x: number; y: number; r: number; a: number; twinkle?: number; }
-interface Leaf { x: number; y: number; vx: number; vy: number; r: number; a: number; age: number; }
+interface Leaf { x: number; y: number; vx: number; vy: number; size: number; a: number; age: number; rot: number; rotSpeed: number; }
 interface Bubble { x: number; y: number; vy: number; r: number; a: number; wobble: number; }
 
 interface ZenCanvasProps {
@@ -314,6 +314,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     // Resolve Rosé Pine text color from CSS variables each frame (cheap)
     const css = getComputedStyle(document.documentElement);
     const rpText = (css.getPropertyValue('--rp-text') || '#e0def4').trim();
+    const moss = (css.getPropertyValue('--moss') || '#7fbf9e').trim();
+    const leafCol = (css.getPropertyValue('--leaf') || '#a3d9b1').trim();
     const isCosmic = document.documentElement.classList.contains('theme-cosmic');
     const sNow = settingsRef.current ?? getSettings();
     const perfMode = !!sNow.performanceMode;
@@ -324,16 +326,19 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     // Forest theme: Subtle leaf drift (<5 leaves)
     if (isForest && !perfMode && !rm) {
       const now = Date.now();
-      // Spawn new leaf every 15-25 seconds
-      if (now - lastLeafSpawnRef.current > (15000 + Math.random() * 10000) && leavesRef.current.length < 4) {
+      // Spawn new leaf every 12-18 seconds, keep ≤5
+      if (now - lastLeafSpawnRef.current > (12000 + Math.random() * 6000) && leavesRef.current.length < 5) {
+        const size = 10 + Math.random() * 8; // 10–18 px
         leavesRef.current.push({
           x: Math.random() * canvas.width,
-          y: -20,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: 0.8 + Math.random() * 0.4,
-          r: 8 + Math.random() * 4,
-          a: 0.15 + Math.random() * 0.1,
-          age: 0
+          y: -size,
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: (6 + Math.random() * 6) / 60, // 6–12 px/s
+          size,
+          a: 0.12 + Math.random() * 0.06,
+          age: 0,
+          rot: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() * 0.1 - 0.05) / 60 // slow rotation rad/frame
         });
         lastLeafSpawnRef.current = now;
       }
@@ -343,15 +348,16 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const updatedLeaves: Leaf[] = [];
       for (const leaf of leavesRef.current) {
         leaf.age += 1/60;
+        leaf.rot += leaf.rotSpeed;
         leaf.x += leaf.vx + Math.sin(leaf.age * 2) * 0.3;
         leaf.y += leaf.vy;
         
-        if (leaf.y < canvas.height + 20 && leaf.age < 30) {
+        if (leaf.y < canvas.height + leaf.size && leaf.age < 30) {
           // Draw leaf shape
           ctx.globalAlpha = leaf.a * Math.max(0, 1 - leaf.age / 30);
-          ctx.fillStyle = leaf.age < 15 ? 'rgba(62, 143, 176, 0.4)' : 'rgba(156, 207, 216, 0.3)';
+          ctx.fillStyle = leaf.age < 15 ? moss : leafCol;
           ctx.beginPath();
-          ctx.ellipse(leaf.x, leaf.y, leaf.r, leaf.r * 0.6, leaf.age, 0, Math.PI * 2);
+          ctx.ellipse(leaf.x, leaf.y, leaf.size * 0.5, leaf.size * 0.36, leaf.rot, 0, Math.PI * 2);
           ctx.fill();
           updatedLeaves.push(leaf);
         }
@@ -363,14 +369,14 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     // Ocean theme: Occasional bubble drift
     if (isOcean && !perfMode && !rm) {
       const now = Date.now();
-      // Spawn new bubble every 5-10 seconds
-      if (now - lastBubbleSpawnRef.current > (5000 + Math.random() * 5000) && bubblesRef.current.length < 6) {
+      // Spawn new bubble every 2-4 seconds, keep ≤12
+      if (now - lastBubbleSpawnRef.current > (2000 + Math.random() * 2000) && bubblesRef.current.length < 12) {
         bubblesRef.current.push({
           x: Math.random() * canvas.width,
           y: canvas.height + 10,
-          vy: -1.2 - Math.random() * 0.8,
-          r: 3 + Math.random() * 3,
-          a: 0.08 + Math.random() * 0.04,
+          vy: -(12 + Math.random() * 12) / 60, // 12–24 px/s upward
+          r: 2 + Math.random() * 3,
+          a: 0.06 + Math.random() * 0.06,
           wobble: Math.random() * Math.PI * 2
         });
         lastBubbleSpawnRef.current = now;
@@ -386,7 +392,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         
         if (bubble.y > -10) {
           ctx.globalAlpha = bubble.a;
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 0.5;
           ctx.beginPath();
           ctx.arc(bubble.x, bubble.y, bubble.r, 0, Math.PI * 2);

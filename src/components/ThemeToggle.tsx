@@ -8,9 +8,30 @@ const ThemeToggle: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    const root = document.documentElement;
     const settings = getSettings();
     setTheme(settings.theme);
     applyTheme(settings.theme);
+
+    const updateMotionAttr = (reduced: boolean) => {
+      root.setAttribute('data-motion', reduced ? 'off' : 'on');
+    };
+
+    // Initialize data-motion from settings and system preference
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    updateMotionAttr(settings.reducedMotion || media.matches);
+
+    const onMediaChange = (e: MediaQueryListEvent) => {
+      const s = getSettings();
+      updateMotionAttr(s.reducedMotion || e.matches);
+    };
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', onMediaChange);
+    } else {
+      media.addListener(onMediaChange);
+    }
+
     // Listen for external settings changes
     const onSettings = (e: Event) => {
       const s = (e as CustomEvent).detail as Settings;
@@ -18,9 +39,18 @@ const ThemeToggle: React.FC = () => {
         setTheme(s.theme as Theme);
         applyTheme(s.theme as Theme);
       }
+      updateMotionAttr(!!s.reducedMotion || media.matches);
     };
+
     window.addEventListener('settingsChanged', onSettings as EventListener);
-    return () => window.removeEventListener('settingsChanged', onSettings as EventListener);
+    return () => {
+      window.removeEventListener('settingsChanged', onSettings as EventListener);
+      if (typeof media.removeEventListener === 'function') {
+        media.removeEventListener('change', onMediaChange);
+      } else {
+        media.removeListener(onMediaChange);
+      }
+    };
   }, []);
 
   const applyTheme = (newTheme: Theme) => {
