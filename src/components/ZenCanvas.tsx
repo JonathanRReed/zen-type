@@ -14,7 +14,9 @@ interface Token {
   birth: number;
 }
 
-interface Star { x: number; y: number; r: number; a: number; }
+interface Star { x: number; y: number; r: number; a: number; twinkle?: number; }
+interface Leaf { x: number; y: number; vx: number; vy: number; r: number; a: number; age: number; }
+interface Bubble { x: number; y: number; vy: number; r: number; a: number; wobble: number; }
 
 interface ZenCanvasProps {
   fontFamily?: string;
@@ -39,6 +41,10 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const lastStatsEmitRef = useRef(Date.now());
   const [rm, setRm] = useState<boolean>(reducedMotion);
   const starsRef = useRef<Star[]>([]);
+  const leavesRef = useRef<Leaf[]>([]);
+  const bubblesRef = useRef<Bubble[]>([]);
+  const lastLeafSpawnRef = useRef<number>(0);
+  const lastBubbleSpawnRef = useRef<number>(0);
   // Back buffer for rendering (OffscreenCanvas if available)
   const backCanvasRef = useRef<OffscreenCanvas | HTMLCanvasElement | null>(null);
   const backCtxRef = useRef<OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null>(null);
@@ -312,13 +318,97 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     const sNow = settingsRef.current ?? getSettings();
     const perfMode = !!sNow.performanceMode;
 
-    // Background starfield for Cosmic theme
+    const isForest = document.documentElement.classList.contains('theme-forest');
+    const isOcean = document.documentElement.classList.contains('theme-ocean');
+    
+    // Forest theme: Subtle leaf drift (<5 leaves)
+    if (isForest && !perfMode && !rm) {
+      const now = Date.now();
+      // Spawn new leaf every 15-25 seconds
+      if (now - lastLeafSpawnRef.current > (15000 + Math.random() * 10000) && leavesRef.current.length < 4) {
+        leavesRef.current.push({
+          x: Math.random() * canvas.width,
+          y: -20,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: 0.8 + Math.random() * 0.4,
+          r: 8 + Math.random() * 4,
+          a: 0.15 + Math.random() * 0.1,
+          age: 0
+        });
+        lastLeafSpawnRef.current = now;
+      }
+      
+      // Update and draw leaves
+      ctx.save();
+      const updatedLeaves: Leaf[] = [];
+      for (const leaf of leavesRef.current) {
+        leaf.age += 1/60;
+        leaf.x += leaf.vx + Math.sin(leaf.age * 2) * 0.3;
+        leaf.y += leaf.vy;
+        
+        if (leaf.y < canvas.height + 20 && leaf.age < 30) {
+          // Draw leaf shape
+          ctx.globalAlpha = leaf.a * Math.max(0, 1 - leaf.age / 30);
+          ctx.fillStyle = leaf.age < 15 ? 'rgba(62, 143, 176, 0.4)' : 'rgba(156, 207, 216, 0.3)';
+          ctx.beginPath();
+          ctx.ellipse(leaf.x, leaf.y, leaf.r, leaf.r * 0.6, leaf.age, 0, Math.PI * 2);
+          ctx.fill();
+          updatedLeaves.push(leaf);
+        }
+      }
+      leavesRef.current = updatedLeaves;
+      ctx.restore();
+    }
+    
+    // Ocean theme: Occasional bubble drift
+    if (isOcean && !perfMode && !rm) {
+      const now = Date.now();
+      // Spawn new bubble every 5-10 seconds
+      if (now - lastBubbleSpawnRef.current > (5000 + Math.random() * 5000) && bubblesRef.current.length < 6) {
+        bubblesRef.current.push({
+          x: Math.random() * canvas.width,
+          y: canvas.height + 10,
+          vy: -1.2 - Math.random() * 0.8,
+          r: 3 + Math.random() * 3,
+          a: 0.08 + Math.random() * 0.04,
+          wobble: Math.random() * Math.PI * 2
+        });
+        lastBubbleSpawnRef.current = now;
+      }
+      
+      // Update and draw bubbles
+      ctx.save();
+      const updatedBubbles: Bubble[] = [];
+      for (const bubble of bubblesRef.current) {
+        bubble.wobble += 0.05;
+        bubble.x += Math.sin(bubble.wobble) * 0.4;
+        bubble.y += bubble.vy;
+        
+        if (bubble.y > -10) {
+          ctx.globalAlpha = bubble.a;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.arc(bubble.x, bubble.y, bubble.r, 0, Math.PI * 2);
+          ctx.stroke();
+          updatedBubbles.push(bubble);
+        }
+      }
+      bubblesRef.current = updatedBubbles;
+      ctx.restore();
+    }
+    
+    // Cosmic theme: Starfield with slow twinkle
     if (isCosmic && !perfMode && starsRef.current.length) {
       ctx.save();
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = '#ffffff';
       for (const s of starsRef.current) {
-        ctx.globalAlpha = s.a;
+        // Update twinkle phase
+        if (s.twinkle !== undefined) {
+          s.twinkle += 0.02;
+        }
+        const twinkleFactor = s.twinkle ? (0.7 + 0.3 * Math.sin(s.twinkle)) : 1;
+        ctx.globalAlpha = s.a * twinkleFactor;
+        ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fill();
@@ -492,23 +582,29 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         backCtxRef.current = null;
       }
 
-      // Regenerate star field for cosmic theme
+      // Regenerate particles for theme changes
       const isCosmic = document.documentElement.classList.contains('theme-cosmic');
       const perfMode = !!(settingsRef.current ?? getSettings()).performanceMode;
+      
+      // Reset all theme particles
+      starsRef.current = [];
+      leavesRef.current = [];
+      bubblesRef.current = [];
+      
       if (isCosmic && !perfMode) {
-        const count = Math.floor((window.innerWidth * window.innerHeight) / 12000);
+        // Fewer, brighter stars that twinkle
+        const count = Math.floor((window.innerWidth * window.innerHeight) / 20000);
         const stars: Star[] = [];
         for (let i = 0; i < count; i++) {
           stars.push({
             x: Math.random() * window.innerWidth,
             y: Math.random() * window.innerHeight,
-            r: Math.random() * 1.5 + 0.3,
-            a: Math.random() * 0.4 + 0.2,
+            r: Math.random() * 2 + 0.5,
+            a: Math.random() * 0.5 + 0.3,
+            twinkle: Math.random() * Math.PI * 2
           });
         }
         starsRef.current = stars;
-      } else {
-        starsRef.current = [];
       }
     };
 

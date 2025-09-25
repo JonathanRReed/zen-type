@@ -7,6 +7,7 @@ const ClientTransitions: React.FC = () => {
     const reduceMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (!reduceMotion) {
+      let navLock = false;
       document.documentElement.classList.add('page-enter');
       const t = window.setTimeout(() => {
         document.documentElement.classList.remove('page-enter');
@@ -21,7 +22,13 @@ const ClientTransitions: React.FC = () => {
         const url = new URL(a.href, window.location.origin);
         if (url.origin !== window.location.origin) return; // external
         if (a.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        // If navigating to same path, do nothing
+        const same = url.pathname + url.search + url.hash === window.location.pathname + window.location.search + window.location.hash;
+        if (same) { e.preventDefault(); return; }
+        // Prevent double nav
+        if (navLock) { e.preventDefault(); return; }
         e.preventDefault();
+        navLock = true;
         document.documentElement.classList.add('page-exit');
         window.setTimeout(() => { window.location.href = url.pathname + url.search + url.hash; }, 200);
       };

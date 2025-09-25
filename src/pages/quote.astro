@@ -5,6 +5,7 @@ import StatsBar from '../components/StatsBar';
 import PauseMenu from '../components/PauseMenu';
 import HelpSheet from '../components/HelpSheet';
 import AboutOverlay from '../components/AboutOverlay';
+import ArchiveOverlay from '../components/ArchiveOverlay';
 import SiteFooter from '../components/SiteFooter';
 import ClientTransitions from '../components/ClientTransitions';
 import SiteHeader from '../components/SiteHeader';
@@ -74,6 +75,7 @@ const randomQuote = getRandomQuote(quotes);
 				onClose={() => {}}
 			/>
 			<AboutOverlay client:load />
+			<ArchiveOverlay client:load />
 			<SiteFooter client:load />
 		</div>
 

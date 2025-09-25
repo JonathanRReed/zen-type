@@ -352,8 +352,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       };
       // Persist stats locally
       updateStats(summary as any);
-      // Increment streak on successful completion (user finished without quitting)
-      updateStreak();
+      // Increment streak only with ≥95% accuracy or full completion
+      if (accuracy >= 95) {
+        updateStreak();
+      }
       // Inform listeners
       window.dispatchEvent(new CustomEvent('quoteComplete', { detail: summary }));
       onComplete?.(summary);
