@@ -1,0 +1,556 @@
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { getSettings, saveSettings, type Settings, createArchiveEntry, updateArchiveEntry } from '../utils/storage';
+
+interface Token {
+  id: number;
+  text: string;
+  x: number;
+  y: number;
+  vy: number;
+  swayAmp: number;
+  swayFreq: number;
+  lifetime: number;
+  maxLifetime: number;
+  birth: number;
+}
+
+interface Star { x: number; y: number; r: number; a: number; }
+
+interface ZenCanvasProps {
+  fontFamily?: string;
+  reducedMotion?: boolean;
+  maxTokens?: number;
+  onStats?: (stats: { words: number; chars: number; time: number }) => void;
+}
+
+const ZenCanvas: React.FC<ZenCanvasProps> = ({
+  fontFamily = 'monospace',
+  reducedMotion = false,
+  maxTokens = 160,
+  onStats,
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const tokensRef = useRef<Token[]>([]);
+  const [currentWord, setCurrentWord] = useState('');
+  const [stats, setStats] = useState({ words: 0, chars: 0, startTime: Date.now() });
+  const animationFrameRef = useRef<number | null>(null);
+  const tokenIdRef = useRef(0);
+  const lastStatsEmitRef = useRef(Date.now());
+  const [rm, setRm] = useState<boolean>(reducedMotion);
+  const starsRef = useRef<Star[]>([]);
+  // Back buffer for rendering (OffscreenCanvas if available)
+  const backCanvasRef = useRef<OffscreenCanvas | HTMLCanvasElement | null>(null);
+  const backCtxRef = useRef<OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null>(null);
+  // Settings live snapshot
+  const settingsRef = useRef<Settings | null>(null);
+  // Dynamic token cap under performance guard
+  const dynCapRef = useRef<number>(maxTokens);
+  // FPS buffer for performance guard
+  const frameTimesRef = useRef<number[]>([]);
+  const perfGuardRef = useRef<boolean>(false);
+  // Session timing
+  const sessionStartRef = useRef<number>(Date.now());
+  // Ghost buffer (event log of appended chars within rolling window)
+  const ghostLogRef = useRef<{ t: number; ch: string }[]>([]);
+  const transcriptRef = useRef<string>('');
+  const archiveIdRef = useRef<string | null>(null);
+  const archiveDirtyRef = useRef<boolean>(false);
+  const archiveTimerRef = useRef<number | null>(null);
+  // Markers
+  const markersRef = useRef<number[]>([]);
+  const lastCharRef = useRef<string>('');
+  const lastTypeTsRef = useRef<number>(0);
+
+  // Initialize reduced-motion from settings and media query
+  useEffect(() => {
+    try {
+      const settings = getSettings();
+      settingsRef.current = settings;
+      const media = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setRm(reducedMotion || settings.reducedMotion || media);
+    } catch {
+      setRm(reducedMotion);
+    }
+  }, [reducedMotion]);
+
+  // Archive persistence: create entry on mount, autosave periodically, finalize on unmount or event
+  useEffect(() => {
+    try {
+      const entry = createArchiveEntry({ text: '', wordCount: 0, charCount: 0, startedAt: new Date().toISOString() });
+      archiveIdRef.current = entry.id;
+    } catch {}
+
+    const persist = () => {
+      if (!archiveIdRef.current || !archiveDirtyRef.current) return;
+      const text = transcriptRef.current;
+      const words = text.trim().length ? text.trim().split(/\s+/).length : 0;
+      const chars = text.length;
+      try {
+        updateArchiveEntry(archiveIdRef.current, { text, wordCount: words, charCount: chars });
+        archiveDirtyRef.current = false;
+      } catch {}
+    };
+    archiveTimerRef.current = window.setInterval(persist, 3000);
+
+    const finalize = () => {
+      const id = archiveIdRef.current;
+      if (!id) return;
+      const text = transcriptRef.current;
+      const words = text.trim().length ? text.trim().split(/\s+/).length : 0;
+      const chars = text.length;
+      try {
+        updateArchiveEntry(id, { text, wordCount: words, charCount: chars, endedAt: new Date().toISOString() });
+      } catch {}
+    };
+    const onFinalize = () => finalize();
+    window.addEventListener('finalizeArchive', onFinalize as EventListener);
+
+    return () => {
+      if (archiveTimerRef.current) {
+        clearInterval(archiveTimerRef.current);
+        archiveTimerRef.current = null;
+      }
+      window.removeEventListener('finalizeArchive', onFinalize as EventListener);
+      finalize();
+    };
+  }, []);
+
+  // Respond to settings changes and hotkey toggles
+  useEffect(() => {
+    const onSettings = (e: Event) => {
+      const s = (e as CustomEvent).detail as Settings;
+      settingsRef.current = s;
+    };
+    const onToggleBreath = () => {
+      const s = settingsRef.current ?? getSettings();
+      const next = { ...s, breath: !s.breath } as Settings;
+      settingsRef.current = next;
+      try { saveSettings(next); } catch {}
+      window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+    };
+    const onRequestGhost = (e: Event) => {
+      const { startSec, endSec } = (e as CustomEvent).detail as { startSec: number; endSec: number };
+      const startMs = sessionStartRef.current + startSec * 1000;
+      const endMs = sessionStartRef.current + endSec * 1000;
+      const text = ghostLogRef.current
+        .filter(ev => {
+          const tms = sessionStartRef.current + ev.t * 1000;
+          return tms >= startMs && tms <= endMs && ev.ch.length > 0;
+        })
+        .map(ev => ev.ch)
+        .join('');
+      window.dispatchEvent(new CustomEvent('ghostText', { detail: { text } }));
+    };
+    const onRestoreGhost = (e: Event) => {
+      const { text } = (e as CustomEvent).detail as { text: string };
+      if (!inputRef.current) return;
+      inputRef.current.value = text;
+      setCurrentWord(text);
+    };
+
+    window.addEventListener('settingsChanged', onSettings as EventListener);
+    window.addEventListener('toggleBreath', onToggleBreath as EventListener);
+    window.addEventListener('requestGhost', onRequestGhost as EventListener);
+    window.addEventListener('restoreGhost', onRestoreGhost as EventListener);
+    return () => {
+      window.removeEventListener('settingsChanged', onSettings as EventListener);
+      window.removeEventListener('toggleBreath', onToggleBreath as EventListener);
+      window.removeEventListener('requestGhost', onRequestGhost as EventListener);
+      window.removeEventListener('restoreGhost', onRestoreGhost as EventListener);
+    };
+  }, []);
+
+  // Commit a word using spawn density controls and update transcript/ghost
+  const commitWord = (word: string, delimiter: string) => {
+    const s = settingsRef.current ?? getSettings();
+    const density = Math.max(0.5, Math.min(1.5, s.spawnDensity ?? 1.0));
+    if (density < 1) {
+      if (Math.random() < density) spawnToken(word);
+    } else {
+      // Always spawn one
+      spawnToken(word);
+      const extraBase = Math.floor(density - 1);
+      for (let i = 0; i < extraBase; i++) spawnToken(word);
+      const frac = density - 1 - extraBase;
+      if (Math.random() < frac) spawnToken(word);
+    }
+    // Record delimiter
+    transcriptRef.current += delimiter;
+    ghostLogRef.current.push({ t: (Date.now() - sessionStartRef.current) / 1000, ch: delimiter });
+    archiveDirtyRef.current = true;
+  };
+
+  // Handle input changes
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const lastChar = value[value.length - 1];
+    // Append to transcript and ghost log for typed characters
+    if (value.length > currentWord.length) {
+      const ch = value[value.length - 1] ?? '';
+      // Debounce duplicate keystrokes
+      const s = settingsRef.current ?? getSettings();
+      const thr = Math.max(0, s.debounceMs || 0);
+      const now = performance.now();
+      if (thr > 0 && ch && ch === lastCharRef.current && (now - lastTypeTsRef.current) < thr) {
+        return; // ignore this duplicate
+      }
+      lastCharRef.current = ch;
+      lastTypeTsRef.current = now;
+      if (ch) {
+        // Only append non-delimiter chars here; delimiters recorded in commitWord
+        if (!/[\s.,!?;:]/.test(ch)) {
+          transcriptRef.current += ch;
+        }
+        ghostLogRef.current.push({ t: (Date.now() - sessionStartRef.current) / 1000, ch });
+        // Keep within largest window (max 5 min)
+        const maxWin = (settingsRef.current?.ghostWindowMin ?? 5) * 60;
+        const cutoff = (Date.now() - sessionStartRef.current) / 1000 - maxWin;
+        ghostLogRef.current = ghostLogRef.current.filter(ev => ev.t >= cutoff);
+      }
+    }
+    
+    // Check if we should commit the word (space or punctuation)
+    if (lastChar === ' ' || /[.,!?;:]/.test(lastChar)) {
+      if (currentWord.length > 0) {
+        commitWord(currentWord, lastChar || ' ');
+        setStats(prev => ({
+          words: prev.words + 1,
+          chars: prev.chars + currentWord.length,
+          startTime: prev.startTime
+        }));
+      }
+      setCurrentWord('');
+      e.target.value = '';
+      archiveDirtyRef.current = true;
+    } else {
+      setCurrentWord(value);
+      archiveDirtyRef.current = true;
+    }
+  };
+
+  // Handle key down for special keys
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && currentWord.length > 0) {
+      commitWord(currentWord, '\n');
+      setStats(prev => ({
+        words: prev.words + 1,
+        chars: prev.chars + currentWord.length,
+        startTime: prev.startTime
+      }));
+      setCurrentWord('');
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
+      archiveDirtyRef.current = true;
+    }
+    if (e.key === 'Backspace') {
+      // Record deletion in transcript by removing last char, but do not push deletion char into ghost log
+      transcriptRef.current = transcriptRef.current.slice(0, -1);
+      archiveDirtyRef.current = true;
+    }
+  };
+
+  // Spawn a new token
+  const spawnToken = (text: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const wordLength = text.length;
+    const s = settingsRef.current ?? getSettings();
+    const baseFade = rm ? Math.max(1.8, (s.fadeSec ?? 4) * 0.6) : (s.fadeSec ?? 4);
+    const lifetime = baseFade + (wordLength * 0.3);
+    const amp = rm ? 0 : (s.driftAmp ?? 6);
+
+    // Focus lanes
+    let x = Math.random() * canvas.width;
+    const laneStyle = s.laneStyle ?? 'soft';
+    if (laneStyle !== 'none') {
+      const lanes = [canvas.width * 0.25, canvas.width * 0.5, canvas.width * 0.75];
+      const lane = lanes[Math.floor(Math.random() * lanes.length)];
+      const jitter = laneStyle === 'tight' ? 18 : 40;
+      x = lane + (Math.random() * 2 - 1) * jitter;
+    }
+    
+    const newToken: Token = {
+      id: tokenIdRef.current++,
+      text,
+      x,
+      y: canvas.height - 100,
+      vy: 20 + Math.random() * 25, // 20-45 px/s
+      swayAmp: amp,
+      swayFreq: 0.6 + Math.random() * 0.6, // 0.6-1.2Hz frequency
+      lifetime,
+      maxLifetime: lifetime,
+      birth: Date.now()
+    };
+
+    const arr = tokensRef.current.slice();
+    arr.push(newToken);
+    const cap = dynCapRef.current;
+    if (arr.length > cap) {
+      tokensRef.current = arr.slice(-cap);
+    } else {
+      tokensRef.current = arr;
+    }
+  };
+
+  // Animation loop
+  const animate = useCallback(() => {
+    const canvas = canvasRef.current;
+    const frontCtx = canvas?.getContext('2d');
+    if (!canvas || !frontCtx) return;
+    const ctx = (backCtxRef.current as any) || frontCtx;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Resolve Rosé Pine text color from CSS variables each frame (cheap)
+    const css = getComputedStyle(document.documentElement);
+    const rpText = (css.getPropertyValue('--rp-text') || '#e0def4').trim();
+    const isCosmic = document.documentElement.classList.contains('theme-cosmic');
+    const sNow = settingsRef.current ?? getSettings();
+    const perfMode = !!sNow.performanceMode;
+
+    // Background starfield for Cosmic theme
+    if (isCosmic && !perfMode && starsRef.current.length) {
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#ffffff';
+      for (const s of starsRef.current) {
+        ctx.globalAlpha = s.a;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Update and draw tokens
+    const now = Date.now();
+    const updatedTokens: Token[] = [];
+
+    tokensRef.current.forEach(token => {
+      const age = (now - token.birth) / 1000; // Age in seconds
+      const threshold = perfGuardRef.current ? token.maxLifetime * 0.7 : token.maxLifetime;
+      token.lifetime = threshold - age;
+      if (age >= threshold) return; // Remove when past effective lifetime
+      
+      // Update position
+      token.y -= (token.vy / 60); // Assuming 60fps
+      
+      // Add horizontal sway if not reduced motion
+      const effectiveAmp = (perfGuardRef.current || perfMode) ? 0 : token.swayAmp;
+      if (!rm && effectiveAmp > 0) {
+        const swayOffset = Math.sin(age * token.swayFreq * 2 * Math.PI) * effectiveAmp;
+        token.x += swayOffset / 60;
+      }
+      
+      // Check if still on screen
+      if (token.y < -50 || token.x < -50 || token.x > canvas.width + 50) {
+        return; // Remove off-screen tokens
+      }
+      
+      // Calculate opacity (fade out over effective lifetime)
+      const opacity = Math.max(0, 1 - (age / threshold));
+      
+      // Draw token
+      ctx.save();
+      ctx.globalAlpha = opacity;
+      ctx.fillStyle = rpText;
+      ctx.font = `18px ${fontFamily}`;
+      ctx.fillText(token.text, token.x, token.y);
+      ctx.restore();
+      
+      updatedTokens.push(token);
+    });
+
+    tokensRef.current = updatedTokens;
+
+    // Emit stats every second
+    if (now - lastStatsEmitRef.current >= 1000) {
+      const elapsedTime = (now - stats.startTime) / 1000;
+      const payload = { words: stats.words, chars: stats.chars, time: Math.floor(elapsedTime) };
+      // Optional callback
+      if (onStats) onStats(payload);
+      // Dispatch global event for StatsBar and others
+      window.dispatchEvent(new CustomEvent('zenStats', { detail: payload }));
+      // Session markers
+      const s = settingsRef.current ?? getSettings();
+      const every = Math.max(1, s.markersEveryMin || 2) * 60;
+      const lastMarker = markersRef.current[markersRef.current.length - 1] ?? 0;
+      if (Math.floor(elapsedTime) > 0 && Math.floor(elapsedTime) % every === 0 && lastMarker !== Math.floor(elapsedTime)) {
+        markersRef.current.push(Math.floor(elapsedTime));
+        window.dispatchEvent(new CustomEvent('markersUpdated', { detail: markersRef.current.slice() }));
+      }
+      lastStatsEmitRef.current = now;
+    }
+
+    // Breathing overlay (expanding ring)
+    if (sNow.breath && !rm && !perfMode) {
+      const period = 8000; // 8s full cycle
+      const t = (now % period) / period; // 0..1
+      // sin wave 0..1
+      const scale = 0.5 + 0.5 * Math.sin(t * Math.PI * 2);
+      const radius = Math.min(canvas.width, canvas.height) * (0.15 + 0.1 * scale);
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = rpText;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height * 0.6, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Clamp token cap under explicit performance mode, else dynamic guard
+    if (perfMode) {
+      if (dynCapRef.current > 80) dynCapRef.current = 80;
+    } else if (!perfGuardRef.current) {
+      dynCapRef.current = maxTokens;
+    }
+
+    // Performance guard: monitor FPS and react
+    const frames = frameTimesRef.current;
+    const nowMs = performance.now();
+    const _prevMs = frames.length ? frames[frames.length - 1] : nowMs;
+    frames.push(nowMs);
+    // Keep last ~2s (120 frames)
+    if (frames.length > 120) frames.shift();
+    if (frames.length > 30) {
+      // Approx average FPS
+      const totalDt = frames[frames.length - 1] - frames[0];
+      const avgFps = (frames.length - 1) * 1000 / Math.max(1, totalDt);
+      if (avgFps < 55 && !perfGuardRef.current) {
+        perfGuardRef.current = true;
+        dynCapRef.current = 80; // guardrail cap
+      } else if (avgFps > 57 && perfGuardRef.current) {
+        perfGuardRef.current = false;
+        dynCapRef.current = maxTokens;
+      }
+    }
+
+    // Continue animation if document is visible
+    if (!document.hidden) {
+      // Blit back buffer to front if using offscreen/double buffer
+      if (backCtxRef.current && backCanvasRef.current) {
+        frontCtx.clearRect(0, 0, canvas.width, canvas.height);
+        // @ts-ignore drawImage supports OffscreenCanvas in modern browsers
+        frontCtx.drawImage(backCanvasRef.current as any, 0, 0);
+      }
+      animationFrameRef.current = requestAnimationFrame(animate);
+    }
+  }, [stats, fontFamily, rm, onStats, maxTokens]);
+
+  // Start/stop animation based on document visibility
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !animationFrameRef.current) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else if (document.hidden && animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Start animation
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [animate]);
+
+  // Handle canvas resize
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      canvas.width = globalThis.innerWidth;
+      canvas.height = globalThis.innerHeight;
+
+      // Configure back buffer
+      try {
+        // Recreate if size changed
+        if ('OffscreenCanvas' in window) {
+          backCanvasRef.current = new (window as any).OffscreenCanvas(globalThis.innerWidth, globalThis.innerHeight);
+          backCtxRef.current = (backCanvasRef.current as OffscreenCanvas).getContext('2d');
+        } else {
+          const buf = document.createElement('canvas');
+          buf.width = globalThis.innerWidth; buf.height = globalThis.innerHeight;
+          backCanvasRef.current = buf;
+          backCtxRef.current = buf.getContext('2d');
+        }
+      } catch {
+        backCanvasRef.current = null;
+        backCtxRef.current = null;
+      }
+
+      // Regenerate star field for cosmic theme
+      const isCosmic = document.documentElement.classList.contains('theme-cosmic');
+      const perfMode = !!(settingsRef.current ?? getSettings()).performanceMode;
+      if (isCosmic && !perfMode) {
+        const count = Math.floor((window.innerWidth * window.innerHeight) / 12000);
+        const stars: Star[] = [];
+        for (let i = 0; i < count; i++) {
+          stars.push({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            r: Math.random() * 1.5 + 0.3,
+            a: Math.random() * 0.4 + 0.2,
+          });
+        }
+        starsRef.current = stars;
+      } else {
+        starsRef.current = [];
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  return (
+    <div className="relative w-full h-screen overflow-hidden">
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full"
+        aria-hidden="true"
+      />
+      
+      <input
+        ref={inputRef}
+        type="text"
+        className="absolute bottom-[18vh] left-1/2 -translate-x-1/2 
+                   w-[90vw] max-w-xl px-6 py-4 text-lg font-mono caret-accent
+                   bg-surface/70 backdrop-blur-soft shadow-soft
+                   border border-iris/25 rounded-2xl
+                   text-text placeholder-muted tracking-wide
+                   focus:outline-none focus:ring-2 focus:ring-iris/40 focus:border-iris/40
+                   transition-all duration-200"
+        placeholder="Type freely..."
+        onChange={handleInput}
+        onKeyDown={handleKeyDown}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+      />
+    </div>
+  );
+};
+
+export default ZenCanvas;
