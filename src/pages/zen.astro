@@ -1,0 +1,175 @@
+---
+import '../styles/globals.css';
+import ZenCanvas from '../components/ZenCanvas';
+import StatsBar from '../components/StatsBar';
+import PauseMenu from '../components/PauseMenu';
+import HelpSheet from '../components/HelpSheet';
+import ThemeToggle from '../components/ThemeToggle';
+import ArchiveOverlay from '../components/ArchiveOverlay';
+import AboutOverlay from '../components/AboutOverlay';
+import SiteFooter from '../components/SiteFooter';
+import ClientTransitions from '../components/ClientTransitions';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Zen Mode - Zen Typer</title>
+		<meta name="description" content="Free-flow typing in Zen Mode - Watch your words drift upward like thoughts" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+	</head>
+	<body>
+		<ClientTransitions client:load />
+		<div id="zen-app" class="relative w-full h-screen overflow-hidden">
+			<!-- Header controls -->
+			<header class="fixed top-0 left-0 right-0 z-40 p-6 flex justify-between items-center bg-base/80 backdrop-blur-md">
+				<div class="flex items-center gap-3">
+					<div class="glass rounded-full px-3 py-1 border border-iris/20">
+						<span class="font-mono text-xs tracking-wide text-muted">Zen Typer</span>
+					</div>
+				</div>
+				<div class="flex items-center gap-3">
+					<button 
+						class="button-ghost px-3 py-2 rounded-lg text-sm"
+						aria-label="Open help"
+						onclick="window.dispatchEvent(new CustomEvent('toggleHelp',{detail:true}))"
+					>
+						?
+					</button>
+					<button 
+						class="button-ghost px-3 py-2 rounded-lg text-sm"
+						aria-label="Open pause menu"
+						onclick="window.dispatchEvent(new CustomEvent('togglePause',{detail:true}))"
+					>
+						||
+					</button>
+					<ThemeToggle client:load />
+				</div>
+			</header>
+
+			<!-- Main canvas -->
+			<!-- Theme background layers (behind tokens) -->
+			<div class="pointer-events-none absolute inset-0 z-0 theme-layer"></div>
+			<div class="pointer-events-none absolute inset-0 z-0 grain"></div>
+
+			<ZenCanvas 
+				client:load
+				fontFamily="JetBrains Mono"
+				maxTokens={160}
+			/>
+
+			<!-- Stats bar -->
+			<StatsBar 
+				client:load
+				mode="zen"
+				visible={true}
+				metrics={{}}
+			/>
+
+			<!-- Pause menu -->
+			<PauseMenu 
+				client:load
+				isOpen={false}
+				mode="zen"
+				onClose={() => {}}
+				onReset={() => { window.location.reload(); }}
+			/>
+
+			<!-- Help sheet -->
+			<HelpSheet 
+				client:load
+				isOpen={false}
+				onClose={() => {}}
+			/>
+
+			<!-- Archive & About overlays (hidden by default) -->
+			<ArchiveOverlay client:load />
+			<AboutOverlay client:load />
+			<SiteFooter client:load />
+		</div>
+
+		<script>
+			let statsVisible = true;
+			let isPaused = false;
+			let helpOpen = false;
+
+			// Handle keyboard shortcuts
+			document.addEventListener('keydown', (e) => {
+				const tag = (document.activeElement && 'tagName' in document.activeElement
+					? document.activeElement.tagName
+					: '')
+					.toLowerCase();
+				const isTyping = tag === 'input' || tag === 'textarea';
+				// Tab to switch to Quote mode
+				if (!isTyping && e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+					e.preventDefault();
+					document.documentElement.classList.add('page-exit');
+					setTimeout(() => { window.location.href = '/quote'; }, 200);
+				}
+				
+				// Esc for pause menu
+				if (e.key === 'Escape') {
+					e.preventDefault();
+					isPaused = !isPaused;
+					// Update pause menu state
+					const pauseEvent = new CustomEvent('togglePause', { detail: isPaused });
+					window.dispatchEvent(pauseEvent);
+				}
+				
+				// F for fullscreen (uppercase only)
+				if (!isTyping && e.key === 'F') {
+					if (!e.ctrlKey && !e.metaKey) {
+						e.preventDefault();
+						if (!document.fullscreenElement) {
+							document.documentElement.requestFullscreen();
+						} else {
+							document.exitFullscreen();
+						}
+					}
+				}
+				
+				// T to toggle stats (uppercase only)
+				if (!isTyping && e.key === 'T') {
+					if (!e.ctrlKey && !e.metaKey) {
+						e.preventDefault();
+						statsVisible = !statsVisible;
+						const statsEvent = new CustomEvent('toggleStats', { detail: statsVisible });
+						window.dispatchEvent(statsEvent);
+					}
+				}
+
+				// B to toggle breathing overlay (uppercase only)
+				if (!isTyping && e.key === 'B') {
+					if (!e.ctrlKey && !e.metaKey) {
+						e.preventDefault();
+						window.dispatchEvent(new CustomEvent('toggleBreath'));
+					}
+				}
+				
+				// ? for help
+				if (e.key === '?') {
+					e.preventDefault();
+					helpOpen = !helpOpen;
+					const helpEvent = new CustomEvent('toggleHelp', { detail: helpOpen });
+					window.dispatchEvent(helpEvent);
+				}
+
+				// A for Archive (uppercase only)
+				if (!isTyping && e.key === 'A') {
+					if (!e.ctrlKey && !e.metaKey) {
+						e.preventDefault();
+						window.dispatchEvent(new CustomEvent('toggleArchive'));
+					}
+				}
+			});
+
+			// Stats updates handled inside islands/components
+		</script>
+	</body>
+</html>
