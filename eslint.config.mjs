@@ -9,7 +9,7 @@ import astroPlugin from 'eslint-plugin-astro';
 import astroParser from 'astro-eslint-parser';
 
 export default [
-  { ignores: ['dist/**', 'node_modules/**', '.astro/**', 'src/pages/quote_old_backup.astro'] },
+  { ignores: ['dist/**', 'node_modules/**', '.astro/**', 'src/pages/quote_old_backup.astro', '_backups/**'] },
   {
     files: ['**/*.js', '**/*.jsx'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'module' },

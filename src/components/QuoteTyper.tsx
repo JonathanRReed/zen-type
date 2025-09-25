@@ -450,6 +450,36 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     inputRef.current?.focus();
   }, []);
 
+  // Keep focus on hidden input to avoid browser "find" triggering when typing on the page
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    const onBlur = () => {
+      // If a modal/dialog is open, don't steal focus
+      const modalOpen = !!document.querySelector('[role="dialog"][aria-modal="true"]');
+      if (!modalOpen) {
+        setTimeout(() => inputRef.current?.focus(), 0);
+      }
+    };
+    input.addEventListener('blur', onBlur);
+    return () => input.removeEventListener('blur', onBlur);
+  }, []);
+
+  // Capture printable keys globally to prevent browser quick-find when input isn't focused
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = document.activeElement as HTMLElement | null;
+      const inField = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+      if (!inField && (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter')) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler, { capture: true });
+    return () => window.removeEventListener('keydown', handler as any, { capture: true } as any);
+  }, []);
+
   // Render character span
   const renderChar = (char: string, index: number) => {
     const isTyped = index < cursor;

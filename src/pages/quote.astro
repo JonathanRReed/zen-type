@@ -4,10 +4,10 @@ import QuoteTyper from '../components/QuoteTyper';
 import StatsBar from '../components/StatsBar';
 import PauseMenu from '../components/PauseMenu';
 import HelpSheet from '../components/HelpSheet';
-import ThemeToggle from '../components/ThemeToggle';
 import AboutOverlay from '../components/AboutOverlay';
 import SiteFooter from '../components/SiteFooter';
 import ClientTransitions from '../components/ClientTransitions';
+import SiteHeader from '../components/SiteHeader';
 import { loadQuotes, getRandomQuote } from '../utils/quotes';
 
 // Load a random quote at build time
@@ -31,43 +31,7 @@ const randomQuote = getRandomQuote(quotes);
 	<body>
 		<ClientTransitions client:load />
 		<div id="quote-app" class="relative w-full min-h-screen">
-			<!-- Header controls -->
-			<header class="fixed top-0 left-0 right-0 z-40 p-6 flex justify-between items-center bg-base/80 backdrop-blur-md">
-				<div class="flex items-center gap-4">
-					<a href="/" class="text-muted hover:text-text transition-colors">
-						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<line x1="19" y1="12" x2="5" y2="12"/>
-							<polyline points="12 19 5 12 12 5"/>
-						</svg>
-					</a>
-					<span class="text-sm font-mono text-muted">Quote Mode</span>
-				</div>
-				<div class="flex items-center gap-4">
-					<button 
-						id="new-quote-btn"
-						class="px-4 py-2 text-sm bg-surface/60 hover:bg-surface/80 
-						       border border-muted/20 rounded-lg
-						       text-text font-sans transition-all"
-					>
-						New Quote
-					</button>
-					<button 
-						class="button-ghost px-3 py-2 rounded-lg text-sm"
-						aria-label="Open help"
-						onclick="window.dispatchEvent(new CustomEvent('toggleHelp',{detail:true}))"
-					>
-						?
-					</button>
-					<button 
-						class="button-ghost px-3 py-2 rounded-lg text-sm"
-						aria-label="Open pause menu"
-						onclick="window.dispatchEvent(new CustomEvent('togglePause',{detail:true}))"
-					>
-						||
-					</button>
-					<ThemeToggle client:load />
-				</div>
-			</header>
+			<SiteHeader client:load mode="quote" />
 
 			<!-- Main quote typer -->
 			<div id="quote-container">
@@ -113,7 +77,7 @@ const randomQuote = getRandomQuote(quotes);
 			<SiteFooter client:load />
 		</div>
 
-		<script define:vars={{ quotes }}>
+		<script>
 			let isPaused = false;
 			let helpOpen = false;
 			let statsVisible = true;
@@ -167,13 +131,6 @@ const randomQuote = getRandomQuote(quotes);
 					const helpEvent = new CustomEvent('toggleHelp', { detail: helpOpen });
 					window.dispatchEvent(helpEvent);
 				}
-			});
-
-			// New quote button (no reload, seamless)
-			document.getElementById('new-quote-btn')?.addEventListener('click', () => {
-				const randomIndex = Math.floor(Math.random() * quotes.length);
-				const newQuote = quotes[randomIndex];
-				window.dispatchEvent(new CustomEvent('newQuote', { detail: { quote: newQuote.text, author: newQuote.author } }));
 			});
 
 			// Quote completion is handled within QuoteTyper (stats persisted + event dispatched)

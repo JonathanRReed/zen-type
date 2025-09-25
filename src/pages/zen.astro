@@ -4,11 +4,11 @@ import ZenCanvas from '../components/ZenCanvas';
 import StatsBar from '../components/StatsBar';
 import PauseMenu from '../components/PauseMenu';
 import HelpSheet from '../components/HelpSheet';
-import ThemeToggle from '../components/ThemeToggle';
 import ArchiveOverlay from '../components/ArchiveOverlay';
 import AboutOverlay from '../components/AboutOverlay';
 import SiteFooter from '../components/SiteFooter';
 import ClientTransitions from '../components/ClientTransitions';
+import SiteHeader from '../components/SiteHeader';
 ---
 
 <!DOCTYPE html>
@@ -27,31 +27,7 @@ import ClientTransitions from '../components/ClientTransitions';
 	<body>
 		<ClientTransitions client:load />
 		<div id="zen-app" class="relative w-full h-screen overflow-hidden">
-			<!-- Header controls -->
-			<header class="fixed top-0 left-0 right-0 z-40 p-6 flex justify-between items-center bg-base/80 backdrop-blur-md">
-				<div class="flex items-center gap-3">
-					<div class="glass rounded-full px-3 py-1 border border-iris/20">
-						<span class="font-mono text-xs tracking-wide text-muted">Zen Typer</span>
-					</div>
-				</div>
-				<div class="flex items-center gap-3">
-					<button 
-						class="button-ghost px-3 py-2 rounded-lg text-sm"
-						aria-label="Open help"
-						onclick="window.dispatchEvent(new CustomEvent('toggleHelp',{detail:true}))"
-					>
-						?
-					</button>
-					<button 
-						class="button-ghost px-3 py-2 rounded-lg text-sm"
-						aria-label="Open pause menu"
-						onclick="window.dispatchEvent(new CustomEvent('togglePause',{detail:true}))"
-					>
-						||
-					</button>
-					<ThemeToggle client:load />
-				</div>
-			</header>
+			<SiteHeader client:load mode="zen" />
 
 			<!-- Main canvas -->
 			<!-- Theme background layers (behind tokens) -->
