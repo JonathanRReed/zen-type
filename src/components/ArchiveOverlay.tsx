@@ -31,6 +31,24 @@ const ArchiveOverlay: React.FC = () => {
 
   const active = useMemo(() => entries.find(e => e.id === activeId) || null, [entries, activeId]);
 
+  // Open if header requested before mount
+  useEffect(() => {
+    try {
+      const pending = localStorage.getItem('zt.openArchiveNext');
+      if (pending === '1') {
+        localStorage.removeItem('zt.openArchiveNext');
+        setEntries([...getArchive()].sort((a, b) => {
+          const at = new Date(a.endedAt || a.startedAt).getTime();
+          const bt = new Date(b.endedAt || b.startedAt).getTime();
+          return bt - at;
+        }));
+        setView('list');
+        setActiveId(null);
+        setOpen(true);
+      }
+    } catch {}
+  }, []);
+
   // Open/close handler
   useEffect(() => {
     const handler = (e: Event) => {
@@ -72,7 +90,7 @@ const ArchiveOverlay: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-base/80 backdrop-blur-md relative"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-base/80 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
     >

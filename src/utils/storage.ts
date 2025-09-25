@@ -110,7 +110,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showStats: true,
   highContrast: false,
   autoAdvanceQuotes: false,
-  autoAdvanceDelayMs: 0,
+  autoAdvanceDelayMs: 1500,  // 1.5s affirmation delay
   performanceMode: false,
   profile: 'Practice',
   debounceMs: 0,

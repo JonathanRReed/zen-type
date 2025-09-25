@@ -63,7 +63,10 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
           <button
             className="button-ghost px-3 py-2 rounded-lg text-sm"
             aria-label="Open drafts"
-            onClick={() => window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true }))}
+            onClick={() => {
+              try { localStorage.setItem('zt.openArchiveNext', '1'); } catch {}
+              window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true }));
+            }}
           >
             Drafts
           </button>

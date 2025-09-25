@@ -23,6 +23,10 @@
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
   /* Default ambient gradient (Rosé Pine on OLED-dark) */
   --theme-gradient: linear-gradient(180deg, var(--rp-base) 0%, var(--rp-overlay) 100%);
+  --theme-gradient-angle: 180deg;
+  --theme-gradient-center-x: 50%;
+  --theme-gradient-center-y: 50%;
+  --theme-hue-shift: 0deg;
 }
 
 html {
@@ -152,87 +156,302 @@ html.page-exit body { opacity: 0; transform: translateY(-6px); }
 }
 
 /* Keyframes */
-@keyframes breathe90 { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.04);} }
-@keyframes wave20 { 0%{ background-position: 0% 50%, 0% 52%; } 50%{ background-position: 100% 51%, 100% 53%; } 100%{ background-position: 0% 50%, 0% 52%; } }
-@keyframes scroll120 { 0%{ background-position: 0 0; } 100%{ background-position: 0 8px; } }
-@keyframes hue120 { 0%,100%{ filter: hue-rotate(0deg);} 50%{ filter: hue-rotate(2deg);} }
-@keyframes shimmer8 { 0%,100%{ opacity:.06;} 50%{ opacity:.12;} }
-@keyframes bubbleUp20 { 0%{ transform: translateY(8%); opacity:0;} 10%{opacity:.10;} 90%{opacity:.10;} 100%{ transform: translateY(-8%); opacity:0;} }
-@keyframes leafFloat40 { 0%{ transform: translateY(-3%) translateX(0) rotate(0deg); opacity:.10;} 50%{ transform: translateY(35%) translateX(1.5%) rotate(10deg);} 100%{ transform: translateY(85%) translateX(-1.5%) rotate(-7deg); opacity:0; } }
-@keyframes twinkle16 { 0%,100%{ opacity:.35;} 50%{ opacity:.7;} }
-@keyframes comet120 { 0%{ opacity:0; transform: translateX(-15%) translateY(-10%) rotate(20deg);} 1%{ opacity:.22;} 3%{ opacity:.18;} 5%{ opacity:0; transform: translateX(115%) translateY(20%) rotate(20deg);} 100%{ opacity:0; } }
+@keyframes forestBreath90 {
+  0%,100% {
+    background-position: 50% 52%, 16% -6%, 82% -10%, 50% 100%;
+    filter: saturate(0.96);
+  }
+  50% {
+    background-position: 52% 49%, 18% -4%, 80% -8%, 50% 102%;
+    filter: saturate(1.04);
+  }
+}
+@keyframes leafGlide90 {
+  0% {
+    background-position: 15% -15%, 42% -20%, 65% -12%, 85% -18%;
+    opacity: 0;
+  }
+  10% {
+    opacity: .05;
+  }
+  50% {
+    background-position: 18% 45%, 45% 40%, 62% 48%, 82% 42%;
+    opacity: .04;
+  }
+  90% {
+    opacity: .02;
+  }
+  100% {
+    background-position: 20% 110%, 48% 108%, 58% 112%, 78% 110%;
+    opacity: 0;
+  }
+}
+@keyframes oceanDrift90 {
+  0%,100% {
+    background-position: 50% 52%, 50% 50%, 50% 48%;
+  }
+  50% {
+    background-position: 48% 50%, 52% 49%, 50% 51%;
+  }
+}
+@keyframes oceanBubble30 {
+  0% {
+    background-position: 20% 110%, 60% 115%, 85% 112%;
+    opacity: 0;
+  }
+  5% {
+    opacity: .6;
+  }
+  50% {
+    background-position: 22% 55%, 62% 58%, 83% 52%;
+    opacity: .5;
+  }
+  95% {
+    opacity: .3;
+  }
+  100% {
+    background-position: 24% -5%, 64% -8%, 81% -10%;
+    opacity: 0;
+  }
+}
+@keyframes horizonShimmer15 {
+  0%,100% {
+    opacity: .35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: .45;
+    transform: translateY(-0.5%);
+  }
+}
+@keyframes cosmicHue120 {
+  0%,100% {
+    filter: hue-rotate(0deg) saturate(1);
+  }
+  50% {
+    filter: hue-rotate(2deg) saturate(1.03);
+  }
+}
+@keyframes cosmicTwinkle25 {
+  0%,100% {
+    opacity: .45;
+  }
+  25% {
+    opacity: .65;
+  }
+  50% {
+    opacity: .35;
+  }
+  75% {
+    opacity: .55;
+  }
+}
+@keyframes cosmicComet120 {
+  0% {
+    opacity: 0;
+    transform: translate3d(-20%, -12%, 0) rotate(22deg);
+  }
+  2% {
+    opacity: .15;
+  }
+  5% {
+    opacity: .08;
+    transform: translate3d(120%, 15%, 0) rotate(22deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(120%, 15%, 0) rotate(22deg);
+  }
+}
+@keyframes plainScroll150 {
+  0% {
+    background-position: 50% 0%;
+  }
+  100% {
+    background-position: 50% 5%;
+  }
+}
 
-/* Forest: pine/foam earth tones, subtle leaf float, soft breathing */
+/* Forest: True green tones with pine/foam from Rosé Pine, organic feel */
 html.theme-forest .theme-layer {
   background-image:
-    var(--theme-gradient),
-    radial-gradient(ellipse 40% 10% at 20% -10%, color-mix(in oklab,var(--rp-pine) 40%, transparent) 0%, transparent 70%),
-    radial-gradient(ellipse 35% 9% at 80% -15%, color-mix(in oklab,var(--rp-foam) 22%, transparent) 0%, transparent 70%),
-    linear-gradient(180deg, color-mix(in oklab, var(--rp-pine) 6%, transparent), transparent 40%);
-  background-size: cover, 100% 100%, 100% 100%, 100% 100%;
-  animation: breathe90 90s ease-in-out infinite;
+    radial-gradient(ellipse 110% 60% at 50% 15%, color-mix(in oklab, var(--rp-foam) 25%, #1a3025 75%) 0%, transparent 65%),
+    radial-gradient(ellipse 65% 18% at 25% -5%, color-mix(in oklab, var(--rp-pine) 45%, #0f2419 55%) 0%, transparent 75%),
+    radial-gradient(ellipse 60% 16% at 75% -8%, color-mix(in oklab, var(--rp-foam) 40%, #1e3f2e 60%) 0%, transparent 70%),
+    var(--theme-gradient, linear-gradient(var(--theme-gradient-angle, 180deg), #0d1f15, #1a2e22));
+  background-size: 140% 140%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: 50% 52%, 25% -5%, 75% -8%, 50% 100%;
+  animation: forestBreath90 90s ease-in-out infinite;
+  filter: saturate(1.02);
 }
-html.theme-forest .theme-layer::before,
+html.theme-forest .theme-layer::before {
+  content:""; position:absolute; inset:0; pointer-events:none;
+  /* Subtle leaf drift animation with <5 leaves */
+  background-image:
+    radial-gradient(14px 8px at center, color-mix(in oklab, var(--rp-pine) 65%, transparent) 40%, transparent 75%),
+    radial-gradient(15px 9px at center, color-mix(in oklab, var(--rp-foam) 50%, transparent) 35%, transparent 75%),
+    radial-gradient(13px 7px at center, color-mix(in oklab, var(--rp-pine) 55%, var(--rp-foam) 45%) 40%, transparent 75%),
+    radial-gradient(14px 8px at center, color-mix(in oklab, var(--rp-foam) 60%, transparent) 35%, transparent 75%);
+  background-size: 38px 24px, 40px 26px, 36px 22px, 42px 26px;
+  background-position: 15% -15%, 42% -20%, 65% -12%, 85% -18%;
+  animation: leafGlide90 90s linear infinite;
+  opacity: .05;
+  mix-blend-mode: screen;
+}
 html.theme-forest .theme-layer::after {
   content:""; position:absolute; inset:0; pointer-events:none;
-  background:
-    radial-gradient(12px 6px at 30% -10%, rgba(62,143,176,.10) 40%, transparent 60%),
-    radial-gradient(10px 5px at 70% -20%, rgba(156,207,216,.08) 40%, transparent 60%),
-    radial-gradient(9px 5px at 50% -15%, rgba(62,143,176,.06) 40%, transparent 60%);
-  animation: leafFloat40 40s linear infinite;
+  /* Organic grain overlay for depth */
+  background: linear-gradient(180deg, rgba(13,21,17,.4) 0%, rgba(13,21,17,0) 50%, rgba(7,12,10,.5) 100%);
+  mix-blend-mode: soft-light;
+  opacity: .6;
+}
+html.theme-forest .grain {
+  background-image:
+    radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    repeating-linear-gradient(135deg, rgba(26,42,34,0.18) 0 1px, transparent 1px 8px);
+  background-size: 3px 3px, 4px 4px, 140px 140px;
+  background-position: 0 0, 1px 1px, 0 0;
+  opacity: .22;
+  mix-blend-mode: soft-light;
 }
 
-/* Ocean: layered waves, subtle shimmer, upward bubbles */
+/* Ocean: True aquatic gradient with layered deep blues and teal-greens */
 html.theme-ocean .theme-layer {
   background-image:
-    radial-gradient(circle at 50% 52%, color-mix(in oklab,var(--rp-foam) 10%,transparent), transparent 60%),
-    linear-gradient(180deg, color-mix(in oklab,var(--rp-base) 15%, transparent), color-mix(in oklab,var(--rp-overlay) 85%, transparent)),
-    linear-gradient(180deg, var(--rp-base), var(--rp-overlay));
-  background-size: 200% 200%, 100% 100%, cover;
-  background-blend-mode: screen, normal;
-  animation: wave20 20s ease-in-out infinite;
+    radial-gradient(ellipse 130% 65% at var(--theme-gradient-center-x, 50%) var(--theme-gradient-center-y, 50%), color-mix(in oklab, #1a3d5a 45%, #0c2438 55%) 0%, transparent 65%),
+    linear-gradient(190deg, color-mix(in oklab, #0f2844 65%, #1a4a6e 35%) 0%, color-mix(in oklab, #081422 70%, #0d2940 30%) 100%),
+    linear-gradient(180deg, #050d18 0%, color-mix(in oklab, #081422 75%, #0c1e2e 25%) 100%);
+  background-size: 150% 150%, 100% 100%, 100% 100%;
+  background-position: 50% 50%, 50% 50%, 50% 50%;
+  animation: oceanDrift90 90s ease-in-out infinite;
+  filter: saturate(1.05);
 }
-html.theme-ocean .theme-layer::before { /* Bubbles */
+html.theme-ocean .theme-layer::before {
   content:""; position:absolute; inset:0; pointer-events:none;
+  /* Horizon shimmer effect for subtle refraction */
   background:
-    radial-gradient(6px 6px at 20% 90%, rgba(255,255,255,.05) 40%, transparent 60%),
-    radial-gradient(4px 4px at 60% 85%, rgba(255,255,255,.04) 40%, transparent 60%),
-    radial-gradient(5px 5px at 80% 95%, rgba(255,255,255,.04) 40%, transparent 60%);
-  animation: bubbleUp20 20s linear infinite;
+    linear-gradient(180deg, rgba(26,61,90,0.35) 0%, rgba(12,30,45,0.6) 100%);
+  mask-image: radial-gradient(150% 50% at 50% 35%, rgba(0,0,0,0) 40%, rgba(0,0,0,1) 100%);
+  -webkit-mask-image: radial-gradient(150% 50% at 50% 35%, rgba(0,0,0,0) 40%, rgba(0,0,0,1) 100%);
+  background-size: 120% 120%;
+  background-position: 50% 50%;
+  mix-blend-mode: soft-light;
+  animation: horizonShimmer15 15s ease-in-out infinite;
+  opacity: .35;
 }
-html.theme-ocean .theme-layer::after { /* Horizon shimmer */
+html.theme-ocean .theme-layer::after {
   content:""; position:absolute; inset:0; pointer-events:none;
-  background: linear-gradient(180deg, rgba(255,255,255,.05), transparent 35%);
-  animation: shimmer8 8s ease-in-out infinite;
+  /* Occasional bubble drift upward (low opacity) */
+  background-image:
+    radial-gradient(5px 5px at center, rgba(255,255,255,0.04) 35%, transparent 65%),
+    radial-gradient(4px 4px at center, rgba(255,255,255,0.035) 35%, transparent 65%),
+    radial-gradient(6px 6px at center, rgba(255,255,255,0.03) 35%, transparent 65%);
+  background-size: 30px 30px, 25px 25px, 35px 35px;
+  background-position: 20% 110%, 60% 115%, 85% 112%;
+  animation: oceanBubble30 30s linear infinite;
+  opacity: .6;
+  mix-blend-mode: screen;
+}
+html.theme-ocean .grain {
+  /* Gentle wave distortion pattern */
+  background-image:
+    radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(185deg, rgba(12,30,46,0.25) 0%, rgba(8,20,34,0) 100%);
+  background-size: 4px 4px, 5px 5px, 100% 100%;
+  background-position: 0 0, 2px 2px, 0 0;
+  opacity: .15;
+  mix-blend-mode: soft-light;
 }
 
-/* Cosmic: fewer brighter stars, gentle twinkle, rare comet, tiny hue shift */
-html.theme-cosmic .theme-layer { animation: hue120 120s ease-in-out infinite; }
+/* Cosmic: Dark violet/black base with Rosé Pine accents */
+html.theme-cosmic .theme-layer {
+  background-image:
+    radial-gradient(ellipse 110% 70% at 50% 25%, color-mix(in oklab, var(--rp-iris) 20%, #0a0014 80%) 0%, transparent 65%),
+    radial-gradient(ellipse 90% 45% at 50% 85%, color-mix(in oklab, #120825 85%, var(--rp-iris) 15%) 0%, transparent 55%),
+    var(--theme-gradient, radial-gradient(ellipse at 50% 50%, #0a0014, #120825, #050008));
+  background-size: 140% 140%, 100% 100%, 100% 100%;
+  background-position: 50% 50%, 50% 100%, 50% 50%;
+  filter: saturate(0.98) hue-rotate(var(--theme-hue-shift, 0deg));
+  animation: cosmicHue120 120s ease-in-out infinite;
+}
 html.theme-cosmic .theme-layer::before {
   content:""; position:absolute; inset:0; pointer-events:none;
-  background:
-    radial-gradient(1.4px 1.4px at 12% 22%, rgba(255,255,255,.95) 50%, transparent 60%),
-    radial-gradient(1.6px 1.6px at 35% 68%, rgba(255,255,255,1) 50%, transparent 60%),
-    radial-gradient(1.5px 1.5px at 62% 38%, rgba(255,255,255,.95) 50%, transparent 60%);
-  animation: twinkle16 16s ease-in-out infinite;
-  opacity:.45;
+  /* Starfield: fewer, brighter dots that twinkle slowly */
+  background-image:
+    radial-gradient(2px 2px at 22% 28%, rgba(255,255,255,0.9) 45%, transparent 55%),
+    radial-gradient(1.8px 1.8px at 45% 65%, rgba(255,255,255,0.95) 45%, transparent 55%),
+    radial-gradient(2.2px 2.2px at 68% 42%, rgba(255,255,255,0.85) 45%, transparent 55%),
+    radial-gradient(1.9px 1.9px at 82% 55%, rgba(255,255,255,0.88) 45%, transparent 55%),
+    radial-gradient(2.1px 2.1px at 35% 85%, rgba(255,255,255,0.92) 45%, transparent 55%),
+    radial-gradient(1.7px 1.7px at 12% 45%, rgba(255,255,255,0.86) 45%, transparent 55%);
+  background-size: auto;
+  background-repeat: no-repeat;
+  animation: cosmicTwinkle25 25s ease-in-out infinite;
+  opacity: .45;
 }
-html.theme-cosmic .theme-layer::after { /* Rare comet every ~120s */
-  content:""; position:absolute; pointer-events:none;
-  top:12%; left:-15%; width:35%; height:1px; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.35), rgba(255,255,255,0));
-  transform: rotate(20deg);
-  animation: comet120 120s linear infinite;
+html.theme-cosmic .theme-layer::after {
+  content:""; position:absolute; inset:auto; pointer-events:none;
+  /* Rare faint comet streak (every ~120s) */
+  top: 18%; left: -15%; width: 35%; height: 1.5px;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(196,167,231,0.25), rgba(255,255,255,0));
+  transform: rotate(22deg);
+  animation: cosmicComet120 120s linear infinite;
+  animation-delay: 15s;
+  opacity: 0;
+}
+html.theme-cosmic .grain {
+  background-image:
+    radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    radial-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(18,8,37,0.3) 0%, rgba(5,0,10,0) 100%);
+  background-size: 3px 3px, 4px 4px, 100% 100%;
+  background-position: 0 0, 1px 1px, 0 0;
+  opacity: .18;
+  mix-blend-mode: soft-light;
 }
 
-/* Plain: minimal vertical gradient scroll + soft halo at bottom center */
+/* Plain: Minimal with faint vertical gradient scroll */
 html.theme-plain .theme-layer {
   background: var(--theme-gradient);
-  background-size: auto 110%;
-  animation: scroll120 120s linear infinite;
+  background-size: 100% 115%;
+  background-position: 50% 0%;
+  animation: plainScroll150 150s linear infinite;
+  filter: saturate(0.96);
 }
 html.theme-plain .theme-layer::after {
   content:""; position:absolute; inset:0; pointer-events:none;
-  background: radial-gradient(ellipse 40% 15% at 50% 70%, rgba(255,255,255,.06), transparent 60%);
+  /* Soft radial halo near caret line for focus */
+  background: radial-gradient(ellipse 38% 14% at 50% 60%, rgba(196,167,231,0.05) 0%, transparent 65%);
+  mix-blend-mode: screen;
+  opacity: .5;
+}
+
+/* High contrast adjustments while keeping theme identity */
+html.high-contrast .theme-layer {
+  filter: contrast(1.08) brightness(1.05);
+}
+html.high-contrast .grain {
+  opacity: .3;
+}
+html.high-contrast.theme-forest .theme-layer::before {
+  opacity: .12;
+}
+html.high-contrast.theme-forest .theme-layer::after {
+  opacity: .66;
+}
+html.high-contrast.theme-ocean .theme-layer::after {
+  opacity: .2;
+}
+html.high-contrast.theme-cosmic .theme-layer::before {
+  opacity: .75;
+}
+html.high-contrast.theme-cosmic .theme-layer::after {
+  opacity: .2;
+}
+html.high-contrast.theme-plain .theme-layer::after {
+  opacity: .78;
 }
 
 @keyframes blink {
@@ -242,9 +461,33 @@ html.theme-plain .theme-layer::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
+  body {
     transition: none !important;
+  }
+
+  html.theme-forest .theme-layer,
+  html.theme-forest .theme-layer::before,
+  html.theme-forest .theme-layer::after,
+  html.theme-ocean .theme-layer,
+  html.theme-ocean .theme-layer::before,
+  html.theme-ocean .theme-layer::after,
+  html.theme-cosmic .theme-layer,
+  html.theme-cosmic .theme-layer::before,
+  html.theme-cosmic .theme-layer::after,
+  html.theme-plain .theme-layer,
+  html.theme-plain .theme-layer::after,
+  .grain {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  html.theme-forest .theme-layer,
+  html.theme-cosmic .theme-layer,
+  html.theme-plain .theme-layer {
+    filter: none !important;
+  }
+
+  html.theme-ocean .theme-layer::after {
+    opacity: .08 !important;
   }
 }

@@ -25,57 +25,128 @@ const ThemeToggle: React.FC = () => {
 
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
-    
+
     // Remove all theme classes
     root.classList.remove('theme-plain', 'theme-forest', 'theme-ocean', 'theme-cosmic');
-    
+
     // Add new theme class
     root.classList.add(`theme-${newTheme.toLowerCase()}`);
-    
+
+    // Reset gradient helpers so each theme starts from its baseline
+    root.style.setProperty('--theme-gradient-angle', '180deg');
+    root.style.setProperty('--theme-gradient-center-x', '50%');
+    root.style.setProperty('--theme-gradient-center-y', '50%');
+
     // Apply theme-specific styles
     switch (newTheme) {
       case 'Forest':
-        root.style.setProperty('--theme-gradient', 'linear-gradient(180deg, var(--rp-pine) 0%, var(--rp-foam) 100%)');
+        root.style.setProperty(
+          '--theme-gradient',
+          'linear-gradient(var(--theme-gradient-angle, 180deg), color-mix(in oklab, #0d1f15 65%, var(--rp-pine) 35%) 0%, color-mix(in oklab, #1a2e22 45%, var(--rp-foam) 55%) 100%)'
+        );
         break;
       case 'Ocean':
-        root.style.setProperty('--theme-gradient', 'radial-gradient(circle at center, var(--rp-base) 0%, var(--rp-foam) 100%)');
+        root.style.setProperty(
+          '--theme-gradient',
+          'radial-gradient(ellipse at var(--theme-gradient-center-x, 50%) var(--theme-gradient-center-y, 50%), color-mix(in oklab, #0c1e2e 70%, #1a3d5a 30%) 0%, color-mix(in oklab, #081422 60%, #0f2844 40%) 100%)'
+        );
         break;
       case 'Cosmic':
-        root.style.setProperty('--theme-gradient', 'conic-gradient(from 180deg at 50% 50%, var(--rp-base), var(--rp-iris), var(--rp-base))');
+        root.style.setProperty(
+          '--theme-gradient',
+          'radial-gradient(ellipse at 50% 50%, color-mix(in oklab, #0a0014 80%, var(--rp-iris) 20%) 0%, color-mix(in oklab, #120825 70%, var(--rp-iris) 30%) 40%, #050008 100%)'
+        );
         break;
       default:
         // Plain (Rosé Pine OLED-dark gradient)
-        root.style.setProperty('--theme-gradient', 'linear-gradient(180deg, var(--rp-base) 0%, var(--rp-overlay) 100%)');
+        root.style.setProperty(
+          '--theme-gradient',
+          'linear-gradient(var(--theme-gradient-angle, 180deg), color-mix(in oklab, var(--rp-base) 92%, #000000 8%) 0%, color-mix(in oklab, var(--rp-overlay) 96%, #000000 4%) 100%)'
+        );
     }
   };
 
-  // Ambient shift every ~60s unless locked
+  // Ambient shift every ~90s unless locked (respects reduced motion)
   useEffect(() => {
+    const root = document.documentElement;
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let tick = 0;
-    let raf: number | null = null;
-    const interval = setInterval(() => {
-      const s = getSettings();
-      if (s.themeShiftLocked) return;
-      tick = (tick + 1) % 60;
-      const root = document.documentElement;
-      // Subtle angle shift for linear/conic gradients
-      const angle = 180 + Math.sin(tick / 60 * Math.PI * 2) * 6; // ±6deg
-      if (theme === 'Forest' || theme === 'Plain') {
-        const base = theme === 'Forest' ? 'var(--rp-pine), var(--rp-foam)' : 'var(--rp-base), var(--rp-overlay)';
-        root.style.setProperty('--theme-gradient', `linear-gradient(${angle}deg, ${base})`);
-      } else if (theme === 'Cosmic') {
-        const start = angle;
-        root.style.setProperty('--theme-gradient', `conic-gradient(from ${start}deg at 50% 50%, var(--rp-base), var(--rp-iris), var(--rp-base))`);
-      } else if (theme === 'Ocean') {
-        // slight radial center drift
-        const x = 50 + Math.sin(tick / 60 * Math.PI * 2) * 4;
-        const y = 50 + Math.cos(tick / 60 * Math.PI * 2) * 4;
-        root.style.setProperty('--theme-gradient', `radial-gradient(circle at ${x}% ${y}%, var(--rp-base) 0%, var(--rp-foam) 100%)`);
+    let interval: number | null = null;
+
+    const resetGradientHelpers = () => {
+      root.style.setProperty('--theme-gradient-angle', '180deg');
+      root.style.setProperty('--theme-gradient-center-x', '50%');
+      root.style.setProperty('--theme-gradient-center-y', '50%');
+      root.style.setProperty('--theme-hue-shift', '0deg');
+    };
+
+    const startShift = () => {
+      if (interval !== null) return;
+      interval = window.setInterval(() => {
+        const s = getSettings();
+        if (s.themeShiftLocked) return;
+        tick = (tick + 1) % 90;
+
+        // Forest: Breathing gradient shift between pine/foam
+        if (theme === 'Forest') {
+          const angle = 180 + Math.sin((tick / 90) * Math.PI * 2) * 4; // ±4deg subtle
+          root.style.setProperty('--theme-gradient-angle', `${angle}deg`);
+        }
+        // Ocean: Gentle wave distortion
+        if (theme === 'Ocean') {
+          const x = 50 + Math.sin((tick / 90) * Math.PI * 2) * 3;
+          const y = 50 + Math.cos((tick / 90) * Math.PI * 2) * 2;
+          root.style.setProperty('--theme-gradient-center-x', `${x}%`);
+          root.style.setProperty('--theme-gradient-center-y', `${y}%`);
+        }
+        // Cosmic: Small hue shift ±2°
+        if (theme === 'Cosmic') {
+          const hue = Math.sin((tick / 90) * Math.PI * 2) * 2; // ±2deg
+          root.style.setProperty('--theme-hue-shift', `${hue}deg`);
+        }
+        // Plain: Minimal vertical gradient scroll
+        if (theme === 'Plain') {
+          const angle = 180 + Math.sin((tick / 90) * Math.PI * 2) * 2; // ±2deg very subtle
+          root.style.setProperty('--theme-gradient-angle', `${angle}deg`);
+        }
+      }, 1000);
+    };
+
+    const stopShift = () => {
+      if (interval !== null) {
+        clearInterval(interval);
+        interval = null;
       }
-    }, 1000);
+      resetGradientHelpers();
+    };
+
+    if (!motionQuery.matches) {
+      startShift();
+    } else {
+      resetGradientHelpers();
+    }
+
+    const handleMotionChange = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        stopShift();
+      } else {
+        startShift();
+      }
+    };
+
+    if (typeof motionQuery.addEventListener === 'function') {
+      motionQuery.addEventListener('change', handleMotionChange);
+    } else {
+      motionQuery.addListener(handleMotionChange);
+    }
+
     return () => {
-      clearInterval(interval);
-      if (raf) cancelAnimationFrame(raf);
+      stopShift();
+      if (typeof motionQuery.removeEventListener === 'function') {
+        motionQuery.removeEventListener('change', handleMotionChange);
+      } else {
+        motionQuery.removeListener(handleMotionChange);
+      }
     };
   }, [theme]);
 

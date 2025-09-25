@@ -31,7 +31,7 @@ const AboutOverlay: React.FC<AboutOverlayProps> = ({ isOpen = false, onClose }) 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-base/80 backdrop-blur-md relative" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-base/80 backdrop-blur-md" role="dialog" aria-modal="true">
       {/* background click to close */}
       <button type="button" className="absolute inset-0 z-0 bg-transparent" aria-label="Close about overlay" onClick={() => { setOpen(false); onClose?.(); }} />
 
