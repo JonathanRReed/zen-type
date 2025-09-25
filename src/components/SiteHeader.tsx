@@ -22,7 +22,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
     return () => window.removeEventListener('settingsChanged', onSettings as EventListener);
   }, []);
 
-  const updateSetting = (key: keyof Settings, value: any) => {
+  const _updateSetting = (key: keyof Settings, value: any) => {
     const next = { ...settings, [key]: value } as Settings;
     setSettings(next);
     try { saveSettings(next); } catch {}
@@ -41,13 +41,22 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-40 p-6 flex justify-between items-center bg-base/80 backdrop-blur-md">
       <div className="flex items-center gap-3">
-        {mode === 'quote' ? (
-          <a href="/" className="text-muted hover:text-text transition-colors text-sm">Home</a>
-        ) : (
-          <div className="glass rounded-full px-3 py-1 border border-iris/20">
-            <span className="font-mono text-xs tracking-wide text-muted">Zen Typer</span>
-          </div>
-        )}
+        <nav aria-label="Primary" className="flex items-center gap-2">
+          <a
+            href="/zen"
+            aria-current={mode === 'zen' ? 'page' : undefined}
+            className={`px-3 py-2 rounded-lg text-sm border transition-colors ${mode === 'zen' ? 'bg-surface/80 text-text border-muted/30' : 'button-ghost border-muted/20 text-muted hover:text-text'}`}
+          >
+            Zen Mode
+          </a>
+          <a
+            href="/quote"
+            aria-current={mode === 'quote' ? 'page' : undefined}
+            className={`px-3 py-2 rounded-lg text-sm border transition-colors ${mode === 'quote' ? 'bg-surface/80 text-text border-muted/30' : 'button-ghost border-muted/20 text-muted hover:text-text'}`}
+          >
+            Quote Mode
+          </a>
+        </nav>
       </div>
       <div className="flex items-center gap-3">
         {mode === 'zen' && (
