@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { saveSettings, resetAllData, type Settings, FONT_OPTIONS } from '../utils/storage';
+import { saveSettings, resetAllData, type Settings, FONT_OPTIONS, getFontStack } from '../utils/storage';
 
 interface SettingsPanelProps {
   settings: Settings;
@@ -18,6 +18,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
     });
     if (broadcast) {
       window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+    }
+
+    if ('fontFamily' in patch && patch.fontFamily) {
+      document.documentElement.style.setProperty('--typing-font', getFontStack(patch.fontFamily));
+      window.dispatchEvent(new CustomEvent('fontChanged', { detail: patch.fontFamily }));
     }
 
     if ('reducedMotion' in patch && broadcast) {

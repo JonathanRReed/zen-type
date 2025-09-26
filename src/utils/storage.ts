@@ -26,10 +26,11 @@ export function setJSON(key: string, value: any): void {
   }
 }
 
-export const FONT_OPTIONS = ['JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro'] as const;
+export const FONT_OPTIONS = ['Nebula Sans', 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro'] as const;
 export type FontOption = typeof FONT_OPTIONS[number];
 
 const FONT_STACKS: Record<FontOption, string> = {
+  'Nebula Sans': "'Nebula Sans', 'Inter', 'Helvetica Neue', Arial, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   'JetBrains Mono': "'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   'Fira Code': "'Fira Code', 'JetBrains Mono', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   'IBM Plex Mono': "'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
