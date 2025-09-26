@@ -31,6 +31,7 @@
 
 html {
   color-scheme: dark;
+  view-transition-name: root;
 }
 
 body {
@@ -263,7 +264,7 @@ html.page-exit body { opacity: 0; transform: translateY(-6px); }
     transform: translate3d(120%, 15%, 0) rotate(22deg);
   }
 }
-@keyframes plainScroll150 {
+@keyframes voidScroll180 {
   0% {
     background-position: 50% 0%;
   }
@@ -393,31 +394,60 @@ html.theme-cosmic .grain {
   mix-blend-mode: soft-light;
 }
 
-/* Plain: Minimal with faint vertical gradient scroll */
-html.theme-plain .theme-layer {
-  background: var(--theme-gradient);
+/* Void: Deep Rosé Pine void with soft aurora pulses */
+html.theme-void {
+  --void-ink: color-mix(in oklab, var(--rp-base) 80%, #050209 20%);
+  --void-veil: color-mix(in oklab, var(--rp-overlay) 85%, #000000 15%);
+  --void-iris: color-mix(in oklab, var(--rp-iris) 18%, transparent);
+  --void-foam: color-mix(in oklab, var(--rp-foam) 12%, transparent);
+}
+html.theme-void .theme-layer {
+  background:
+    radial-gradient(110% 80% at 50% 20%, rgba(12, 6, 24, 0.58), transparent 70%),
+    linear-gradient(200deg, var(--void-ink) 0%, var(--void-veil) 60%, color-mix(in oklab, var(--rp-base) 96%, #000 4%) 100%);
   background-size: 100% 115%;
   background-position: 50% 0%;
-  animation: plainScroll150 150s linear infinite;
-  filter: saturate(0.96);
+  animation: voidScroll180 180s linear infinite;
+  filter: saturate(0.94) brightness(0.98);
 }
-html.theme-plain .theme-layer::after {
+html.theme-void .theme-layer::before {
   content:""; position:absolute; inset:0; pointer-events:none;
-  /* Soft radial halo near caret line for focus */
-  background: radial-gradient(ellipse 38% 14% at 50% 60%, rgba(196,167,231,0.05) 0%, transparent 65%);
+  background: radial-gradient(ellipse 60% 24% at 50% 58%, var(--void-iris), transparent 70%);
+  opacity: .35;
   mix-blend-mode: screen;
-  opacity: .5;
+  animation: voidPulse 26s ease-in-out infinite;
 }
-
-/* High contrast adjustments while keeping theme identity */
-html.high-contrast .theme-layer {
-  filter: contrast(1.08) brightness(1.05);
+html.theme-void .theme-layer::after {
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 40% 18% at 50% 65%, color-mix(in oklab, var(--rp-iris) 10%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 55% 35% at 50% 100%, color-mix(in oklab, var(--rp-gold) 6%, transparent) 0%, transparent 100%);
+  mix-blend-mode: screen;
+  opacity: .65;
+}
+html.theme-void .grain {
+  opacity: .18;
+  mix-blend-mode: soft-light;
+}
+@keyframes voidPulse {
+  0%, 100% {
+    transform: translateY(0) scaleX(1);
+    opacity: .32;
+  }
+  50% {
+    transform: translateY(-1.2%) scaleX(1.02);
+    opacity: .45;
+  }
+}
+html.theme-void[data-motion="on"] .theme-layer::before {
+  animation-play-state: running;
+}
+html.theme-void[data-motion="off"] .theme-layer::before {
+  animation: none;
+  opacity: .32;
 }
 html.high-contrast .grain {
   opacity: .3;
-}
-html.high-contrast.theme-forest .theme-layer::before {
-  opacity: .12;
 }
 html.high-contrast.theme-forest .theme-layer::after {
   opacity: .66;
@@ -431,7 +461,7 @@ html.high-contrast.theme-cosmic .theme-layer::before {
 html.high-contrast.theme-cosmic .theme-layer::after {
   opacity: .2;
 }
-html.high-contrast.theme-plain .theme-layer::after {
+html.high-contrast.theme-void .theme-layer::after {
   opacity: .78;
 }
 
@@ -439,6 +469,41 @@ html.high-contrast.theme-plain .theme-layer::after {
   50% {
     opacity: 0;
   }
+}
+
+@keyframes vt-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+:root::view-transition-old(root),
+:root::view-transition-new(root) {
+  animation-duration: 260ms;
+  animation-timing-function: var(--ease-smooth);
+}
+
+:root::view-transition-old(root) {
+  animation-name: vt-fade-out;
+}
+
+:root::view-transition-new(root) {
+  animation-name: vt-fade-in;
+}
+
+:root[data-transition-theme="theme-void"]::view-transition-new(root) {
+  animation-name: vt-fade-in;
+  animation-duration: 320ms;
+}
+
+:root[data-transition-theme="theme-forest"]::view-transition-new(root),
+:root[data-transition-theme="theme-ocean"]::view-transition-new(root),
+:root[data-transition-theme="theme-cosmic"]::view-transition-new(root) {
+  animation-duration: 320ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -455,8 +520,8 @@ html.high-contrast.theme-plain .theme-layer::after {
   html.theme-cosmic .theme-layer,
   html.theme-cosmic .theme-layer::before,
   html.theme-cosmic .theme-layer::after,
-  html.theme-plain .theme-layer,
-  html.theme-plain .theme-layer::after,
+  html.theme-void .theme-layer,
+  html.theme-void .theme-layer::after,
   .grain {
     animation: none !important;
     transform: none !important;
@@ -464,7 +529,7 @@ html.high-contrast.theme-plain .theme-layer::after {
 
   html.theme-forest .theme-layer,
   html.theme-cosmic .theme-layer,
-  html.theme-plain .theme-layer {
+  html.theme-void .theme-layer {
     filter: none !important;
   }
 

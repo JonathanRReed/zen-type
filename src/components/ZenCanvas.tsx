@@ -26,6 +26,21 @@ interface Star {
 }
 interface Leaf { x: number; y: number; vx: number; vy: number; size: number; a: number; age: number; rot: number; rotSpeed: number; }
 interface Bubble { x: number; y: number; vy: number; r: number; a: number; wobble: number; }
+interface DriftSpeck { x: number; y: number; baseX: number; vy: number; amp: number; phase: number; alpha: number; radius: number; }
+interface Firefly { baseX: number; baseY: number; ampX: number; ampY: number; phase: number; speed: number; radius: number; alpha: number; color: string; }
+
+const hexToRgba = (hex: string, alpha: number) => {
+  const normalized = hex.trim().replace(/^#/, '');
+  const isShort = normalized.length === 3;
+  const value = isShort
+    ? normalized.split('').map(ch => ch + ch).join('')
+    : normalized.padEnd(6, '0');
+  const num = parseInt(value.slice(0, 6), 16);
+  const r = (num >> 16) & 0xff;
+  const g = (num >> 8) & 0xff;
+  const b = num & 0xff;
+  return `rgba(${r}, ${g}, ${b}, ${Math.min(1, Math.max(0, alpha))})`;
+};
 
 interface ZenCanvasProps {
   fontFamily?: string;
@@ -52,6 +67,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const starsRef = useRef<Star[]>([]);
   const leavesRef = useRef<Leaf[]>([]);
   const bubblesRef = useRef<Bubble[]>([]);
+  const driftRef = useRef<DriftSpeck[]>([]);
+  const firefliesRef = useRef<Firefly[]>([]);
   const lastLeafSpawnRef = useRef<number>(0);
   const lastBubbleSpawnRef = useRef<number>(0);
   // Back buffer for rendering (OffscreenCanvas if available)
@@ -384,6 +401,57 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       }
       leavesRef.current = updatedLeaves;
       ctx.restore();
+
+      // Fireflies – soft golden pulses
+      const rpGold = (css.getPropertyValue('--rp-gold') || '#f6c177').trim();
+      const rpLove = (css.getPropertyValue('--rp-love') || '#eb6f92').trim();
+      const rpFoam = (css.getPropertyValue('--rp-foam') || '#9ccfd8').trim();
+      const fireflyPalette = [rpGold, rpLove, rpFoam];
+      const canopyTop = canvas.height * 0.2;
+      const canopyBottom = canvas.height * 0.85;
+      const targetFireflies = 14;
+      while (firefliesRef.current.length < targetFireflies) {
+        const color = fireflyPalette[Math.floor(Math.random() * fireflyPalette.length)];
+        firefliesRef.current.push({
+          baseX: Math.random() * canvas.width,
+          baseY: canopyBottom - Math.random() * (canopyBottom - canopyTop),
+          ampX: 18 + Math.random() * 26,
+          ampY: 10 + Math.random() * 16,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.0009 + Math.random() * 0.0005,
+          radius: 1.1 + Math.random() * 1.4,
+          alpha: 0.18 + Math.random() * 0.1,
+          color,
+        });
+      }
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const updatedFireflies: Firefly[] = [];
+      for (const firefly of firefliesRef.current) {
+        firefly.phase += firefly.speed;
+        firefly.baseY -= 0.03;
+        if (firefly.baseY < canopyTop) {
+          firefly.baseY = canopyBottom + Math.random() * 40;
+          firefly.baseX = Math.random() * canvas.width;
+        }
+        firefly.baseX += (Math.random() - 0.5) * 0.2;
+        if (firefly.baseX < -20) firefly.baseX = canvas.width + 20;
+        if (firefly.baseX > canvas.width + 20) firefly.baseX = -20;
+
+        const x = firefly.baseX + Math.sin(firefly.phase * 3) * firefly.ampX;
+        const y = firefly.baseY + Math.cos(firefly.phase * 2) * firefly.ampY;
+        const pulse = 0.6 + 0.4 * Math.sin(firefly.phase * 4);
+        ctx.globalAlpha = firefly.alpha * pulse;
+        ctx.fillStyle = firefly.color;
+        ctx.beginPath();
+        ctx.arc(x, y, firefly.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        updatedFireflies.push(firefly);
+      }
+      firefliesRef.current = updatedFireflies;
+      ctx.restore();
     }
     
     // Ocean theme: Occasional bubble drift
@@ -394,9 +462,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         bubblesRef.current.push({
           x: Math.random() * canvas.width,
           y: canvas.height + 10,
-          vy: -(12 + Math.random() * 12) / 60, // 12–24 px/s upward
+          vy: -(6 + Math.random() * 8) / 60, // 6–14 px/s upward
           r: 2 + Math.random() * 3,
-          a: 0.06 + Math.random() * 0.06,
+          a: 0.05 + Math.random() * 0.05,
           wobble: Math.random() * Math.PI * 2
         });
         lastBubbleSpawnRef.current = now;
@@ -421,6 +489,66 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         }
       }
       bubblesRef.current = updatedBubbles;
+      ctx.restore();
+
+      // Gentle volumetric light gradient
+      ctx.save();
+      const foam = (css.getPropertyValue('--rp-foam') || '#9ccfd8').trim();
+      const pine = (css.getPropertyValue('--rp-pine') || '#31748f').trim();
+      const surface = (css.getPropertyValue('--rp-surface') || '#1f1d2e').trim();
+      const t = performance.now() * 0.000015;
+      const highlightShift = 0.08 + 0.04 * Math.sin(t * 0.9);
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, hexToRgba(foam, 0.22 + highlightShift * 0.3));
+      grad.addColorStop(0.45, hexToRgba(pine, 0.18 + highlightShift * 0.25));
+      grad.addColorStop(1, hexToRgba(surface, 0.06));
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+
+      // Drifting plankton specks
+      const targetSpecks = rm ? 10 : 18;
+      while (driftRef.current.length < targetSpecks) {
+        driftRef.current.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          baseX: Math.random() * canvas.width,
+          vy: -((2 + Math.random() * 5) / 900),
+          amp: 6 + Math.random() * 10,
+          phase: Math.random() * Math.PI * 2,
+          alpha: 0.035 + Math.random() * 0.06,
+          radius: 0.7 + Math.random() * 1.1,
+        });
+      }
+
+      ctx.save();
+      const updatedSpecks: DriftSpeck[] = [];
+      const driftTime = performance.now() * 0.0001;
+      for (const speck of driftRef.current) {
+        speck.phase += 0.0009;
+        const sway = Math.sin(driftTime + speck.phase) * speck.amp;
+        const nextX = speck.baseX + sway;
+        const nextY = speck.y + speck.vy * canvas.height;
+        if (nextY < -20) {
+          speck.y = canvas.height + 10;
+          speck.baseX = Math.random() * canvas.width;
+          speck.phase = Math.random() * Math.PI * 2;
+          speck.alpha = 0.035 + Math.random() * 0.06;
+          speck.radius = 0.7 + Math.random() * 1.1;
+        } else {
+          speck.y = nextY;
+        }
+
+        ctx.globalAlpha = speck.alpha;
+        ctx.fillStyle = foam;
+        ctx.beginPath();
+        ctx.arc(nextX, speck.y, speck.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        updatedSpecks.push(speck);
+      }
+      driftRef.current = updatedSpecks;
       ctx.restore();
     }
     
@@ -613,6 +741,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       starsRef.current = [];
       leavesRef.current = [];
       bubblesRef.current = [];
+      firefliesRef.current = [];
       
       if (isCosmic && !perfMode) {
         const css = getComputedStyle(document.documentElement);
@@ -643,6 +772,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         }
         starsRef.current = stars;
       }
+
+      driftRef.current = [];
     };
 
     handleResize();
