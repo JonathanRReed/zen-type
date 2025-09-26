@@ -29,38 +29,45 @@ const randomQuote = getRandomQuote(quotes);
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
+			rel="stylesheet"
 			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Lato:wght@400;700&display=swap"
 		/>
 	</head>
 	<body>
 		<ClientTransitions client:load />
 		<ErrorBoundary>
-			<div id="quote-app" class="relative w-full min-h-screen stats-cq-host">
+			<a
+				href="#quote-app"
+				class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-iris focus:text-base focus:rounded-lg focus:shadow-lg"
+			>
+				Skip to main content
+			</a>
+			<div id="quote-app" class="relative w-full min-h-screen overflow-hidden stats-cq-host">
 				<SiteHeader client:load mode="quote" />
+				<div class="pointer-events-none fixed inset-0 z-0 theme-layer"></div>
 
-				<!-- Main quote typer -->
-				<div id="quote-container">
-					<QuoteTyper
-						client:load
-						quote={randomQuote.text}
-						author={randomQuote.author}
-						onComplete={(summary) => {
-							// Handle completion
-							const completeEvent = new CustomEvent('quoteComplete', { detail: summary });
-							window.dispatchEvent(completeEvent);
-						}}
-					/>
+				<div class="relative z-10 flex w-full items-center justify-center px-6 py-12 pb-40">
+					<div class="w-full max-w-4xl">
+						<QuoteTyper
+							client:load
+							quote={randomQuote.text}
+							author={randomQuote.author}
+							onComplete={(summary) => {
+								// Handle completion
+								const completeEvent = new CustomEvent('quoteComplete', { detail: summary });
+								window.dispatchEvent(completeEvent);
+							}}
+						/>
+					</div>
 				</div>
 
-				<!-- Stats bar -->
-				<StatsBar 
+				<StatsBar
 					client:load
 					mode="quote"
 					visible={true}
 					metrics={{}}
 				/>
 
-				<!-- Pause menu -->
 				<PauseMenu
 					client:load
 					mode="quote"
@@ -71,13 +78,13 @@ const randomQuote = getRandomQuote(quotes);
 					data-pause-menu
 				/>
 
-				<!-- Help sheet -->
-				<HelpSheet 
+				<HelpSheet
 					client:load
 					isOpen={false}
+					onClose={() => {}}
 				/>
-				<AboutOverlay client:load />
 				<ArchiveOverlay client:load />
+				<AboutOverlay client:load />
 				<SiteFooter client:load />
 			</div>
 		</ErrorBoundary>

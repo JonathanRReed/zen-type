@@ -484,18 +484,81 @@ html.page-exit body {
     opacity: 0;
   }
   5% {
-    opacity: .6;
+    opacity: .84;
   }
   50% {
     background-position: 22% 55%, 62% 58%, 83% 52%;
-    opacity: .5;
+    opacity: .66;
   }
   95% {
-    opacity: .3;
+    opacity: .38;
   }
   100% {
     background-position: 24% -5%, 64% -8%, 81% -10%;
     opacity: 0;
+  }
+}
+@keyframes oceanBubbleSlow60 {
+  0% {
+    background-position: 12% 120%, 42% 118%, 78% 122%;
+    opacity: 0;
+  }
+  10% {
+    opacity: .36;
+  }
+  55% {
+    background-position: 14% 62%, 44% 60%, 76% 64%;
+    opacity: .42;
+  }
+  95% {
+    opacity: .12;
+  }
+  100% {
+    background-position: 16% -6%, 46% -4%, 74% -2%;
+    opacity: 0;
+  }
+}
+@keyframes oceanLightSweep30 {
+  0% {
+    transform: translateY(0%) scaleY(1);
+    opacity: .18;
+  }
+  50% {
+    transform: translateY(-2.5%) scaleY(1.05);
+    opacity: .28;
+  }
+  100% {
+    transform: translateY(0.5%) scaleY(1);
+    opacity: .16;
+  }
+}
+@keyframes oceanParticleDrift80 {
+  0% {
+    background-position:
+      center top,
+      18% 118%,
+      74% 120%,
+      46% 122%;
+    transform: translate3d(0, 0, 0);
+    opacity: .26;
+  }
+  50% {
+    background-position:
+      center top,
+      22% 76%,
+      70% 82%,
+      44% 86%;
+    transform: translate3d(1.2%, -2%, 0);
+    opacity: .32;
+  }
+  100% {
+    background-position:
+      center top,
+      26% 38%,
+      66% 46%,
+      42% 52%;
+    transform: translate3d(-1.4%, -4%, 0);
+    opacity: .22;
   }
 }
 @keyframes horizonShimmer15 {
@@ -597,6 +660,9 @@ html.theme-ocean {
   --ocean-3: #145275;
   --seafoam: #9ccfd8;
   --deep: #082031;
+  --plankton-foam: color-mix(in oklab, var(--seafoam) 82%, transparent);
+  --plankton-iris: color-mix(in oklab, var(--rp-iris) 58%, transparent);
+  --cascade-wash: color-mix(in oklab, var(--seafoam) 18%, transparent);
 }
 html.theme-ocean .theme-layer {
   background:
@@ -605,27 +671,69 @@ html.theme-ocean .theme-layer {
 }
 /* Wave shimmer (motion only) */
 html.theme-ocean[data-motion="on"] .theme-layer::before {
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background: conic-gradient(from 180deg at 50% 60%,
-              color-mix(in oklab,var(--seafoam) 6%, transparent),
-              transparent 20%, color-mix(in oklab,var(--seafoam) 4%, transparent) 40%, transparent);
-  opacity:.35; mix-blend-mode: screen;
-  animation: ocean-wave 12s ease-in-out infinite;
+  content:""; position:absolute; inset:-6% -8% 0; pointer-events:none;
+  background-image:
+    conic-gradient(from 200deg at 50% 55%,
+      color-mix(in oklab,var(--seafoam) 7%, transparent) 0%,
+      transparent 32%,
+      color-mix(in oklab,var(--seafoam) 5%, transparent) 55%,
+      transparent 75%),
+    radial-gradient(ellipse 110% 140% at 50% 0%,
+      color-mix(in oklab,var(--seafoam) 14%, transparent) 0%,
+      transparent 70%);
+  background-size: 100% 100%, 120% 140%;
+  background-position: 50% 58%, 50% 104%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  opacity: .16;
+  transform-origin: 50% 42%;
+  animation: ocean-wave 12s ease-in-out infinite, oceanLightSweep30 30s ease-in-out infinite;
 }
 @keyframes ocean-wave { 
   50% { transform: translateY(-2%) scaleY(1.02); filter: blur(1.5px); }
 }
 /* Horizon shimmer: soften and remove visible band line */
 html.theme-ocean .theme-layer::after {
-  content:""; position:absolute; inset:0; pointer-events:none;
-  /* Subtle top glow that fades smoothly into the scene */
-  background: linear-gradient(180deg,
-              rgba(255,255,255,0.02) 0%,
-              rgba(255,255,255,0.015) 6%,
-              rgba(255,255,255,0.008) 15%,
-              rgba(255,255,255,0.004) 28%,
-              rgba(255,255,255,0.0) 40%);
+  content:""; position:absolute; inset:-6% -10% -8% -10%; pointer-events:none;
+  background-image:
+    linear-gradient(180deg,
+      rgba(255,255,255,0.015) 0%,
+      rgba(255,255,255,0.009) 16%,
+      rgba(255,255,255,0.003) 34%,
+      rgba(255,255,255,0.0) 52%),
+    radial-gradient(42% 32% at 22% 122%, color-mix(in oklab,var(--plankton-foam) 55%, transparent) 0%, transparent 80%),
+    radial-gradient(38% 28% at 72% 124%, color-mix(in oklab,var(--plankton-iris) 52%, transparent) 0%, transparent 82%),
+    radial-gradient(36% 26% at 48% 132%, color-mix(in oklab,var(--cascade-wash) 45%, transparent) 0%, transparent 84%);
+  background-size: 100% 100%, 18vw 18vw, 15vw 15vw, 16vw 16vw;
+  background-position:
+    center top,
+    22% 122%,
+    72% 124%,
+    46% 132%;
   background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  opacity: .17;
+}
+
+html.theme-ocean[data-motion="on"] .theme-layer::after {
+  animation:
+    oceanParticleDrift80 80s ease-in-out infinite,
+    oceanBubbleSlow60 60s ease-in-out infinite;
+}
+
+html.theme-ocean[data-motion="off"] .theme-layer::before {
+  animation: none;
+  background-position: 50% 58%, 50% 106%;
+}
+
+html.theme-ocean[data-motion="off"] .theme-layer::after {
+  animation: none;
+  background-position:
+    center top,
+    24% 86%,
+    70% 90%,
+    50% 94%;
+  opacity: .16;
 }
 /* Remove dotted wallpaper for Ocean */
 html.theme-ocean .grain { background: none !important; opacity: 0 !important; }
