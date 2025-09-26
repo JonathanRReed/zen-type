@@ -28,6 +28,7 @@
   --theme-gradient-center-x: 50%;
   --theme-gradient-center-y: 50%;
   --theme-hue-shift: 0deg;
+  --typing-font: 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 @property --blur {
@@ -69,6 +70,73 @@ h1, h2, h3, h4 {
   border: 1px solid color-mix(in oklab, var(--rp-iris) 12%, transparent);
 }
 
+.typing-font { font-family: var(--typing-font); }
+
+.settings-shell {
+  background: color-mix(in oklab, var(--rp-overlay) 72%, transparent);
+  border-radius: 24px;
+  border: 1px solid color-mix(in oklab, var(--rp-iris) 18%, transparent);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 color-mix(in oklab, var(--rp-foam) 12%, transparent);
+}
+
+.settings-shell h2 {
+  font-size: 1.75rem;
+  color: color-mix(in oklab, var(--rp-foam) 75%, var(--rp-text) 25%);
+}
+
+.settings-shell select,
+.settings-shell input[type="number"],
+.settings-shell input[type="range"] {
+  border-radius: 14px;
+}
+
+.settings-shell input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.settings-shell label,
+.settings-shell .grid {
+  background: color-mix(in oklab, var(--rp-surface) 60%, transparent);
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in oklab, var(--rp-iris) 12%, transparent);
+}
+
+.settings-shell label + label,
+.settings-shell .grid + label,
+.settings-shell .grid + .grid {
+  margin-top: 0.75rem;
+}
+
+.settings-shell input[type="range"] {
+  accent-color: color-mix(in oklab, var(--rp-foam) 65%, var(--rp-iris) 35%);
+}
+
+.settings-shell .settings-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in oklab, var(--rp-iris) 14%, transparent);
+}
+
+.settings-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.settings-scroll::-webkit-scrollbar-thumb {
+  background: rgba(156, 207, 216, 0.25);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.settings-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* High contrast mode */
 html.high-contrast .glass {
   background: color-mix(in oklab, var(--rp-surface) 92%, transparent);
@@ -77,6 +145,11 @@ html.high-contrast .glass {
 html.high-contrast :focus-visible {
   outline: 3px solid var(--rp-iris);
   outline-offset: 2px;
+}
+html.high-contrast .pause-btn {
+  background: color-mix(in oklab, var(--rp-overlay) 85%, transparent);
+  border-color: color-mix(in oklab, var(--rp-foam) 45%, transparent);
+  color: var(--rp-text);
 }
 
 .caret {
@@ -105,6 +178,87 @@ html.high-contrast :focus-visible {
   border-color: color-mix(in oklab, var(--rp-iris) 32%, transparent);
 }
 
+.pause-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.95rem;
+  border: 1px solid color-mix(in oklab, var(--rp-iris) 18%, transparent);
+  background: color-mix(in oklab, var(--rp-overlay) 65%, transparent);
+  box-shadow:
+    0 6px 22px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  color: color-mix(in oklab, var(--rp-text) 88%, var(--rp-foam) 12%);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: transform 160ms var(--ease-smooth), box-shadow 160ms var(--ease-smooth), background 160ms var(--ease-smooth), border-color 160ms var(--ease-smooth);
+}
+
+.pause-btn:hover,
+.pause-btn:focus-visible {
+  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--rp-overlay) 75%, transparent);
+  border-color: color-mix(in oklab, var(--rp-iris) 28%, transparent);
+  box-shadow:
+    0 10px 28px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  color: var(--rp-text);
+}
+
+.pause-btn:active {
+  transform: translateY(0);
+  background: color-mix(in oklab, var(--rp-overlay) 62%, transparent);
+}
+
+.pause-btn-icon svg {
+  display: block;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  fill: none;
+}
+
+.pause-btn-label {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.font-select {
+  appearance: none;
+  padding: 0.45rem 2.5rem 0.45rem 0.85rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in oklab, var(--rp-iris) 18%, transparent);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0))
+    color-mix(in oklab, var(--rp-overlay) 65%, transparent);
+  color: color-mix(in oklab, var(--rp-text) 90%, var(--rp-foam) 10%);
+  font-family: var(--typing-font);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  transition: border-color 160ms var(--ease-smooth), box-shadow 160ms var(--ease-smooth), background 160ms var(--ease-smooth), color 160ms var(--ease-smooth);
+  background-image:
+    linear-gradient(45deg, transparent 50%, color-mix(in oklab, var(--rp-foam) 65%, transparent) 50%),
+    linear-gradient(135deg, color-mix(in oklab, var(--rp-foam) 65%, transparent) 50%, transparent 50%),
+    linear-gradient(to right, rgba(255,255,255,0.15), rgba(255,255,255,0));
+  background-position:
+    calc(100% - 1.4rem) center,
+    calc(100% - 0.9rem) center,
+    center;
+  background-size:
+    8px 8px,
+    8px 8px,
+    auto;
+  background-repeat: no-repeat;
+}
+
+.font-select:hover,
+.font-select:focus-visible {
+  border-color: color-mix(in oklab, var(--rp-iris) 28%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--rp-iris) 12%, transparent);
+  color: var(--rp-text);
+}
+
 /* Focus-visible accessibility ring across interactive elements */
 :where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid color-mix(in oklab, var(--rp-iris) 70%, transparent);
@@ -131,6 +285,11 @@ html.high-contrast :focus-visible {
 [data-archive-shell] h2,
 [data-archive-shell] h3 {
   text-wrap: balance;
+  font-family: var(--typing-font);
+}
+
+[data-archive-shell] p {
+  text-wrap: pretty;
 }
 
 /* Context-aware highlights using :has() (scoped for supporting browsers) */
@@ -149,8 +308,23 @@ html.high-contrast :focus-visible {
 .snap-mandatory { scroll-snap-type: y mandatory; }
 .snap-item { scroll-snap-align: start; }
 
-/* Container queries for StatsBar responsive placement */
+/* Container queries for responsive HUD layout */
+.stats-cq-host { container: zen-shell / inline-size; }
 .stats-cq { container-type: inline-size; }
+
+@container zen-shell (max-width: 900px) {
+  header.fixed {
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  header.fixed > div:last-child {
+    width: 100%;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}
+
 @container (max-width: 720px) {
   .stats-bar {
     position: static;
@@ -626,16 +800,16 @@ html.high-contrast.theme-void .theme-layer::after {
   body {
     scrollbar-color: rgba(144,140,170,0.65) transparent;
   }
+}
 
-  .stats-bar ::-webkit-scrollbar,
-  body::-webkit-scrollbar {
-    height: 10px;
-    width: 10px;
-  }
+body::-webkit-scrollbar,
+.stats-bar::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
 
-  .stats-bar ::-webkit-scrollbar-thumb,
-  body::-webkit-scrollbar-thumb {
-    background: rgba(144,140,170,0.4);
-    border-radius: 999px;
-  }
+body::-webkit-scrollbar-thumb,
+.stats-bar::-webkit-scrollbar-thumb {
+  background: rgba(144,140,170,0.4);
+  border-radius: 999px;
 }

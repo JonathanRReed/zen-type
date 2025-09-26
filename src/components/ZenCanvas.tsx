@@ -348,11 +348,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Resolve Rosé Pine text color from CSS variables each frame (cheap)
+    // Resolve Rosé Pine text color and typing font from CSS variables each frame (cheap)
     const css = getComputedStyle(document.documentElement);
     const rpText = (css.getPropertyValue('--rp-text') || '#e0def4').trim();
     const moss = (css.getPropertyValue('--moss') || '#7fbf9e').trim();
     const leafCol = (css.getPropertyValue('--leaf') || '#a3d9b1').trim();
+    const typingFont = (css.getPropertyValue('--typing-font') || fontFamily).trim() || fontFamily;
     const isCosmic = document.documentElement.classList.contains('theme-cosmic');
     const sNow = settingsRef.current ?? getSettings();
     const perfMode = !!sNow.performanceMode;
@@ -599,7 +600,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       ctx.save();
       ctx.globalAlpha = opacity;
       ctx.fillStyle = rpText;
-      ctx.font = `18px ${fontFamily}`;
+      ctx.font = `18px ${typingFont}`;
       ctx.fillText(token.text, token.x, token.y);
       ctx.restore();
       
@@ -709,12 +710,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
   // Handle canvas resize
   useEffect(() => {
-    const handleResize = () => {
+    const regenerateThemeParticles = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      
-      canvas.width = globalThis.innerWidth;
-      canvas.height = globalThis.innerHeight;
 
       // Configure back buffer
       try {
@@ -732,6 +730,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         backCanvasRef.current = null;
         backCtxRef.current = null;
       }
+
+      const ctx = (backCtxRef.current as any) || canvas.getContext('2d');
 
       // Regenerate particles for theme changes
       const isCosmic = document.documentElement.classList.contains('theme-cosmic');
@@ -774,12 +774,29 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       }
 
       driftRef.current = [];
+
+      // Clear canvas to avoid ghosting old theme artifacts
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      canvas.width = globalThis.innerWidth;
+      canvas.height = globalThis.innerHeight;
+
+      regenerateThemeParticles();
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
+    window.addEventListener('themeChanged', regenerateThemeParticles as EventListener);
 
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('themeChanged', regenerateThemeParticles as EventListener);
+    };
   }, []);
 
   // Focus input on mount
