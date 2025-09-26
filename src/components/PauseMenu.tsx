@@ -21,12 +21,35 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
     setOpen(isOpen);
   }, [isOpen]);
 
+  // Lock background scroll and close on Escape when open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setOpen(false);
+        onClose?.();
+        try { window.dispatchEvent(new CustomEvent('focusTyping')); } catch {}
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
   // Respond to global toggle events
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as boolean;
       setOpen(detail);
       if (detail) {
+        // Ensure other overlays are closed to prevent click interception
+        try { window.dispatchEvent(new CustomEvent('toggleHelp', { detail: false })); } catch {}
+        try { window.dispatchEvent(new CustomEvent('toggleArchive', { detail: false })); } catch {}
         setSettings(getSettings());
         setStats(getStats());
       }
@@ -69,17 +92,23 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-base/80 backdrop-blur-md">
-      <div className="glass rounded-2xl p-8 max-w-lg w-full mx-4">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-base/80 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+      <div
+        className="glass rounded-2xl p-8 max-w-lg w-full mx-4"
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        tabIndex={-1}
+      >
         {!showSettings && !showAbout ? (
           <>
-            <h2 className="text-2xl font-sans text-foam mb-6">Paused</h2>
+            <h2 id="pause-title" className="text-2xl font-sans text-foam mb-6">Paused</h2>
             
             <div className="space-y-3">
               <button
                 onClick={() => {
                   setOpen(false);
                   onClose?.();
+                  try { window.dispatchEvent(new CustomEvent('focusTyping')); } catch {}
                 }}
                 className="w-full px-6 py-3 bg-iris/20 hover:bg-iris/30 
                          border border-iris/40 rounded-lg
@@ -121,7 +150,17 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
               )}
               
               <button
-                onClick={() => window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true }))}
+                onClick={() => {
+                  // Try both: direct opener and event dispatch, plus a short retry.
+                  const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
+                  try { if (typeof opener === 'function') opener(); } catch {}
+                  try { window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true })); } catch {}
+                  window.setTimeout(() => {
+                    const op2 = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
+                    try { if (typeof op2 === 'function') op2(); } catch {}
+                    try { window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true })); } catch {}
+                  }, 50);
+                }}
                 className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 
                          border border-muted/20 rounded-lg
                          text-text font-sans transition-all"
