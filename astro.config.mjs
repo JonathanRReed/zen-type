@@ -10,4 +10,17 @@ export default defineConfig({
       applyBaseStyles: false,
     })
   ],
+  vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom'],
+            'astro-vendor': ['astro'],
+            'utils-vendor': ['../src/utils/storage', '../src/utils/quotes', '../src/utils/webvitals'],
+          }
+        }
+      }
+    }
+  }
 });

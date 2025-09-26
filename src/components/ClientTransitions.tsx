@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { initializeWebVitals } from '../utils/webvitals';
 
 const isSafari = () => {
   if (typeof navigator === 'undefined') return false;
@@ -44,6 +45,9 @@ const ClientTransitions: React.FC = () => {
     if (!shouldUseViewTransition()) {
       return;
     }
+
+    // Initialize performance monitoring
+    initializeWebVitals();
 
     const root = document.documentElement;
 

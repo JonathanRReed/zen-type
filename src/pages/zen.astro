@@ -9,6 +9,7 @@ import AboutOverlay from '../components/AboutOverlay';
 import SiteFooter from '../components/SiteFooter';
 import ClientTransitions from '../components/ClientTransitions';
 import SiteHeader from '../components/SiteHeader';
+import ErrorBoundary from '../components/ErrorBoundary';
 ---
 
 <!DOCTYPE html>
@@ -21,54 +22,60 @@ import SiteHeader from '../components/SiteHeader';
 		<title>Zen Mode - Zen Typer</title>
 		<meta name="description" content="Free-flow typing in Zen Mode - Watch your words drift upward like thoughts" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 	</head>
 	<body>
 		<ClientTransitions client:load />
-		<div id="zen-app" class="relative w-full h-screen overflow-hidden">
-			<SiteHeader client:load mode="zen" />
+		<ErrorBoundary>
+			<!-- Skip to main content link for accessibility -->
+			<a
+				href="#zen-app"
+				className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-iris focus:text-base focus:rounded-lg focus:shadow-lg"
+			>
+				Skip to main content
+			</a>
+			<div id="zen-app" className="relative w-full h-screen overflow-hidden">
+				<SiteHeader client:load mode="zen" />
 
-			<!-- Main canvas -->
-			<!-- Theme background layers (behind tokens) -->
-			<div class="pointer-events-none absolute inset-0 z-0 theme-layer"></div>
-			<div class="pointer-events-none absolute inset-0 z-0 grain"></div>
+				<!-- Main canvas -->
+				<!-- Theme background layers (behind tokens) -->
+				<div class="pointer-events-none absolute inset-0 z-0 theme-layer"></div>
 
-			<ZenCanvas 
-				client:load
-				fontFamily="JetBrains Mono"
-				maxTokens={160}
-			/>
+				<ZenCanvas 
+					client:load
+					fontFamily="JetBrains Mono"
+					maxTokens={160}
+				/>
 
-			<!-- Stats bar -->
-			<StatsBar 
-				client:load
-				mode="zen"
-				visible={true}
-				metrics={{}}
-			/>
+				<!-- Stats bar -->
+				<StatsBar 
+					client:load
+					mode="zen"
+					visible={true}
+					metrics={{}}
+				/>
 
-			<!-- Pause menu -->
-			<PauseMenu 
-				client:load
-				isOpen={false}
-				mode="zen"
-				onClose={() => {}}
-				onReset={() => { window.location.reload(); }}
-			/>
+				<!-- Pause menu -->
+				<PauseMenu
+					client:load
+					mode="zen"
+					onReset={() => { window.location.reload(); }}
+					data-pause-menu
+				/>
 
-			<!-- Help sheet -->
-			<HelpSheet 
-				client:load
-				isOpen={false}
-				onClose={() => {}}
-			/>
+				<!-- Help sheet -->
+				<HelpSheet 
+					client:load
+					isOpen={false}
+					onClose={() => {}}
+				/>
 
-			<!-- Archive & About overlays (hidden by default) -->
-			<ArchiveOverlay client:load />
-			<AboutOverlay client:load />
-			<SiteFooter client:load />
-		</div>
+				<!-- Archive & About overlays (hidden by default) -->
+				<ArchiveOverlay client:load />
+				<AboutOverlay client:load />
+				<SiteFooter client:load />
+			</div>
+		</ErrorBoundary>
 
 		<script>
 			let isPaused = false;
@@ -85,6 +92,17 @@ import SiteHeader from '../components/SiteHeader';
 					e.preventDefault();
 					isPaused = !isPaused;
 					window.dispatchEvent(new CustomEvent('togglePause', { detail: isPaused }));
+				}
+			});
+
+			// Handle pause menu state changes
+			window.addEventListener('togglePause', function(e) {
+				const detail = e.detail;
+				isPaused = typeof detail === 'boolean' ? detail : !isPaused;
+				// Update the pause menu component
+				const pauseMenu = document.querySelector('[data-pause-menu]');
+				if (pauseMenu) {
+					pauseMenu.setAttribute('data-is-open', isPaused.toString());
 				}
 			});
 		</script>
