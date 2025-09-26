@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { initializeWebVitals } from '../utils/webvitals';
 
 const isSafari = () => {
@@ -18,11 +18,14 @@ const shouldUseViewTransition = () => {
 };
 
 const ClientTransitions: React.FC = () => {
+  const pendingNavigateRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
     root.classList.remove('page-exit');
     root.classList.add('page-enter');
+    root.classList.add('body-ready');
     const raf = window.requestAnimationFrame(() => {
       root.classList.remove('page-enter');
     });
@@ -49,6 +52,8 @@ const ClientTransitions: React.FC = () => {
       .finally(() => {
         root.removeAttribute('data-transition-theme');
         window.clearTimeout(timeout);
+        pendingNavigateRef.current?.();
+        pendingNavigateRef.current = null;
       });
   }, []);
 
@@ -68,11 +73,13 @@ const ClientTransitions: React.FC = () => {
 
     const navigateTo = (to: string) => {
       if (isNavigating) {
+        pendingNavigateRef.current = () => navigateTo(to);
         return;
       }
 
       isNavigating = true;
       const go = () => {
+        isNavigating = false;
         window.location.assign(to);
       };
 

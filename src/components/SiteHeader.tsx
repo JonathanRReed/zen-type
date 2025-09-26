@@ -83,168 +83,276 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
     });
   };
 
+  const navLinkClass = (active: boolean) =>
+    `inline-flex items-center justify-center px-3.5 h-10 rounded-full text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/70 ${
+      active
+        ? 'bg-iris/20 border-iris/60 text-text shadow-sm'
+        : 'border-muted/30 text-muted hover:text-text hover:border-muted/50'
+    }`;
+
+  const primaryButtonClass =
+    'group inline-flex items-center gap-2 px-5 h-11 rounded-xl border border-iris/25 bg-[color:var(--rp-surface)]/45 text-sm font-medium text-foam/90 transition-colors shadow-[0_8px_20px_-16px_rgba(102,76,255,0.45)] hover:bg-[color:var(--rp-surface)]/60 hover:border-iris/40 hover:text-foam focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/55';
+
+  const utilityIconButtonClass =
+    'flex h-10 w-10 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/70';
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 p-6 flex justify-between items-center bg-base/80 backdrop-blur-md">
-      <div className="flex items-center gap-3">
-        <nav aria-label="Primary" className="flex items-center gap-2">
+    <header className="fixed top-0 left-0 right-0 z-40 px-6 py-5 bg-base/80 backdrop-blur-md">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-6">
+        <nav aria-label="Mode toggle" className="flex items-center gap-2">
           <a
             href="/zen"
             aria-current={mode === 'zen' ? 'page' : undefined}
-            className={`px-3 py-2 rounded-lg text-sm border transition-colors ${mode === 'zen' ? 'bg-surface/80 text-text border-muted/30' : 'button-ghost border-muted/20 text-muted hover:text-text'}`}
+            className={navLinkClass(mode === 'zen')}
           >
-            Zen Mode
+            Zen
           </a>
           <a
             href="/quote"
             aria-current={mode === 'quote' ? 'page' : undefined}
-            className={`px-3 py-2 rounded-lg text-sm border transition-colors ${mode === 'quote' ? 'bg-surface/80 text-text border-muted/30' : 'button-ghost border-muted/20 text-muted hover:text-text'}`}
+            className={navLinkClass(mode === 'quote')}
           >
-            Quote Mode
+            Quote
           </a>
         </nav>
-      </div>
-      <div className="flex items-center gap-3">
-        {mode === 'zen' && (
-          <>
+
+        <div className="flex justify-center">
+          {mode === 'zen' && (
             <button
-              className="button-ghost px-3 py-2 rounded-lg text-sm"
+              type="button"
+              className={primaryButtonClass}
               aria-label="Open drafts"
               onClick={() => {
-              try { localStorage.setItem('zt.openArchiveNext', '1'); } catch {}
-              const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
-              // Fire both: direct open (if available) and event, so we don't depend on mount order.
-              try {
-                if (typeof opener === 'function') {
-                  opener();
-                }
-              } catch (e) {
-                console.warn('[Drafts] openLibraryOverlay failed', e);
-              }
-              try {
-                window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
-              } catch (e) {
-                console.warn('[Drafts] dispatch toggleArchive failed', e);
-              }
-              // Retry once shortly after in case the overlay mounts a tick later
-              window.setTimeout(() => {
-                const o2 = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
+                try { localStorage.setItem('zt.openArchiveNext', '1'); } catch {}
+                const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
+                // Fire both: direct open (if available) and event, so we don't depend on mount order.
                 try {
-                  if (typeof o2 === 'function') {
-                    o2();
+                  if (typeof opener === 'function') {
+                    opener();
                   }
                 } catch (e) {
-                  console.warn('[Drafts] retry openLibraryOverlay failed', e);
+                  console.warn('[Drafts] openLibraryOverlay failed', e);
                 }
                 try {
                   window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
                 } catch (e) {
-                  console.warn('[Drafts] retry dispatch toggleArchive failed', e);
+                  console.warn('[Drafts] dispatch toggleArchive failed', e);
                 }
-              }, 80);
-            }}
-          >
-            Drafts
-          </button>
-          </>
-        )}
-        {mode === 'quote' && (
-          <>
+                // Retry once shortly after in case the overlay mounts a tick later
+                window.setTimeout(() => {
+                  const o2 = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
+                  try {
+                    if (typeof o2 === 'function') {
+                      o2();
+                    }
+                  } catch (e) {
+                    console.warn('[Drafts] retry openLibraryOverlay failed', e);
+                  }
+                  try {
+                    window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
+                  } catch (e) {
+                    console.warn('[Drafts] retry dispatch toggleArchive failed', e);
+                  }
+                }, 80);
+              }}
+            >
+              <span className="relative z-10 flex items-center gap-2 text-sm tracking-wide">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M5.25 4.5A1.25 1.25 0 0 1 6.5 3.25h4.4a1.25 1.25 0 0 1 .884.366l1.966 1.934A1.25 1.25 0 0 1 14 6.435V12.5A1.5 1.5 0 0 1 12.5 14h-6A1.5 1.5 0 0 1 5 12.5Z"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M7 9h4.5M7 11.5h3"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="font-medium">Drafts</span>
+              </span>
+            </button>
+          )}
+
+          {mode === 'quote' && (
             <button
               id="header-new-quote"
-              className="px-4 py-2 text-sm bg-surface/60 hover:bg-surface/80 border border-muted/20 rounded-lg text-text font-sans transition-all"
+              type="button"
+              className={primaryButtonClass}
               onClick={() => window.dispatchEvent(new CustomEvent('newQuote'))}
             >
-              New Quote
+              <span className="relative z-10 flex items-center gap-2 text-sm tracking-wide">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M9 4v10"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M4 9h10"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="font-medium">New Quote</span>
+              </span>
             </button>
-            <label className="flex items-center gap-2 text-sm text-muted select-none">
-              <input
-                type="checkbox"
-                checked={autoNext}
-                onChange={(e) => handleAutoNextToggle(e.target.checked)}
-                className="w-5 h-5 rounded accent-iris"
-              />
-              Auto Next
-            </label>
-          </>
-        )}
-        <button
-          className="pause-btn"
-          aria-label="Open pause menu"
-          onClick={() => window.dispatchEvent(new CustomEvent('togglePause', { detail: true }))}
-        >
-          <span className="pause-btn-icon" aria-hidden="true">
-            <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1" y="1" width="4" height="14" rx="1.5" />
-              <rect x="9" y="1" width="4" height="14" rx="1.5" />
-            </svg>
-          </span>
-          <span className="pause-btn-label">Pause</span>
-        </button>
-        <div ref={quickWrapperRef} className="relative">
-          <button
-            type="button"
-            className="button-ghost px-3 py-2 rounded-lg text-sm"
-            aria-haspopup="menu"
-            aria-expanded={showQuick}
-            onClick={() => setShowQuick(prev => !prev)}
-          >
-            Quick Settings
-          </button>
-          {showQuick && (
-            <div
-              role="menu"
-              className="glass absolute top-12 right-0 z-50 rounded-2xl p-6 w-72 shadow-xl border border-muted/30 text-sm flex flex-col gap-4"
-              aria-label="Quick settings"
-            >
-              <div className="space-y-2">
-                <div className="text-xs uppercase tracking-widest text-muted">Accessibility</div>
-                <label className="flex items-center justify-between gap-3">
-                  <span>Reduced motion</span>
-                  <input
-                    type="checkbox"
-                    checked={!!settings.reducedMotion}
-                    onChange={(e) => _updateSetting('reducedMotion', e.target.checked)}
-                    className="w-5 h-5 accent-iris"
-                  />
-                </label>
-                <label className="flex items-center justify-between gap-3">
-                  <span>High contrast</span>
-                  <input
-                    type="checkbox"
-                    checked={!!settings.highContrast}
-                    onChange={(e) => _updateSetting('highContrast', e.target.checked)}
-                    className="w-5 h-5 accent-iris"
-                  />
-                </label>
-              </div>
-              <div className="space-y-2">
-                <div className="text-xs uppercase tracking-widest text-muted">Display</div>
-                <label className="flex items-center justify-between gap-3">
-                  <span>Show stats bar</span>
-                  <input
-                    type="checkbox"
-                    checked={!!settings.showStats}
-                    onChange={(e) => _updateSetting('showStats', e.target.checked)}
-                    className="w-5 h-5 accent-iris"
-                  />
-                </label>
-                <label className="flex items-center justify-between gap-3">
-                  <span>Performance mode</span>
-                  <input
-                    type="checkbox"
-                    checked={!!settings.performanceMode}
-                    onChange={(e) => _updateSetting('performanceMode', e.target.checked)}
-                    className="w-5 h-5 accent-iris"
-                  />
-                </label>
-              </div>
-            </div>
           )}
         </div>
-        <ThemeToggle />
+
+        <div className="flex items-center justify-end gap-2.5">
+          {mode === 'quote' && (
+            <button
+              type="button"
+              className={`${utilityIconButtonClass} ${
+                autoNext
+                  ? 'bg-iris/20 border-iris/50 text-iris shadow-sm'
+                  : 'border-muted/30 text-muted hover:text-text hover:border-muted/50'
+              }`}
+              onClick={() => handleAutoNextToggle(!autoNext)}
+              aria-pressed={autoNext}
+              aria-label={autoNext ? 'Disable auto next quotes' : 'Enable auto next quotes'}
+              title={autoNext ? 'Auto Next: On' : 'Auto Next: Off'}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path d="M5 5L10 10L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M11 5L16 10L11 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="sr-only">Auto next</span>
+            </button>
+          )}
+
+          <button
+            className="pause-btn"
+            aria-label="Open pause menu"
+            onClick={() => window.dispatchEvent(new CustomEvent('togglePause', { detail: true }))}
+          >
+            <span className="pause-btn-icon" aria-hidden="true">
+              <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="4" height="14" rx="1.5" />
+                <rect x="9" y="1" width="4" height="14" rx="1.5" />
+              </svg>
+            </span>
+            <span className="pause-btn-label">Pause</span>
+          </button>
+
+          <div ref={quickWrapperRef} className="relative">
+            <button
+              type="button"
+              className={`${utilityIconButtonClass} ${
+                showQuick
+                  ? 'bg-iris/20 border-iris/50 text-iris shadow-sm'
+                  : 'border-muted/30 text-muted hover:text-text hover:border-muted/50'
+              }`}
+              aria-haspopup="menu"
+              aria-expanded={showQuick}
+              onClick={() => setShowQuick(prev => !prev)}
+              title="Quick settings"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7.25 3.75h3.5l0.62 1.74a1 1 0 0 0 .6.6l1.74.62v3.5l-1.74.62a1 1 0 0 0-.6.6l-.62 1.74h-3.5l-.62-1.74a1 1 0 0 0-.6-.6l-1.74-.62v-3.5l1.74-.62a1 1 0 0 0 .6-.6Z"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinejoin="round"
+                />
+                <circle cx="9" cy="9" r="1.9" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+              <span className="sr-only">Quick settings</span>
+            </button>
+            {showQuick && (
+              <div
+                role="menu"
+                className="glass absolute top-12 right-0 z-50 rounded-2xl p-6 w-72 shadow-xl border border-muted/30 text-sm flex flex-col gap-4"
+                aria-label="Quick settings"
+              >
+                <div className="space-y-2">
+                  <div className="text-xs uppercase tracking-widest text-muted">Accessibility</div>
+                  <label className="flex items-center justify-between gap-3">
+                    <span>Reduced motion</span>
+                    <input
+                      type="checkbox"
+                      checked={!!settings.reducedMotion}
+                      onChange={(e) => _updateSetting('reducedMotion', e.target.checked)}
+                      className="w-5 h-5 accent-iris"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-3">
+                    <span>High contrast</span>
+                    <input
+                      type="checkbox"
+                      checked={!!settings.highContrast}
+                      onChange={(e) => _updateSetting('highContrast', e.target.checked)}
+                      className="w-5 h-5 accent-iris"
+                    />
+                  </label>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-xs uppercase tracking-widest text-muted">Display</div>
+                  <label className="flex items-center justify-between gap-3">
+                    <span>Show stats bar</span>
+                    <input
+                      type="checkbox"
+                      checked={!!settings.showStats}
+                      onChange={(e) => _updateSetting('showStats', e.target.checked)}
+                      className="w-5 h-5 accent-iris"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-3">
+                    <span>Performance mode</span>
+                    <input
+                      type="checkbox"
+                      checked={!!settings.performanceMode}
+                      onChange={(e) => _updateSetting('performanceMode', e.target.checked)}
+                      className="w-5 h-5 accent-iris"
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );
-};
+}
+;
 
 export default SiteHeader;

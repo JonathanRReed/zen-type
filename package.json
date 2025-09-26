@@ -1,20 +1,24 @@
 {
+  "$schema": "https://json.schemastore.org/package",
   "name": "zen-type",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
+    "dev": "astro dev --bun",
+    "build": "astro build --bun",
+    "preview": "astro preview --bun",
     "astro": "astro",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx,.astro",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx,.astro --fix",
+    "check": "astro check",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/image": "^0.18.0",
     "astro": "5.14.1",
     "dexie": "^4.2.0",
     "diff": "^8.0.2",

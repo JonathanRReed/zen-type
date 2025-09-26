@@ -1,50 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { getSettings, saveSettings, type Settings } from '../utils/storage';
+import { useMotionPreference } from '../hooks/useMotionPreference';
 
 type Theme = 'Void' | 'Forest' | 'Ocean' | 'Cosmic';
 
 const ThemeToggle: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('Void');
   const [isOpen, setIsOpen] = useState(false);
-  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
+  const { reducedMotion } = useMotionPreference({ syncAttribute: true });
 
   useEffect(() => {
-    const root = document.documentElement;
     const settings = getSettings();
     setTheme(settings.theme);
     applyTheme(settings.theme);
 
-    let themeChangedTimer: number | null = window.setTimeout(() => {
+    const themeChangedTimer: number | null = window.setTimeout(() => {
       try {
         window.dispatchEvent(new CustomEvent('themeChanged', { detail: settings.theme }));
       } catch {}
     }, 0);
-
-    const syncMotion = (reduced: boolean) => {
-      root.setAttribute('data-motion', reduced ? 'off' : 'on');
-      setReduceMotionEnabled(reduced);
-    };
-
-    let media: MediaQueryList | null = null;
-    if (typeof window.matchMedia === 'function') {
-      media = window.matchMedia('(prefers-reduced-motion: reduce)');
-      syncMotion(!!settings.reducedMotion || media.matches);
-    } else {
-      syncMotion(!!settings.reducedMotion);
-    }
-
-    const onMediaChange = (e: MediaQueryListEvent) => {
-      const s = getSettings();
-      syncMotion(!!s.reducedMotion || e.matches);
-    };
-
-    if (media) {
-      if (typeof media.addEventListener === 'function') {
-        media.addEventListener('change', onMediaChange);
-      } else if (typeof media.addListener === 'function') {
-        media.addListener(onMediaChange);
-      }
-    }
 
     // Listen for external settings changes
     const onSettings = (e: Event) => {
@@ -53,8 +27,6 @@ const ThemeToggle: React.FC = () => {
         setTheme(s.theme as Theme);
         applyTheme(s.theme as Theme);
       }
-      const mediaMatches = media?.matches ?? false;
-      syncMotion(!!s.reducedMotion || mediaMatches);
     };
 
     window.addEventListener('settingsChanged', onSettings as EventListener);
@@ -63,13 +35,6 @@ const ThemeToggle: React.FC = () => {
         clearTimeout(themeChangedTimer);
       }
       window.removeEventListener('settingsChanged', onSettings as EventListener);
-      if (media) {
-        if (typeof media.removeEventListener === 'function') {
-          media.removeEventListener('change', onMediaChange);
-        } else if (typeof media.removeListener === 'function') {
-          media.removeListener(onMediaChange);
-        }
-      }
     };
   }, []);
 
@@ -119,7 +84,6 @@ const ThemeToggle: React.FC = () => {
   // Ambient shift every ~90s unless locked (respects reduced motion)
   useEffect(() => {
     const root = document.documentElement;
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let tick = 0;
     let interval: number | null = null;
 
@@ -130,20 +94,10 @@ const ThemeToggle: React.FC = () => {
       root.style.setProperty('--theme-hue-shift', '0deg');
     };
 
-    const stopShift = () => {
-      if (interval !== null) {
-        clearInterval(interval);
-        interval = null;
-      }
-      resetGradientHelpers();
-    };
-
-    const isMotionDisabled = () => reduceMotionEnabled || motionQuery.matches;
-
     const startShift = () => {
-      if (interval !== null || isMotionDisabled()) return;
+      if (interval !== null || reducedMotion) return;
       interval = window.setInterval(() => {
-        if (isMotionDisabled()) {
+        if (reducedMotion) {
           stopShift();
           return;
         }
@@ -176,34 +130,24 @@ const ThemeToggle: React.FC = () => {
       }, 1000);
     };
 
-    if (isMotionDisabled()) {
+    const stopShift = () => {
+      if (interval !== null) {
+        clearInterval(interval);
+        interval = null;
+      }
+      resetGradientHelpers();
+    };
+
+    if (reducedMotion) {
       stopShift();
     } else {
       startShift();
     }
 
-    const handleMotionChange = (event: MediaQueryListEvent) => {
-      if (event.matches || reduceMotionEnabled) {
-        stopShift();
-      } else {
-        startShift();
-      }
-    };
-
-    let removeMotionListener: (() => void) | undefined;
-    if (typeof motionQuery.addEventListener === 'function') {
-      motionQuery.addEventListener('change', handleMotionChange);
-      removeMotionListener = () => motionQuery.removeEventListener('change', handleMotionChange);
-    } else if (typeof motionQuery.addListener === 'function') {
-      motionQuery.addListener(handleMotionChange);
-      removeMotionListener = () => motionQuery.removeListener(handleMotionChange);
-    }
-
     return () => {
       stopShift();
-      removeMotionListener?.();
     };
-  }, [theme, reduceMotionEnabled]);
+  }, [theme, reducedMotion]);
 
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { getSettings, saveSettings, type Settings, createArchiveEntry, updateArchiveEntry } from '../utils/storage';
+import { DEFAULT_SETTINGS, getSettings, saveSettings, type Settings, createArchiveEntry, updateArchiveEntry } from '../utils/storage';
+import { useMotionPreference } from '../hooks/useMotionPreference';
 
 interface Token {
   id: number;
@@ -28,6 +29,32 @@ interface Leaf { x: number; y: number; vx: number; vy: number; size: number; a: 
 interface Bubble { x: number; y: number; vy: number; r: number; a: number; wobble: number; }
 interface DriftSpeck { x: number; y: number; baseX: number; vy: number; amp: number; phase: number; alpha: number; radius: number; }
 interface Firefly { baseX: number; baseY: number; ampX: number; ampY: number; phase: number; speed: number; radius: number; alpha: number; color: string; }
+
+type StyleCache = {
+  rpText: string;
+  moss: string;
+  leaf: string;
+  typingFont: string;
+  rpFoam: string;
+  rpPine: string;
+  rpSurface: string;
+  rpGold: string;
+  rpLove: string;
+  rpIris: string;
+};
+
+const FALLBACK_STYLE_CACHE: StyleCache = {
+  rpText: '#e0def4',
+  moss: '#7fbf9e',
+  leaf: '#a3d9b1',
+  typingFont: 'monospace',
+  rpFoam: '#9ccfd8',
+  rpPine: '#31748f',
+  rpSurface: '#1f1d2e',
+  rpGold: '#f6c177',
+  rpLove: '#eb6f92',
+  rpIris: '#c4a7e7',
+};
 
 const hexToRgba = (hex: string, alpha: number) => {
   const normalized = hex.trim().replace(/^#/, '');
@@ -63,7 +90,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const animationFrameRef = useRef<number | null>(null);
   const tokenIdRef = useRef(0);
   const lastStatsEmitRef = useRef(Date.now());
-  const [rm, setRm] = useState<boolean>(reducedMotion);
+  const { reducedMotion: rm } = useMotionPreference({ forced: reducedMotion });
   const starsRef = useRef<Star[]>([]);
   const leavesRef = useRef<Leaf[]>([]);
   const bubblesRef = useRef<Bubble[]>([]);
@@ -71,8 +98,6 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const firefliesRef = useRef<Firefly[]>([]);
   const lastLeafSpawnRef = useRef<number>(0);
   const lastBubbleSpawnRef = useRef<number>(0);
-  const mediaQueryRef = useRef<MediaQueryList | null>(null);
-  const forcedReducedRef = useRef<boolean>(reducedMotion);
   // Back buffer for rendering (OffscreenCanvas if available)
   const backCanvasRef = useRef<OffscreenCanvas | HTMLCanvasElement | null>(null);
   const backCtxRef = useRef<OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null>(null);
@@ -91,108 +116,134 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const archiveIdRef = useRef<string | null>(null);
   const archiveDirtyRef = useRef<boolean>(false);
   const archiveTimerRef = useRef<number | null>(null);
+  const archiveIdleRef = useRef<number | null>(null);
+  const styleCacheRef = useRef<StyleCache | null>(null);
   // Markers
   const markersRef = useRef<number[]>([]);
   const lastCharRef = useRef<string>('');
   const lastTypeTsRef = useRef<number>(0);
 
-  // Initialize reduced-motion from settings and media query
-  useEffect(() => {
-    forcedReducedRef.current = reducedMotion;
-  }, [reducedMotion]);
-
-  useEffect(() => {
-    let media: MediaQueryList | null = null;
-
-    const handleMediaChange = (event: MediaQueryListEvent) => {
-      const settings = settingsRef.current;
-      const shouldReduce = forcedReducedRef.current || !!(settings?.reducedMotion) || event.matches;
-      setRm(shouldReduce);
-    };
-
-    try {
-      const settings = getSettings();
-      settingsRef.current = settings;
-      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-        media = window.matchMedia('(prefers-reduced-motion: reduce)');
-        mediaQueryRef.current = media;
-        const initialReduce = forcedReducedRef.current || !!settings.reducedMotion || media.matches;
-        setRm(initialReduce);
-
-        if (typeof media.addEventListener === 'function') {
-          media.addEventListener('change', handleMediaChange);
-        } else if (typeof media.addListener === 'function') {
-          media.addListener(handleMediaChange);
-        }
-      } else {
-        setRm(forcedReducedRef.current || !!settings.reducedMotion);
-        mediaQueryRef.current = null;
+  const getSettingsSnapshot = (): Settings => {
+    if (!settingsRef.current) {
+      try {
+        settingsRef.current = getSettings();
+      } catch {
+        settingsRef.current = { ...DEFAULT_SETTINGS };
       }
-    } catch {
-      setRm(forcedReducedRef.current);
     }
+    return settingsRef.current;
+  };
 
-    return () => {
-      if (!media) return;
-      if (typeof media.removeEventListener === 'function') {
-        media.removeEventListener('change', handleMediaChange);
-      } else if (typeof media.removeListener === 'function') {
-        media.removeListener(handleMediaChange);
+  const flushArchive = useCallback(() => {
+    const id = archiveIdRef.current;
+    if (!id || !archiveDirtyRef.current) return;
+    const text = transcriptRef.current;
+    const trimmed = text.trim();
+    const words = trimmed.length ? trimmed.split(/\s+/).length : 0;
+    const chars = text.length;
+    try {
+      updateArchiveEntry(id, { text, wordCount: words, charCount: chars });
+      archiveDirtyRef.current = false;
+    } catch {}
+  }, []);
+
+  const finalizeArchive = useCallback(() => {
+    const id = archiveIdRef.current;
+    if (!id) return;
+    const text = transcriptRef.current;
+    const trimmed = text.trim();
+    const words = trimmed.length ? trimmed.split(/\s+/).length : 0;
+    const chars = text.length;
+    try {
+      updateArchiveEntry(id, { text, wordCount: words, charCount: chars, endedAt: new Date().toISOString() });
+      archiveDirtyRef.current = false;
+    } catch {}
+  }, []);
+
+  const scheduleArchivePersist = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (archiveTimerRef.current !== null) {
+      window.clearTimeout(archiveTimerRef.current);
+    }
+    if (archiveIdleRef.current !== null && 'cancelIdleCallback' in window) {
+      (window as any).cancelIdleCallback(archiveIdleRef.current);
+      archiveIdleRef.current = null;
+    }
+    archiveTimerRef.current = window.setTimeout(() => {
+      archiveTimerRef.current = null;
+      if ('requestIdleCallback' in window) {
+        archiveIdleRef.current = (window as any).requestIdleCallback(() => {
+          archiveIdleRef.current = null;
+          flushArchive();
+        }, { timeout: 2000 });
+      } else {
+        flushArchive();
       }
-      if (mediaQueryRef.current === media) {
-        mediaQueryRef.current = null;
-      }
+    }, 1500);
+  }, [flushArchive]);
+
+  const markArchiveDirty = useCallback(() => {
+    archiveDirtyRef.current = true;
+    scheduleArchivePersist();
+  }, [scheduleArchivePersist]);
+
+  const computeStyleCache = useCallback(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const root = document.documentElement;
+    const css = getComputedStyle(root);
+    const getVar = (name: string, fallback: string) => {
+      const value = css.getPropertyValue(name);
+      return value ? value.trim() : fallback;
     };
-  }, [reducedMotion]);
 
-  // Archive persistence: create entry on first user input after mount, autosave periodically, finalize on unmount or event
+    styleCacheRef.current = {
+      rpText: getVar('--rp-text', '#e0def4'),
+      moss: getVar('--moss', '#7fbf9e'),
+      leaf: getVar('--leaf', '#a3d9b1'),
+      typingFont: getVar('--typing-font', fontFamily) || fontFamily,
+      rpFoam: getVar('--rp-foam', '#9ccfd8'),
+      rpPine: getVar('--rp-pine', '#31748f'),
+      rpSurface: getVar('--rp-surface', '#1f1d2e'),
+      rpGold: getVar('--rp-gold', '#f6c177'),
+      rpLove: getVar('--rp-love', '#eb6f92'),
+      rpIris: getVar('--rp-iris', '#c4a7e7'),
+    };
+  }, [fontFamily]);
+
   useEffect(() => {
-    const persist = () => {
-      if (!archiveIdRef.current || !archiveDirtyRef.current) return;
-      const text = transcriptRef.current;
-      const words = text.trim().length ? text.trim().split(/\s+/).length : 0;
-      const chars = text.length;
-      try {
-        updateArchiveEntry(archiveIdRef.current, { text, wordCount: words, charCount: chars });
-        archiveDirtyRef.current = false;
-      } catch {}
-    };
-    archiveTimerRef.current = window.setInterval(persist, 3000);
+    computeStyleCache();
+  }, [computeStyleCache]);
 
-    const finalize = () => {
-      const id = archiveIdRef.current;
-      if (!id) return;
-      const text = transcriptRef.current;
-      const words = text.trim().length ? text.trim().split(/\s+/).length : 0;
-      const chars = text.length;
-      try {
-        updateArchiveEntry(id, { text, wordCount: words, charCount: chars, endedAt: new Date().toISOString() });
-      } catch {}
-    };
-    const onFinalize = () => finalize();
-    window.addEventListener('finalizeArchive', onFinalize as EventListener);
-
-    return () => {
-      if (archiveTimerRef.current) {
-        clearInterval(archiveTimerRef.current);
+  // Archive persistence: schedule saves after idle and finalize on teardown
+  useEffect(() => {
+    const handleFinalize = () => {
+      if (archiveTimerRef.current !== null) {
+        window.clearTimeout(archiveTimerRef.current);
         archiveTimerRef.current = null;
       }
-      window.removeEventListener('finalizeArchive', onFinalize as EventListener);
-      finalize();
+      if (archiveIdleRef.current !== null && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(archiveIdleRef.current);
+        archiveIdleRef.current = null;
+      }
+      finalizeArchive();
     };
-  }, []);
+
+    window.addEventListener('finalizeArchive', handleFinalize as EventListener);
+
+    return () => {
+      window.removeEventListener('finalizeArchive', handleFinalize as EventListener);
+      handleFinalize();
+    };
+  }, [finalizeArchive]);
 
   // Respond to settings changes and hotkey toggles
   useEffect(() => {
     const onSettings = (e: Event) => {
       const s = (e as CustomEvent).detail as Settings;
       settingsRef.current = s;
-      const mediaMatches = mediaQueryRef.current?.matches ?? false;
-      const shouldReduce = forcedReducedRef.current || !!s.reducedMotion || mediaMatches;
-      setRm(shouldReduce);
     };
     const onToggleBreath = () => {
-      const s = settingsRef.current ?? getSettings();
+      const s = getSettingsSnapshot();
       const next = { ...s, breath: !s.breath } as Settings;
       settingsRef.current = next;
       try { saveSettings(next); } catch {}
@@ -234,11 +285,11 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       window.removeEventListener('restoreGhost', onRestoreGhost as EventListener);
       window.removeEventListener('focusTyping', onFocusTyping as EventListener);
     };
-  }, []);
+  }, [computeStyleCache]);
 
   // Commit a word using spawn density controls and update transcript/ghost
   const commitWord = (word: string, delimiter: string) => {
-    const s = settingsRef.current ?? getSettings();
+    const s = getSettingsSnapshot();
     const density = Math.max(0.5, Math.min(1.5, s.spawnDensity ?? 1.0));
     if (density < 1) {
       if (Math.random() < density) spawnToken(word);
@@ -253,7 +304,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     // Record delimiter
     transcriptRef.current += delimiter;
     ghostLogRef.current.push({ t: (Date.now() - sessionStartRef.current) / 1000, ch: delimiter });
-    archiveDirtyRef.current = true;
+    markArchiveDirty();
   };
 
   // Handle input changes
@@ -274,7 +325,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     if (value.length > currentWord.length) {
       const ch = value[value.length - 1] ?? '';
       // Debounce duplicate keystrokes
-      const s = settingsRef.current ?? getSettings();
+      const s = getSettingsSnapshot();
       const thr = Math.max(0, s.debounceMs || 0);
       const now = performance.now();
       if (thr > 0 && ch && ch === lastCharRef.current && (now - lastTypeTsRef.current) < thr) {
@@ -294,7 +345,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         ghostLogRef.current = ghostLogRef.current.filter(ev => ev.t >= cutoff);
       }
     }
-    
+
     // Check if we should commit the word (space or punctuation)
     if (lastChar === ' ' || /[.,!?;:]/.test(lastChar)) {
       if (currentWord.length > 0) {
@@ -307,10 +358,10 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       }
       setCurrentWord('');
       e.target.value = '';
-      archiveDirtyRef.current = true;
+      markArchiveDirty();
     } else {
       setCurrentWord(value);
-      archiveDirtyRef.current = true;
+      markArchiveDirty();
     }
   };
 
@@ -327,12 +378,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       if (inputRef.current) {
         inputRef.current.value = '';
       }
-      archiveDirtyRef.current = true;
+      markArchiveDirty();
     }
     if (e.key === 'Backspace') {
       // Record deletion in transcript by removing last char, but do not push deletion char into ghost log
       transcriptRef.current = transcriptRef.current.slice(0, -1);
-      archiveDirtyRef.current = true;
+      markArchiveDirty();
     }
   };
 
@@ -342,7 +393,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     if (!canvas) return;
 
     const wordLength = text.length;
-    const s = settingsRef.current ?? getSettings();
+    const s = getSettingsSnapshot();
     const baseFade = rm ? Math.max(1.8, (s.fadeSec ?? 4) * 0.6) : (s.fadeSec ?? 4);
     const lifetime = baseFade + (wordLength * 0.3);
     const amp = rm ? 0 : (s.driftAmp ?? 6);
@@ -390,35 +441,37 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Resolve Rosé Pine text color and typing font from CSS variables each frame (cheap)
-    const css = getComputedStyle(document.documentElement);
-    const rpText = (css.getPropertyValue('--rp-text') || '#e0def4').trim();
-    const moss = (css.getPropertyValue('--moss') || '#7fbf9e').trim();
-    const leafCol = (css.getPropertyValue('--leaf') || '#a3d9b1').trim();
-    const typingFont = (css.getPropertyValue('--typing-font') || fontFamily).trim() || fontFamily;
+    if (!styleCacheRef.current) {
+      computeStyleCache();
+    }
+    const styleCache = styleCacheRef.current ?? { ...FALLBACK_STYLE_CACHE, typingFont: fontFamily };
+    const { rpText, moss, leaf: leafColor, typingFont, rpFoam, rpPine, rpSurface, rpGold, rpLove } = styleCache;
     const isCosmic = document.documentElement.classList.contains('theme-cosmic');
-    const sNow = settingsRef.current ?? getSettings();
+    const sNow = getSettingsSnapshot();
     const perfMode = !!sNow.performanceMode;
 
     const isForest = document.documentElement.classList.contains('theme-forest');
     const isOcean = document.documentElement.classList.contains('theme-ocean');
     
     // Forest theme: Subtle leaf drift (<5 leaves)
-    if (isForest && !perfMode && !rm) {
+    if (isForest && !perfMode) {
       const now = Date.now();
-      // Spawn new leaf every 12-18 seconds, keep ≤5
-      if (now - lastLeafSpawnRef.current > (12000 + Math.random() * 6000) && leavesRef.current.length < 5) {
-        const size = 10 + Math.random() * 8; // 10–18 px
+      const reduced = rm;
+      const leafCap = reduced ? 4 : 6;
+      const spawnWindow = reduced ? 14000 : 9000;
+
+      if (now - lastLeafSpawnRef.current > (spawnWindow + Math.random() * spawnWindow) && leavesRef.current.length < leafCap) {
+        const size = 11 + Math.random() * 10; // 11–21 px
         leavesRef.current.push({
           x: Math.random() * canvas.width,
           y: -size,
-          vx: (Math.random() - 0.5) * 0.15,
-          vy: (6 + Math.random() * 6) / 60, // 6–12 px/s
+          vx: (Math.random() - 0.5) * 0.12,
+          vy: (4 + Math.random() * 5) / 60, // 4–9 px/s
           size,
-          a: 0.12 + Math.random() * 0.06,
+          a: 0.16 + Math.random() * 0.08,
           age: 0,
           rot: Math.random() * Math.PI * 2,
-          rotSpeed: (Math.random() * 0.1 - 0.05) / 60 // slow rotation rad/frame
+          rotSpeed: (Math.random() * 0.08 - 0.04) / 60 // slow rotation rad/frame
         });
         lastLeafSpawnRef.current = now;
       }
@@ -429,16 +482,21 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       for (const leaf of leavesRef.current) {
         leaf.age += 1/60;
         leaf.rot += leaf.rotSpeed;
-        leaf.x += leaf.vx + Math.sin(leaf.age * 2) * 0.3;
+        leaf.x += leaf.vx + Math.sin(leaf.age * 1.4) * 0.4;
         leaf.y += leaf.vy;
         
-        if (leaf.y < canvas.height + leaf.size && leaf.age < 30) {
+        if (leaf.y < canvas.height + leaf.size && leaf.age < (reduced ? 22 : 36)) {
           // Draw leaf shape
-          ctx.globalAlpha = leaf.a * Math.max(0, 1 - leaf.age / 30);
-          ctx.fillStyle = leaf.age < 15 ? moss : leafCol;
+          ctx.globalAlpha = leaf.a * Math.max(0, 1 - leaf.age / (reduced ? 22 : 36));
+          const fill = leaf.age < 12 ? moss : hexToRgba(moss, 0.7);
+          ctx.fillStyle = fill;
           ctx.beginPath();
           ctx.ellipse(leaf.x, leaf.y, leaf.size * 0.5, leaf.size * 0.36, leaf.rot, 0, Math.PI * 2);
           ctx.fill();
+          ctx.globalAlpha *= 0.45;
+          ctx.strokeStyle = hexToRgba(leafColor, 0.35);
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
           updatedLeaves.push(leaf);
         }
       }
@@ -446,24 +504,21 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       ctx.restore();
 
       // Fireflies – soft golden pulses
-      const rpGold = (css.getPropertyValue('--rp-gold') || '#f6c177').trim();
-      const rpLove = (css.getPropertyValue('--rp-love') || '#eb6f92').trim();
-      const rpFoam = (css.getPropertyValue('--rp-foam') || '#9ccfd8').trim();
       const fireflyPalette = [rpGold, rpLove, rpFoam];
-      const canopyTop = canvas.height * 0.2;
-      const canopyBottom = canvas.height * 0.85;
-      const targetFireflies = 14;
+      const canopyTop = canvas.height * 0.18;
+      const canopyBottom = canvas.height * 0.82;
+      const targetFireflies = reduced ? 10 : 16;
       while (firefliesRef.current.length < targetFireflies) {
         const color = fireflyPalette[Math.floor(Math.random() * fireflyPalette.length)];
         firefliesRef.current.push({
           baseX: Math.random() * canvas.width,
           baseY: canopyBottom - Math.random() * (canopyBottom - canopyTop),
-          ampX: 18 + Math.random() * 26,
-          ampY: 10 + Math.random() * 16,
+          ampX: 16 + Math.random() * 22,
+          ampY: 10 + Math.random() * 14,
           phase: Math.random() * Math.PI * 2,
-          speed: 0.0009 + Math.random() * 0.0005,
-          radius: 1.1 + Math.random() * 1.4,
-          alpha: 0.18 + Math.random() * 0.1,
+          speed: 0.00065 + Math.random() * 0.0004,
+          radius: 1.2 + Math.random() * 1.6,
+          alpha: 0.22 + Math.random() * 0.12,
           color,
         });
       }
@@ -473,18 +528,18 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const updatedFireflies: Firefly[] = [];
       for (const firefly of firefliesRef.current) {
         firefly.phase += firefly.speed;
-        firefly.baseY -= 0.03;
+        firefly.baseY -= reduced ? 0.015 : 0.028;
         if (firefly.baseY < canopyTop) {
-          firefly.baseY = canopyBottom + Math.random() * 40;
+          firefly.baseY = canopyBottom + Math.random() * 28;
           firefly.baseX = Math.random() * canvas.width;
         }
         firefly.baseX += (Math.random() - 0.5) * 0.2;
         if (firefly.baseX < -20) firefly.baseX = canvas.width + 20;
         if (firefly.baseX > canvas.width + 20) firefly.baseX = -20;
 
-        const x = firefly.baseX + Math.sin(firefly.phase * 3) * firefly.ampX;
-        const y = firefly.baseY + Math.cos(firefly.phase * 2) * firefly.ampY;
-        const pulse = 0.6 + 0.4 * Math.sin(firefly.phase * 4);
+        const x = firefly.baseX + Math.sin(firefly.phase * 2.6) * firefly.ampX;
+        const y = firefly.baseY + Math.cos(firefly.phase * 2.1) * firefly.ampY;
+        const pulse = 0.55 + 0.45 * Math.sin(firefly.phase * 3.4);
         ctx.globalAlpha = firefly.alpha * pulse;
         ctx.fillStyle = firefly.color;
         ctx.beginPath();
@@ -497,94 +552,108 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       ctx.restore();
     }
     
-    // Ocean theme: Occasional bubble drift
-    if (isOcean && !perfMode && !rm) {
+    // Ocean theme: bubbles and plankton ambience (kept subtle with reduced motion)
+    if (isOcean && !perfMode) {
       const now = Date.now();
-      // Spawn new bubble every 2-4 seconds, keep ≤12
-      if (now - lastBubbleSpawnRef.current > (2000 + Math.random() * 2000) && bubblesRef.current.length < 12) {
+      const foam = rpFoam;
+      const pine = rpPine;
+      const surface = rpSurface;
+      const reduced = rm;
+
+      const bubbleCap = perfGuardRef.current ? 10 : (reduced ? 12 : 16);
+      const spawnDelay = reduced ? 2000 : 900;
+
+      if (now - lastBubbleSpawnRef.current > (spawnDelay + Math.random() * spawnDelay) && bubblesRef.current.length < bubbleCap) {
         bubblesRef.current.push({
           x: Math.random() * canvas.width,
-          y: canvas.height + 10,
-          vy: -(6 + Math.random() * 8) / 60, // 6–14 px/s upward
-          r: 2 + Math.random() * 3,
-          a: 0.05 + Math.random() * 0.05,
-          wobble: Math.random() * Math.PI * 2
+          y: canvas.height + 12,
+          vy: reduced ? -(1.2 + Math.random() * 1.8) / 60 : -(4.5 + Math.random() * 7) / 60,
+          r: (reduced ? 3.6 : 4.4) + Math.random() * (reduced ? 1.8 : 3.0),
+          a: (reduced ? 0.28 : 0.22) + Math.random() * 0.18,
+          wobble: Math.random() * Math.PI * 2,
         });
         lastBubbleSpawnRef.current = now;
       }
-      
-      // Update and draw bubbles
+
       ctx.save();
       const updatedBubbles: Bubble[] = [];
       for (const bubble of bubblesRef.current) {
-        bubble.wobble += 0.05;
-        bubble.x += Math.sin(bubble.wobble) * 0.4;
+        bubble.wobble += reduced ? 0.028 : 0.05;
+        bubble.x += Math.sin(bubble.wobble) * (reduced ? 0.16 : 0.45);
         bubble.y += bubble.vy;
-        
-        if (bubble.y > -10) {
+
+        if (bubble.y > -24) {
+          ctx.save();
           ctx.globalAlpha = bubble.a;
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 0.5;
+          ctx.fillStyle = hexToRgba(foam, reduced ? 0.42 : 0.28);
           ctx.beginPath();
           ctx.arc(bubble.x, bubble.y, bubble.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = Math.min(0.9, bubble.a + 0.25);
+          ctx.lineWidth = 0.85;
+          ctx.strokeStyle = hexToRgba('#ffffff', reduced ? 0.48 : 0.4);
           ctx.stroke();
+
+          ctx.globalAlpha = Math.min(0.7, bubble.a + 0.2);
+          ctx.fillStyle = hexToRgba('#ffffff', reduced ? 0.45 : 0.35);
+          ctx.beginPath();
+          ctx.arc(bubble.x - bubble.r * 0.35, bubble.y - bubble.r * 0.35, bubble.r * 0.22, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
           updatedBubbles.push(bubble);
         }
       }
       bubblesRef.current = updatedBubbles;
       ctx.restore();
 
-      // Gentle volumetric light gradient
       ctx.save();
-      const foam = (css.getPropertyValue('--rp-foam') || '#9ccfd8').trim();
-      const pine = (css.getPropertyValue('--rp-pine') || '#31748f').trim();
-      const surface = (css.getPropertyValue('--rp-surface') || '#1f1d2e').trim();
       const t = performance.now() * 0.000015;
-      const highlightShift = 0.08 + 0.04 * Math.sin(t * 0.9);
+      const highlightShift = 0.12 + 0.05 * Math.sin(t * 0.9);
       const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      grad.addColorStop(0, hexToRgba(foam, 0.22 + highlightShift * 0.3));
-      grad.addColorStop(0.45, hexToRgba(pine, 0.18 + highlightShift * 0.25));
-      grad.addColorStop(1, hexToRgba(surface, 0.06));
-      ctx.globalAlpha = 0.5;
+      grad.addColorStop(0, hexToRgba(foam, 0.28 + highlightShift * 0.3));
+      grad.addColorStop(0.42, hexToRgba(pine, 0.19 + highlightShift * 0.3));
+      grad.addColorStop(1, hexToRgba(surface, 0.08));
+      ctx.globalAlpha = reduced ? 0.34 : 0.5;
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
 
-      // Drifting plankton specks
-      const targetSpecks = rm ? 10 : 18;
+      const targetSpecks = perfGuardRef.current ? 18 : (reduced ? 22 : 34);
       while (driftRef.current.length < targetSpecks) {
         driftRef.current.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           baseX: Math.random() * canvas.width,
-          vy: -((2 + Math.random() * 5) / 900),
-          amp: 6 + Math.random() * 10,
+          vy: -(reduced ? (1 + Math.random() * 2) / 1200 : (2 + Math.random() * 6) / 900),
+          amp: (reduced ? 4 : 7) + Math.random() * (reduced ? 6 : 12),
           phase: Math.random() * Math.PI * 2,
-          alpha: 0.035 + Math.random() * 0.06,
-          radius: 0.7 + Math.random() * 1.1,
+          alpha: (reduced ? 0.2 : 0.3) + Math.random() * 0.24,
+          radius: (reduced ? 1.6 : 2.1) + Math.random() * (reduced ? 1.6 : 2.8),
         });
       }
 
       ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
       const updatedSpecks: DriftSpeck[] = [];
-      const driftTime = performance.now() * 0.0001;
+      const driftTime = performance.now() * 0.00008;
       for (const speck of driftRef.current) {
-        speck.phase += 0.0009;
+        speck.phase += reduced ? 0.00045 : 0.0012;
         const sway = Math.sin(driftTime + speck.phase) * speck.amp;
         const nextX = speck.baseX + sway;
         const nextY = speck.y + speck.vy * canvas.height;
-        if (nextY < -20) {
-          speck.y = canvas.height + 10;
+        if (nextY < -28) {
+          speck.y = canvas.height + 14;
           speck.baseX = Math.random() * canvas.width;
           speck.phase = Math.random() * Math.PI * 2;
-          speck.alpha = 0.035 + Math.random() * 0.06;
-          speck.radius = 0.7 + Math.random() * 1.1;
+          speck.alpha = (reduced ? 0.2 : 0.3) + Math.random() * 0.24;
+          speck.radius = (reduced ? 1.6 : 2.1) + Math.random() * (reduced ? 1.6 : 2.8);
         } else {
           speck.y = nextY;
         }
 
         ctx.globalAlpha = speck.alpha;
-        ctx.fillStyle = foam;
+        ctx.fillStyle = hexToRgba(foam, reduced ? 0.7 : 0.96);
         ctx.beginPath();
         ctx.arc(nextX, speck.y, speck.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -662,7 +731,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       // Dispatch global event for StatsBar and others
       window.dispatchEvent(new CustomEvent('zenStats', { detail: payload }));
       // Session markers
-      const s = settingsRef.current ?? getSettings();
+      const s = getSettingsSnapshot();
       const every = Math.max(1, s.markersEveryMin || 2) * 60;
       const lastMarker = markersRef.current[markersRef.current.length - 1] ?? 0;
       if (Math.floor(elapsedTime) > 0 && Math.floor(elapsedTime) % every === 0 && lastMarker !== Math.floor(elapsedTime)) {
@@ -726,7 +795,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       }
       animationFrameRef.current = requestAnimationFrame(animate);
     }
-  }, [stats, fontFamily, rm, onStats, maxTokens]);
+  }, [stats, fontFamily, rm, onStats, maxTokens, computeStyleCache]);
 
   // Start/stop animation based on document visibility
   useEffect(() => {
@@ -758,6 +827,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const canvas = canvasRef.current;
       if (!canvas) return;
 
+      computeStyleCache();
+
       // Configure back buffer
       try {
         // Recreate if size changed
@@ -779,7 +850,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
       // Regenerate particles for theme changes
       const isCosmic = document.documentElement.classList.contains('theme-cosmic');
-      const perfMode = !!(settingsRef.current ?? getSettings()).performanceMode;
+      const perfMode = !!getSettingsSnapshot().performanceMode;
       
       // Reset all theme particles
       starsRef.current = [];
@@ -788,12 +859,13 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       firefliesRef.current = [];
       
       if (isCosmic && !perfMode) {
-        const css = getComputedStyle(document.documentElement);
+        computeStyleCache();
+        const paletteSource = styleCacheRef.current ?? FALLBACK_STYLE_CACHE;
         const palette = [
-          (css.getPropertyValue('--rp-text') || '#e0def4').trim(),
-          (css.getPropertyValue('--rp-foam') || '#9ccfd8').trim(),
-          (css.getPropertyValue('--rp-gold') || '#f6c177').trim(),
-          (css.getPropertyValue('--rp-iris') || '#c4a7e7').trim(),
+          paletteSource.rpText,
+          paletteSource.rpFoam,
+          paletteSource.rpGold,
+          paletteSource.rpIris,
         ];
         const area = window.innerWidth * window.innerHeight;
         const count = Math.min(220, Math.max(60, Math.floor(area / 14000)));
@@ -835,15 +907,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
     handleResize();
     const updateFont = () => {
-      const css = getComputedStyle(document.documentElement);
-      const typingFontVar = css.getPropertyValue('--typing-font');
-      if (typingFontVar) {
-        document.documentElement.style.setProperty('--typing-font', typingFontVar);
-      }
-      const uiFontVar = css.getPropertyValue('--ui-font');
-      if (uiFontVar) {
-        document.documentElement.style.setProperty('--ui-font', uiFontVar);
-      }
+      computeStyleCache();
     };
 
     handleResize();
@@ -856,7 +920,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       window.removeEventListener('themeChanged', regenerateThemeParticles as EventListener);
       window.removeEventListener('fontChanged', updateFont);
     };
-  }, []);
+  }, [computeStyleCache]);
 
   // Focus input on mount
   useEffect(() => {
