@@ -61,23 +61,6 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
       <div className="flex items-center gap-3">
         {mode === 'zen' && (
           <>
-            {/* Emergency test button */}
-            <button
-              className="px-2 py-1 bg-love/80 text-white rounded text-xs"
-              onClick={() => {
-                console.log('[TEST] Direct Library open attempt');
-                const opener = (window as any).openLibraryOverlay;
-                if (opener) {
-                  console.log('[TEST] openLibraryOverlay exists, calling it');
-                  opener();
-                } else {
-                  console.log('[TEST] openLibraryOverlay not found');
-                  alert('Library opener not found. Check console.');
-                }
-              }}
-            >
-              TEST
-            </button>
             <button
               className="button-ghost px-3 py-2 rounded-lg text-sm"
               aria-label="Open drafts"
@@ -87,14 +70,12 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
               // Fire both: direct open (if available) and event, so we don't depend on mount order.
               try {
                 if (typeof opener === 'function') {
-                  console.debug('[Drafts] calling openLibraryOverlay()');
                   opener();
                 }
               } catch (e) {
                 console.warn('[Drafts] openLibraryOverlay failed', e);
               }
               try {
-                console.debug('[Drafts] dispatch toggleArchive {force:true}');
                 window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
               } catch (e) {
                 console.warn('[Drafts] dispatch toggleArchive failed', e);
@@ -104,14 +85,12 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                 const o2 = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
                 try {
                   if (typeof o2 === 'function') {
-                    console.debug('[Drafts] retry openLibraryOverlay()');
                     o2();
                   }
                 } catch (e) {
                   console.warn('[Drafts] retry openLibraryOverlay failed', e);
                 }
                 try {
-                  console.debug('[Drafts] retry dispatch toggleArchive {force:true}');
                   window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
                 } catch (e) {
                   console.warn('[Drafts] retry dispatch toggleArchive failed', e);
