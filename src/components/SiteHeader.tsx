@@ -124,13 +124,6 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
         )}
         <button 
           className="button-ghost px-3 py-2 rounded-lg text-sm"
-          aria-label="Open help"
-          onClick={() => window.dispatchEvent(new CustomEvent('toggleHelp', { detail: true }))}
-        >
-          ?
-        </button>
-        <button 
-          className="button-ghost px-3 py-2 rounded-lg text-sm"
           aria-label="Open pause menu"
           onClick={() => window.dispatchEvent(new CustomEvent('togglePause', { detail: true }))}
         >
