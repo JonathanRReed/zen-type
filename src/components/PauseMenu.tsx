@@ -76,26 +76,45 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
     return () => window.removeEventListener('markersUpdated', handler as EventListener);
   }, []);
 
+  const applySettingsPatch = useCallback((patch: Partial<Settings>, broadcast = true) => {
+    setSettings(prev => {
+      const next = { ...prev, ...patch } as Settings;
+      saveSettings(next);
+      if (broadcast) {
+        window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+      }
+
+      if ('reducedMotion' in patch && broadcast) {
+        document.documentElement.classList.toggle('reduce-motion', !!next.reducedMotion);
+      }
+      if ('highContrast' in patch && broadcast) {
+        document.documentElement.classList.toggle('high-contrast', !!next.highContrast);
+      }
+      if ('showStats' in patch && broadcast) {
+        window.dispatchEvent(new CustomEvent('toggleStats', { detail: !!next.showStats }));
+      }
+      if ('performanceMode' in patch && broadcast) {
+        document.documentElement.classList.toggle('perf-mode', !!next.performanceMode);
+      }
+
+      return next;
+    });
+  }, []);
+
   const handleSettingChange = (key: keyof Settings, value: any) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    saveSettings(newSettings);
-    // Broadcast to listeners
-    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: newSettings }));
-    
-    // Apply settings immediately
-    if (key === 'reducedMotion') {
-      document.documentElement.classList.toggle('reduce-motion', value);
-    } else if (key === 'highContrast') {
-      document.documentElement.classList.toggle('high-contrast', value);
-    } else if (key === 'showStats') {
-      // Broadcast to StatsBar and persist
-      window.dispatchEvent(new CustomEvent('toggleStats', { detail: value }));
-    } else if (key === 'performanceMode') {
-      // Low-power mode: reduce visuals
-      document.documentElement.classList.toggle('perf-mode', value);
-    }
+    applySettingsPatch({ [key]: value } as Partial<Settings>);
   };
+
+  useEffect(() => {
+    // Hydrate UI-affecting classes without rebroadcasting
+    applySettingsPatch({
+      reducedMotion: settings.reducedMotion,
+      highContrast: settings.highContrast,
+      showStats: settings.showStats,
+      performanceMode: settings.performanceMode,
+    }, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!open) return null;
 
@@ -257,18 +276,39 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
                   value={settings.profile || 'Practice'}
                   onChange={(e) => {
                     const p = e.target.value as NonNullable<Settings['profile']>;
-                    const patch: Partial<Settings> = { profile: p };
                     if (p === 'Minimal') {
-                      Object.assign(patch, { showStats: false, reducedMotion: true, fadeSec: 3, driftAmp: 3, spawnDensity: 0.9, laneStyle: 'none', breath: false });
+                      applySettingsPatch({
+                        profile: p,
+                        showStats: false,
+                        reducedMotion: true,
+                        fadeSec: 3,
+                        driftAmp: 3,
+                        spawnDensity: 0.9,
+                        laneStyle: 'none',
+                        breath: false,
+                      });
                     } else if (p === 'Practice') {
-                      Object.assign(patch, { showStats: true, reducedMotion: false, fadeSec: 4, driftAmp: 6, spawnDensity: 1.0, laneStyle: 'soft', breath: false });
+                      applySettingsPatch({
+                        profile: p,
+                        showStats: true,
+                        reducedMotion: false,
+                        fadeSec: 4,
+                        driftAmp: 6,
+                        spawnDensity: 1.0,
+                        laneStyle: 'soft',
+                        breath: false,
+                      });
                     } else if (p === 'Meditative') {
-                      Object.assign(patch, { showStats: false, reducedMotion: false, fadeSec: 5, driftAmp: 4, spawnDensity: 0.9, laneStyle: 'soft', breath: true });
-                    }
-                    // Apply bundle
-                    for (const [k, v] of Object.entries(patch)) {
-                      // @ts-ignore
-                      handleSettingChange(k as keyof Settings, v);
+                      applySettingsPatch({
+                        profile: p,
+                        showStats: false,
+                        reducedMotion: false,
+                        fadeSec: 5,
+                        driftAmp: 4,
+                        spawnDensity: 0.9,
+                        laneStyle: 'soft',
+                        breath: true,
+                      });
                     }
                   }}
                   className="bg-surface border border-muted/20 rounded px-3 py-2"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { updateStats, updateStreak, exportSessionCard, exportSessionCardSVG, getSettings } from '../utils/storage';
+import { updateStats, updateStreak, exportSessionCard, exportSessionCardSVG, getSettings, saveSettings, type Settings } from '../utils/storage';
 import { loadQuotes, getRandomQuote, type Quote } from '../utils/quotes';
 
 interface QuoteTyperProps {
@@ -38,16 +38,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   const [correctChars, setCorrectChars] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastAnnouncedProgress = useRef(0);
-  const lastKeyTimeRef = useRef<number | null>(null);
-  const keyIntervalsRef = useRef<number[]>([]);
   const lastTypedCharRef = useRef<string>('');
   const lastPressTsRef = useRef<number>(0);
-  const [microDrillActive, setMicroDrillActive] = useState(false);
-  const [currentDrillPrompt, setCurrentDrillPrompt] = useState('');
-  const [drillEndsAt, setDrillEndsAt] = useState(0);
-  const [hardestTrigramState, setHardestTrigramState] = useState('');
-  const [medianIKDState, setMedianIKDState] = useState(0);
-  const [stabilityState, setStabilityState] = useState(100);
   // Auto-advance & affirmation state
   const [autoAdvance, setAutoAdvance] = useState<boolean>(() => {
     try { return !!getSettings().autoAdvanceQuotes; } catch { return false; }
@@ -84,6 +76,21 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   }, [correctChars, totalTyped]);
 
   // Chunk helpers
+  const toggleAutoAdvance = useCallback((enabled: boolean) => {
+    setAutoAdvance(enabled);
+    try {
+      const current = getSettings();
+      const next: Settings = {
+        ...current,
+        autoAdvanceQuotes: enabled,
+        autoAdvanceDelayMs: current.autoAdvanceDelayMs ?? 0,
+      };
+      saveSettings(next);
+      setAdvanceDelay(Math.max(0, next.autoAdvanceDelayMs ?? 0));
+      window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+    } catch {}
+  }, []);
+
   const computeChunks = useCallback(() => {
     // Split into ~10 word chunks (8–12 adaptive bounds)
     const words = activeQuote.split(/\s+/).filter(Boolean);
@@ -131,9 +138,9 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     loadQuotes().then(arr => { if (mounted) quotesRef.current = arr; });
     const onSettings = (e: Event) => {
       try {
-        const s = (e as CustomEvent).detail as ReturnType<typeof getSettings>;
-        setAutoAdvance(!!(s as any).autoAdvanceQuotes);
-        setAdvanceDelay(Math.max(0, Number((s as any).autoAdvanceDelayMs ?? 0)));
+        const s = (e as CustomEvent).detail as Settings;
+        setAutoAdvance(!!s.autoAdvanceQuotes);
+        setAdvanceDelay(Math.max(0, Number(s.autoAdvanceDelayMs ?? 0)));
       } catch {}
     };
     const onNew = (e: Event) => {
@@ -222,13 +229,9 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       e.preventDefault();
       
       if (cursor >= activeQuote.length) return;
-      // Inter-key delay for IKD stats
-      const nowTs = performance.now();
-      if (lastKeyTimeRef.current != null) keyIntervalsRef.current.push(nowTs - lastKeyTimeRef.current);
-      lastKeyTimeRef.current = nowTs;
-
       // Optional debounce for ultra-fast duplicate keystrokes
       const thr = Math.max(0, getSettings().debounceMs || 0);
+      const nowTs = performance.now();
       if (thr > 0 && e.key === lastTypedCharRef.current && (nowTs - lastPressTsRef.current) < thr) {
         return;
       }
@@ -317,24 +320,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       const wpm = calculateWPM();
       const accuracy = calculateAccuracy();
       // Insights
-      const trigramCounts = new Map<string, number>();
-      errorTypeAt.forEach((_, idx) => {
-        const start = Math.max(0, idx - 2);
-        const tri = activeQuote.slice(start, Math.min(activeQuote.length, start + 3));
-        if (tri.length === 3) trigramCounts.set(tri, (trigramCounts.get(tri) || 0) + 1);
-      });
-      let hardestTrigram = '';
-      let maxTri = 0;
-      trigramCounts.forEach((v, k) => { if (v > maxTri) { maxTri = v; hardestTrigram = k; } });
-      setHardestTrigramState(hardestTrigram);
-      const sortedIKD = keyIntervalsRef.current.slice().sort((a,b)=>a-b);
-      const medianIKD = sortedIKD.length ? Math.round(sortedIKD[Math.floor(sortedIKD.length/2)]) : 0;
-      setMedianIKDState(medianIKD);
-      const mean = sortedIKD.length ? sortedIKD.reduce((s,v)=>s+v,0)/sortedIKD.length : 0;
-      const sd = sortedIKD.length ? Math.sqrt(sortedIKD.reduce((s,v)=>s+(v-mean)*(v-mean),0)/sortedIKD.length) : 0;
-      const stability = Math.max(0, Math.min(100, Math.round(100 - (sd/50)*25)));
-      setStabilityState(stability);
-
       const summary = {
         mode: 'quote' as const,
         startedAt: startTime,
@@ -346,9 +331,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         slip: errorCounts.slip,
         skip: errorCounts.skip,
         extra: errorCounts.extra,
-        hardestTrigram,
-        medianIKD,
-        stability,
       };
       // Persist stats locally
       updateStats(summary as any);
@@ -390,37 +372,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     
     announceProgress(100);
   };
-
-  // Micro-drill: auto 20s timer and prompts
-  useEffect(() => {
-    if (!microDrillActive) return;
-    // Generate a prompt from hardest trigram or top error keys
-    let prompt = hardestTrigramState;
-    if (!prompt) {
-      // Collect error keys from typedChars at error indices
-      const freq = new Map<string, number>();
-      errorTypeAt.forEach((_, i) => {
-        const ch = typedChars[i] || '';
-        if (!ch) return;
-        freq.set(ch, (freq.get(ch) || 0) + 1);
-      });
-      const top = [...freq.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]).join(' ');
-      prompt = top || 'AS DF JK';
-    }
-    setCurrentDrillPrompt(prompt);
-    const end = Date.now() + 20000;
-    setDrillEndsAt(end);
-    const iv = setInterval(() => {
-      if (Date.now() >= end) {
-        clearInterval(iv);
-        setMicroDrillActive(false);
-      } else {
-        // keep ticking
-        setDrillEndsAt(end);
-      }
-    }, 250);
-    return () => clearInterval(iv);
-  }, [microDrillActive, hardestTrigramState, errorTypeAt, typedChars]);
 
   // Announce progress for accessibility
   const announceProgress = (percent: number) => {
@@ -598,10 +549,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
                 <div className="font-mono">Extra: {errorCounts.extra}</div>
               </div>
               <div className="glass rounded p-3">
-                <div className="text-xs text-muted mb-1">Insights</div>
-                <div className="font-mono">Hardest trigram: {hardestTrigramState || '—'}</div>
-                <div className="font-mono">Median IKD: {medianIKDState} ms</div>
-                <div className="font-mono">Stability: {stabilityState}%</div>
+                <div className="text-xs text-muted mb-1">Totals</div>
+                <div className="font-mono">Characters typed: {totalTyped}</div>
+                <div className="font-mono">Correct chars: {correctChars}</div>
+                <div className="font-mono">Streak time: {streakTimeSec}s</div>
               </div>
             </div>
             <div className="flex items-center justify-center gap-3">
@@ -640,21 +591,19 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
                 Export SVG card
               </button>
               <button
-                onClick={() => setMicroDrillActive(true)}
-                className="px-6 py-2 bg-foam/20 hover:bg-foam/30 border border-foam/40 rounded-lg text-foam font-sans transition-all"
+                onClick={() => toggleAutoAdvance(!autoAdvance)}
+                className={`px-6 py-2 border rounded-lg font-sans transition-all ${autoAdvance ? 'bg-surface/60 hover:bg-surface/80 border-muted/30 text-text' : 'bg-foam/20 hover:bg-foam/30 border-foam/40 text-foam'}`}
               >
-                Start 20s micro-drill
+                {autoAdvance ? 'Disable Auto Next' : 'Enable Auto Next'}
               </button>
-              {!autoAdvance && (
-                <button
-                  onClick={handleReset}
-                  className="px-6 py-2 bg-iris/20 hover:bg-iris/30 
-                           border border-iris/40 rounded-lg
-                           text-iris font-sans transition-all"
-                >
-                  Type Again
-                </button>
-              )}
+              <button
+                onClick={handleReset}
+                className="px-6 py-2 bg-iris/20 hover:bg-iris/30 
+                         border border-iris/40 rounded-lg
+                         text-iris font-sans transition-all"
+              >
+                Type Again
+              </button>
             </div>
           </div>
         )}
@@ -672,18 +621,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           spellCheck={false}
         />
 
-        {/* Micro-drill overlay */}
-        {microDrillActive && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-base/80 backdrop-blur-md">
-            <div className="glass rounded-2xl p-8 w-full max-w-lg text-center">
-              <h3 className="text-xl text-foam mb-2">20s Micro-drill</h3>
-              <p className="text-muted mb-4">Practice top error keys/trigrams.</p>
-              <div className="text-3xl font-mono mb-4">{currentDrillPrompt}</div>
-              <div className="text-sm text-muted mb-4">Time left: {Math.max(0, Math.ceil((drillEndsAt - Date.now())/1000))}s</div>
-              <button className="px-6 py-2 bg-surface/60 border border-muted/20 rounded-lg" onClick={() => setMicroDrillActive(false)}>Done</button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

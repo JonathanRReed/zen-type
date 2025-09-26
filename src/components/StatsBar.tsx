@@ -57,43 +57,43 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
 
   return (
     <div className="stats-cq">
-      <div className="stats-bar fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="glass rounded-full px-6 py-3 flex items-center gap-6">
-        {/* Time */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted uppercase tracking-wider">Time</span>
-          <span className="text-lg font-mono text-foam">
-            {formatTime((data.time as number) || 0)}
-          </span>
-        </div>
-
-        {/* Words */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted uppercase tracking-wider">Words</span>
-          <span className="text-lg font-mono text-gold">
-            {data.words || 0}
-          </span>
-        </div>
-
-        {/* WPM */}
-        {(mode === 'quote' || data.wpm !== undefined) && (
+      <div className="stats-bar fixed bottom-24 md:bottom-20 left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-4">
+        <div className="glass rounded-3xl px-6 py-3 flex flex-wrap items-center justify-center gap-6">
+          {/* Time */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted uppercase tracking-wider">WPM</span>
-            <span className="text-lg font-mono text-rose">
-              {data.wpm || '—'}
+            <span className="text-xs text-muted uppercase tracking-wider">Time</span>
+            <span className="text-lg font-mono text-foam">
+              {formatTime((data.time as number) || 0)}
             </span>
           </div>
-        )}
 
-        {/* Accuracy (Quote mode only) */}
-        {mode === 'quote' && data.accuracy !== undefined && (
+          {/* Words */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted uppercase tracking-wider">Accuracy</span>
-            <span className="text-lg font-mono text-iris">
-              {data.accuracy}%
+            <span className="text-xs text-muted uppercase tracking-wider">Words</span>
+            <span className="text-lg font-mono text-gold">
+              {data.words || 0}
             </span>
           </div>
-        )}
+
+          {/* WPM */}
+          {(mode === 'quote' || data.wpm !== undefined) && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted uppercase tracking-wider">WPM</span>
+              <span className="text-lg font-mono text-rose">
+                {data.wpm || '—'}
+              </span>
+            </div>
+          )}
+
+          {/* Accuracy (Quote mode only) */}
+          {mode === 'quote' && data.accuracy !== undefined && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted uppercase tracking-wider">Accuracy</span>
+              <span className="text-lg font-mono text-iris">
+                {data.accuracy}%
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

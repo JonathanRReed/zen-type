@@ -1,6 +1,6 @@
 // Simple localStorage-based drafts viewer - no complex dependencies
 import React, { useState, useEffect, useMemo } from 'react';
-import { getArchive, deleteArchiveEntry, saveArchive, type ArchiveEntry } from '../utils/storage';
+import { getArchive, deleteArchiveEntry, saveArchive, updateArchiveEntry, type ArchiveEntry } from '../utils/storage';
 
 interface SimpleDraftsProps {
   isOpen: boolean;
@@ -11,6 +11,8 @@ export const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) =
   const [drafts, setDrafts] = useState<ArchiveEntry[]>([]);
   const [selectedDraft, setSelectedDraft] = useState<ArchiveEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingText, setEditingText] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -49,6 +51,16 @@ export const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) =
       setSelectedDraft(filteredDrafts[0]);
     }
   }, [filteredDrafts, selectedDraft]);
+
+  useEffect(() => {
+    if (selectedDraft) {
+      setEditingText(selectedDraft.text);
+      setIsDirty(false);
+    } else {
+      setEditingText('');
+      setIsDirty(false);
+    }
+  }, [selectedDraft]);
 
   const handleDelete = (id: string) => {
     if (confirm('Delete this draft?')) {
@@ -92,6 +104,38 @@ export const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) =
     const latest = drafts[0]?.startedAt ?? null;
     return { totalWords, totalChars, avgWords, latest };
   }, [drafts]);
+
+  const editingStats = useMemo(() => {
+    const text = editingText || '';
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const chars = text.length;
+    const lines = text === '' ? 0 : text.split(/\n/).length;
+    return { words, chars, lines };
+  }, [editingText]);
+
+  const handleSave = () => {
+    if (!selectedDraft) return;
+    const updated: ArchiveEntry = {
+      ...selectedDraft,
+      text: editingText,
+      wordCount: editingStats.words,
+      charCount: editingStats.chars,
+      endedAt: new Date().toISOString(),
+    };
+    updateArchiveEntry(selectedDraft.id, updated);
+    setDrafts(prev => prev.map(d => (d.id === updated.id ? updated : d)));
+    setSelectedDraft(updated);
+    setIsDirty(false);
+  };
+
+  const handleRestoreToCanvas = () => {
+    try {
+      window.dispatchEvent(new CustomEvent('restoreDraft', { detail: { text: editingText } }));
+      window.dispatchEvent(new CustomEvent('toggleArchive', { detail: false }));
+    } catch (e) {
+      console.error('Unable to restore draft to editor', e);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -225,24 +269,53 @@ export const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) =
         <div className="flex-1 flex flex-col">
           {selectedDraft ? (
             <>
-              <div className="p-4 border-b border-muted/20">
-                <h3 className="text-lg text-text">
-                  {formatDate(selectedDraft.startedAt)}
-                </h3>
-                <p className="text-sm text-muted mt-1">
-                  {selectedDraft.wordCount} words • {selectedDraft.charCount} characters
-                  {selectedDraft.endedAt && ` • ${Math.round((new Date(selectedDraft.endedAt).getTime() - new Date(selectedDraft.startedAt).getTime()) / 60000)} minutes`}
-                </p>
+              <div className="p-4 border-b border-muted/20 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg text-text">
+                    {formatDate(selectedDraft.startedAt)}
+                  </h3>
+                  <p className="text-sm text-muted mt-1 flex flex-wrap items-center gap-3">
+                    <span>{editingStats.words} words</span>
+                    <span>{editingStats.chars} characters</span>
+                    <span>{editingStats.lines} lines</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingText(selectedDraft.text);
+                      setIsDirty(false);
+                    }}
+                    className="px-4 py-2 bg-surface/40 hover:bg-surface/60 border border-muted/30 rounded-lg text-sm"
+                    disabled={!isDirty}
+                  >
+                    Revert
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-4 py-2 bg-foam/20 hover:bg-foam/30 border border-foam/40 rounded-lg text-sm text-foam font-medium disabled:opacity-50"
+                    disabled={!isDirty}
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-6">
-                <pre className="font-mono text-sm text-text/90 whitespace-pre-wrap">
-                  {selectedDraft.text || '(empty draft)'}
-                </pre>
+              <div className="flex-1 overflow-hidden p-6">
+                <textarea
+                  value={editingText}
+                  onChange={(e) => {
+                    setEditingText(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full h-full resize-none rounded-2xl border border-muted/20 bg-overlay/30 px-5 py-4 font-mono text-sm text-text/90 focus:outline-none focus:border-iris/40 focus:ring-1 focus:ring-iris/40"
+                  spellCheck={false}
+                  aria-label="Edit draft text"
+                />
               </div>
-              <div className="p-4 border-t border-muted/20 flex gap-2">
+              <div className="p-4 border-t border-muted/20 flex flex-wrap gap-2">
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(selectedDraft.text);
+                    navigator.clipboard.writeText(editingText);
                     alert('Copied to clipboard!');
                   }}
                   className="px-4 py-2 bg-surface/60 hover:bg-surface/80 border border-muted/20 rounded-lg text-sm"
@@ -251,7 +324,7 @@ export const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) =
                 </button>
                 <button
                   onClick={() => {
-                    const blob = new Blob([selectedDraft.text], { type: 'text/plain' });
+                    const blob = new Blob([editingText], { type: 'text/plain' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -262,6 +335,12 @@ export const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) =
                   className="px-4 py-2 bg-surface/60 hover:bg-surface/80 border border-muted/20 rounded-lg text-sm"
                 >
                   Download as .txt
+                </button>
+                <button
+                  onClick={handleRestoreToCanvas}
+                  className="px-4 py-2 bg-iris/20 hover:bg-iris/30 border border-iris/40 rounded-lg text-sm text-iris"
+                >
+                  Load into Zen mode
                 </button>
               </div>
             </>
