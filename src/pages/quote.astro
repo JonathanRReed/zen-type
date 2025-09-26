@@ -92,8 +92,7 @@ const randomQuote = getRandomQuote(quotes);
 				// Tab to switch to Zen mode
 				if (!isTyping && e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
 					e.preventDefault();
-					document.documentElement.classList.add('page-exit');
-					setTimeout(() => { window.location.href = '/zen'; }, 200);
+					window.dispatchEvent(new CustomEvent('app:navigate', { detail: '/zen' }));
 				}
 				
 				// Esc for pause menu

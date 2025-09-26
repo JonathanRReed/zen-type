@@ -1,5 +1,5 @@
 // Integration component for Zen Mode -> Library handoff
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { SessionStore } from './db';
 
 interface ZenModeIntegrationProps {
@@ -16,10 +16,10 @@ interface ZenModeIntegrationProps {
   onSessionSaved?: (sessionId: string) => void;
 }
 
-export const ZenModeIntegration: React.FC<ZenModeIntegrationProps> = ({
+export const ZenModeIntegration = ({
   sessionData,
   onSessionSaved
-}) => {
+}: ZenModeIntegrationProps) => {
   useEffect(() => {
     if (!sessionData) return;
     

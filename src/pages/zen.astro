@@ -75,6 +75,18 @@ import SiteHeader from '../components/SiteHeader';
 			let isPaused = false;
 			let helpOpen = false;
 
+			const vtNav = (to) => {
+				const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+				// @ts-ignore experimental API
+				const vt = document.startViewTransition;
+				if (!reduce && typeof vt === 'function') {
+					// @ts-ignore
+					vt(() => { window.location.href = to; });
+				} else {
+					window.location.href = to;
+				}
+			};
+
 			// Handle keyboard shortcuts
 			document.addEventListener('keydown', (e) => {
 				const tag = (document.activeElement && 'tagName' in document.activeElement
@@ -85,8 +97,7 @@ import SiteHeader from '../components/SiteHeader';
 				// Tab to switch to Quote mode
 				if (!isTyping && e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
 					e.preventDefault();
-					document.documentElement.classList.add('page-exit');
-					setTimeout(() => { window.location.href = '/quote'; }, 200);
+					vtNav('/quote');
 				}
 				
 				// Esc for pause menu

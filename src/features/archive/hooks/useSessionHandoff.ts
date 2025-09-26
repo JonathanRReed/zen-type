@@ -1,7 +1,7 @@
 // Hook for session handoff from Zen/Quote modes to Library
 import { useCallback } from 'react';
 import { SessionStore } from '../db';
-import { getArchiveEntry, type ArchiveEntry } from '../../../utils/storage';
+import { getArchiveEntry } from '../../../utils/storage';
 
 export function useSessionHandoff() {
   // Convert legacy archive entry to new session and open Library
