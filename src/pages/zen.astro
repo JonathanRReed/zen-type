@@ -71,92 +71,22 @@ import SiteHeader from '../components/SiteHeader';
 		</div>
 
 		<script>
-			let statsVisible = true;
 			let isPaused = false;
-			let helpOpen = false;
 
-			const vtNav = (to) => {
-				const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-				// @ts-ignore experimental API
-				const vt = document.startViewTransition;
-				if (!reduce && typeof vt === 'function') {
-					// @ts-ignore
-					vt(() => { window.location.href = to; });
-				} else {
-					window.location.href = to;
-				}
-			};
-
-			// Handle keyboard shortcuts
 			document.addEventListener('keydown', (e) => {
-				const tag = (document.activeElement && 'tagName' in document.activeElement
-					? document.activeElement.tagName
-					: '')
-					.toLowerCase();
+				const el = document.activeElement;
+				const tag = el && el.tagName ? el.tagName.toLowerCase() : '';
 				const isTyping = tag === 'input' || tag === 'textarea';
-				// Tab to switch to Quote mode
 				if (!isTyping && e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
 					e.preventDefault();
-					vtNav('/quote');
+					window.dispatchEvent(new CustomEvent('app:navigate', { detail: '/quote' }));
 				}
-				
-				// Esc for pause menu
 				if (e.key === 'Escape') {
 					e.preventDefault();
 					isPaused = !isPaused;
-					// Update pause menu state
-					const pauseEvent = new CustomEvent('togglePause', { detail: isPaused });
-					window.dispatchEvent(pauseEvent);
-				}
-				
-				// F for fullscreen (uppercase only)
-				if (!isTyping && e.key === 'F') {
-					if (!e.ctrlKey && !e.metaKey) {
-						e.preventDefault();
-						if (!document.fullscreenElement) {
-							document.documentElement.requestFullscreen();
-						} else {
-							document.exitFullscreen();
-						}
-					}
-				}
-				
-				// T to toggle stats (uppercase only)
-				if (!isTyping && e.key === 'T') {
-					if (!e.ctrlKey && !e.metaKey) {
-						e.preventDefault();
-						statsVisible = !statsVisible;
-						const statsEvent = new CustomEvent('toggleStats', { detail: statsVisible });
-						window.dispatchEvent(statsEvent);
-					}
-				}
-
-				// B to toggle breathing overlay (uppercase only)
-				if (!isTyping && e.key === 'B') {
-					if (!e.ctrlKey && !e.metaKey) {
-						e.preventDefault();
-						window.dispatchEvent(new CustomEvent('toggleBreath'));
-					}
-				}
-				
-				// ? for help
-				if (e.key === '?') {
-					e.preventDefault();
-					helpOpen = !helpOpen;
-					const helpEvent = new CustomEvent('toggleHelp', { detail: helpOpen });
-					window.dispatchEvent(helpEvent);
-				}
-
-				// A for Archive (uppercase only)
-				if (!isTyping && e.key === 'A') {
-					if (!e.ctrlKey && !e.metaKey) {
-						e.preventDefault();
-						window.dispatchEvent(new CustomEvent('toggleArchive'));
-					}
+					window.dispatchEvent(new CustomEvent('togglePause', { detail: isPaused }));
 				}
 			});
-
-			// Stats updates handled inside islands/components
 		</script>
 	</body>
 </html>

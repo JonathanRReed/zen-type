@@ -81,8 +81,6 @@ const randomQuote = getRandomQuote(quotes);
 
 		<script>
 			let isPaused = false;
-			let helpOpen = false;
-			let statsVisible = true;
 
 			// Handle keyboard shortcuts
 			document.addEventListener('keydown', (e) => {
@@ -101,36 +99,6 @@ const randomQuote = getRandomQuote(quotes);
 					isPaused = !isPaused;
 					const pauseEvent = new CustomEvent('togglePause', { detail: isPaused });
 					window.dispatchEvent(pauseEvent);
-				}
-				
-				// F for fullscreen (uppercase only)
-				if (!isTyping && e.key === 'F') {
-					if (!e.ctrlKey && !e.metaKey) {
-						e.preventDefault();
-						if (!document.fullscreenElement) {
-							document.documentElement.requestFullscreen();
-						} else {
-							document.exitFullscreen();
-						}
-					}
-				}
-				
-				// T to toggle stats (uppercase only)
-				if (!isTyping && e.key === 'T') {
-					if (!e.ctrlKey && !e.metaKey) {
-						e.preventDefault();
-						statsVisible = !statsVisible;
-						const statsEvent = new CustomEvent('toggleStats', { detail: statsVisible });
-						window.dispatchEvent(statsEvent);
-					}
-				}
-
-				// ? for help
-				if (!isTyping && e.key === '?') {
-					e.preventDefault();
-					helpOpen = !helpOpen;
-					const helpEvent = new CustomEvent('toggleHelp', { detail: helpOpen });
-					window.dispatchEvent(helpEvent);
 				}
 			});
 

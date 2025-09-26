@@ -10,11 +10,10 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const quickRefs = [
     { key: 'Tab', label: 'switch mode' },
-    { key: 'Esc', label: 'pause' },
-    { key: 'F', label: 'fullscreen' },
-    { key: 'T', label: 'stats' },
-    { key: 'B', label: 'breath' },
-    { key: '?', label: 'help' },
+    { key: 'Esc', label: 'pause menu' },
+    { key: 'Space', label: 'commit word (Zen)' },
+    { key: 'Enter', label: 'force commit (Zen)' },
+    { key: 'Backspace', label: 'correct character (Quote)' },
   ];
 
   useEffect(() => {
@@ -108,26 +107,6 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
                 <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Esc</kbd>
                 <span className="text-text">Open pause menu</span>
               </div>
-              <div className="flex items-center justify-between">
-                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">F</kbd>
-                <span className="text-text">Toggle fullscreen</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">B</kbd>
-                <span className="text-text">Toggle breathing overlay</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">T</kbd>
-                <span className="text-text">Toggle stats bar</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">?</kbd>
-                <span className="text-text">Show this help menu</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">A</kbd>
-                <span className="text-text">Open Drafts / Library</span>
-              </div>
             </div>
           </div>
           {/* Mode-specific shortcuts */}
@@ -152,10 +131,6 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
                 <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Backspace</kbd>
                 <span className="text-text">Correct previous character</span>
               </div>
-              <div className="flex items-center justify-between">
-                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">R</kbd>
-                <span className="text-text">Reset current quote (in pause menu)</span>
-              </div>
             </div>
           </div>
 
@@ -174,10 +149,6 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
               <li className="flex items-start">
                 <span className="mr-2">•</span>
                 <span>Enable reduced motion in settings for accessibility</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>Uppercase shortcuts like F, T, B, A and ? are active when not typing</span>
               </li>
             </ul>
             {/* Live demo line */}
