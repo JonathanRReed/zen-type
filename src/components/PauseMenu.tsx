@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getSettings, saveSettings, getStats, updateStats, updateStreak, resetAllData, type Settings } from '../utils/storage';
 
 interface PauseMenuProps {
@@ -17,6 +17,12 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
   const [stats, setStats] = useState(getStats());
   const [markers, setMarkers] = useState<number[]>([]);
 
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+    onClose?.();
+    try { window.dispatchEvent(new CustomEvent('focusTyping')); } catch {}
+  }, [onClose]);
+
   useEffect(() => {
     setOpen(isOpen);
   }, [isOpen]);
@@ -29,9 +35,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        setOpen(false);
-        onClose?.();
-        try { window.dispatchEvent(new CustomEvent('focusTyping')); } catch {}
+        closeMenu();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -39,13 +43,12 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open, closeMenu]);
 
   // Respond to global toggle events
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      console.log('[PauseMenu] togglePause received:', detail);
       // Accept boolean or undefined (toggle)
       if (typeof detail === 'boolean') {
         setOpen(detail);
@@ -97,11 +100,31 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-base/80 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+    <div
+      className="fixed inset-0 z-[2000] flex items-center justify-center bg-base/80 backdrop-blur-md"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pause-title"
+    >
       <div
-        className="glass rounded-2xl p-8 max-w-lg w-full mx-4"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
+        role="presentation"
+        tabIndex={-1}
+        className="absolute inset-0"
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget && e.button === 0) closeMenu();
+        }}
+        onTouchEnd={(e) => {
+          if (e.target === e.currentTarget) closeMenu();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            closeMenu();
+          }
+        }}
+      />
+      <div
+        className="glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain relative z-10"
         tabIndex={-1}
       >
         {!showSettings && !showAbout ? (
@@ -110,11 +133,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
             
             <div className="space-y-3">
               <button
-                onClick={() => {
-                  setOpen(false);
-                  onClose?.();
-                  try { window.dispatchEvent(new CustomEvent('focusTyping')); } catch {}
-                }}
+                onClick={closeMenu}
                 className="w-full px-6 py-3 bg-iris/20 hover:bg-iris/30 
                          border border-iris/40 rounded-lg
                          text-iris font-sans transition-all"
@@ -143,8 +162,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
                       console.error('Failed to persist zen session', e);
                     }
                     onReset?.();
-                    setOpen(false);
-                    onClose?.();
+                    closeMenu();
                   }}
                   className="w-full px-6 py-3 bg-love/20 hover:bg-love/30 
                            border border-love/40 rounded-lg
@@ -153,31 +171,6 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
                   Reset Session
                 </button>
               )}
-              
-              <button
-                onClick={() => {
-                  console.log('[PauseMenu] Archive button clicked');
-                  // Close pause menu first
-                  setOpen(false);
-                  onClose?.();
-                  // Then open archive
-                  setTimeout(() => {
-                    const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
-                    if (typeof opener === 'function') {
-                      console.log('[PauseMenu] Calling openLibraryOverlay');
-                      opener();
-                    } else {
-                      console.log('[PauseMenu] openLibraryOverlay not found, using event');
-                      window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
-                    }
-                  }, 100);
-                }}
-                className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 
-                         border border-muted/20 rounded-lg
-                         text-text font-sans transition-all"
-              >
-                Archive
-              </button>
 
               <button
                 onClick={() => setShowSettings(true)}
