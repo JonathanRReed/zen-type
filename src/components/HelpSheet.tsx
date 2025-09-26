@@ -8,6 +8,14 @@ interface HelpSheetProps {
 const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
   const [open, setOpen] = useState<boolean>(isOpen);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const quickRefs = [
+    { key: 'Tab', label: 'switch mode' },
+    { key: 'Esc', label: 'pause' },
+    { key: 'F', label: 'fullscreen' },
+    { key: 'T', label: 'stats' },
+    { key: 'B', label: 'breath' },
+    { key: '?', label: 'help' },
+  ];
 
   useEffect(() => {
     setOpen(isOpen);
@@ -173,19 +181,13 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
               </li>
             </ul>
             {/* Live demo line */}
-            <div className="mt-4 mb-2 p-3 rounded-lg bg-surface/60 border border-muted/20 flex items-center justify-center gap-3">
-              <kbd className="px-3 py-1.5 bg-overlay rounded font-mono text-sm">Tab</kbd>
-              <span className="text-muted">switch mode</span>
-              <kbd className="px-3 py-1.5 bg-overlay rounded font-mono text-sm">Esc</kbd>
-              <span className="text-muted">pause</span>
-              <kbd className="px-3 py-1.5 bg-overlay rounded font-mono text-sm">F</kbd>
-              <span className="text-muted">fullscreen</span>
-              <kbd className="px-3 py-1.5 bg-overlay rounded font-mono text-sm">T</kbd>
-              <span className="text-muted">stats</span>
-              <kbd className="px-3 py-1.5 bg-overlay rounded font-mono text-sm">B</kbd>
-              <span className="text-muted">breath</span>
-              <kbd className="px-3 py-1.5 bg-overlay rounded font-mono text-sm">?</kbd>
-              <span className="text-muted">help</span>
+            <div className="mt-4 mb-2 p-3 rounded-lg bg-surface/60 border border-muted/20 grid gap-3 sm:grid-cols-2">
+              {quickRefs.map(({ key, label }) => (
+                <div key={key} className="flex items-center gap-3">
+                  <kbd className="px-3 py-1.5 bg-overlay rounded font-mono text-sm">{key}</kbd>
+                  <span className="text-muted">{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
