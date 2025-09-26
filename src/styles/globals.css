@@ -331,12 +331,16 @@ html.theme-ocean[data-motion="on"] .theme-layer::before {
 @keyframes ocean-wave { 
   50% { transform: translateY(-2%) scaleY(1.02); filter: blur(1.5px); }
 }
-/* Horizon shimmer band at ~15% height */
+/* Horizon shimmer: soften and remove visible band line */
 html.theme-ocean .theme-layer::after {
   content:""; position:absolute; inset:0; pointer-events:none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
-  background-size: 100% 15%;
-  background-position: 0 15%;
+  /* Subtle top glow that fades smoothly into the scene */
+  background: linear-gradient(180deg,
+              rgba(255,255,255,0.04) 0%,
+              rgba(255,255,255,0.03) 6%,
+              rgba(255,255,255,0.015) 12%,
+              rgba(255,255,255,0.008) 20%,
+              rgba(255,255,255,0.0) 36%);
   background-repeat: no-repeat;
 }
 /* Remove dotted wallpaper for Ocean */

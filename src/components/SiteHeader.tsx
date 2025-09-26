@@ -65,13 +65,40 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
             aria-label="Open drafts"
             onClick={() => {
               try { localStorage.setItem('zt.openArchiveNext', '1'); } catch {}
-              // Prefer direct open if ArchiveOverlay is mounted
               const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
-              if (typeof opener === 'function') {
-                opener();
-              } else {
-                window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true }));
+              // Fire both: direct open (if available) and event, so we don't depend on mount order.
+              try {
+                if (typeof opener === 'function') {
+                  console.debug('[Drafts] calling openLibraryOverlay()');
+                  opener();
+                }
+              } catch (e) {
+                console.warn('[Drafts] openLibraryOverlay failed', e);
               }
+              try {
+                console.debug('[Drafts] dispatch toggleArchive {force:true}');
+                window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
+              } catch (e) {
+                console.warn('[Drafts] dispatch toggleArchive failed', e);
+              }
+              // Retry once shortly after in case the overlay mounts a tick later
+              window.setTimeout(() => {
+                const o2 = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
+                try {
+                  if (typeof o2 === 'function') {
+                    console.debug('[Drafts] retry openLibraryOverlay()');
+                    o2();
+                  }
+                } catch (e) {
+                  console.warn('[Drafts] retry openLibraryOverlay failed', e);
+                }
+                try {
+                  console.debug('[Drafts] retry dispatch toggleArchive {force:true}');
+                  window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
+                } catch (e) {
+                  console.warn('[Drafts] retry dispatch toggleArchive failed', e);
+                }
+              }, 80);
             }}
           >
             Drafts

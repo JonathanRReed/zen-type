@@ -155,15 +155,21 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       setCurrentWord(text);
     };
 
+    const onFocusTyping = () => {
+      inputRef.current?.focus();
+    };
+
     window.addEventListener('settingsChanged', onSettings as EventListener);
     window.addEventListener('toggleBreath', onToggleBreath as EventListener);
     window.addEventListener('requestGhost', onRequestGhost as EventListener);
     window.addEventListener('restoreGhost', onRestoreGhost as EventListener);
+    window.addEventListener('focusTyping', onFocusTyping as EventListener);
     return () => {
       window.removeEventListener('settingsChanged', onSettings as EventListener);
       window.removeEventListener('toggleBreath', onToggleBreath as EventListener);
       window.removeEventListener('requestGhost', onRequestGhost as EventListener);
       window.removeEventListener('restoreGhost', onRestoreGhost as EventListener);
+      window.removeEventListener('focusTyping', onFocusTyping as EventListener);
     };
   }, []);
 

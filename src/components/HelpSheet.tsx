@@ -67,7 +67,7 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
       }}
     >
       <div
-        className="glass rounded-2xl p-8 max-w-lg w-full mx-4"
+        className="glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain"
         role="dialog"
         aria-modal="true"
         aria-labelledby="help-title"
@@ -87,7 +87,7 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
             </svg>
           </button>
         </div>
-        <div className="space-y-6">
+        <div className="space-y-6 pb-8">
           {/* General shortcuts */}
           <div>
             <h3 className="text-sm font-bold text-iris mb-3 uppercase tracking-wider">General</h3>
@@ -173,7 +173,7 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
               </li>
             </ul>
             {/* Live demo line */}
-            <div className="mt-4 p-3 rounded-lg bg-surface/60 border border-muted/20 flex items-center justify-center gap-3">
+            <div className="mt-4 mb-2 p-3 rounded-lg bg-surface/60 border border-muted/20 flex items-center justify-center gap-3">
               <kbd className="px-3 py-1.5 bg-overlay rounded font-mono text-sm">Tab</kbd>
               <span className="text-muted">switch mode</span>
               <kbd className="px-3 py-1.5 bg-overlay rounded font-mono text-sm">Esc</kbd>

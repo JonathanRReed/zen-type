@@ -13,40 +13,51 @@ const ArchiveOverlay: React.FC = () => {
     try {
       const pending = localStorage.getItem('zt.openArchiveNext');
       if (pending === '1') {
+        console.debug('[ArchiveOverlay] open via pending flag');
         localStorage.removeItem('zt.openArchiveNext');
         setOpen(true);
+        (window as any).__zt_lastArchiveOpen = Date.now();
       }
-    } catch {}
+    } catch (e) {
+      console.warn('[ArchiveOverlay] pending flag check failed', e);
+    }
   }, []);
 
   // Imperative global open helper for reliability (used by header button)
   useEffect(() => {
     (window as any).openLibraryOverlay = (sessionId?: string) => {
+      console.debug('[ArchiveOverlay] openLibraryOverlay called', sessionId);
       if (sessionId) setInitialSessionId(sessionId);
       setOpen(true);
+      (window as any).__zt_lastArchiveOpen = Date.now();
     };
     return () => { try { delete (window as any).openLibraryOverlay; } catch {} };
   }, []);
 
-  // Open/close handler via event
+  // Open/close handler via event (stable listener)
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      
-      if (typeof detail === 'object' && detail?.sessionId) {
-        // Opening with a specific session to convert
-        setInitialSessionId(detail.sessionId);
+      const detail = (e as CustomEvent).detail as any;
+      console.debug('[ArchiveOverlay] toggleArchive received', detail);
+      if (detail && typeof detail === 'object') {
+        if ('sessionId' in detail && detail.sessionId) {
+          setInitialSessionId(String(detail.sessionId));
+        }
+        // Any object detail implies an explicit open request
         setOpen(true);
-      } else {
-        // Simple toggle
-        const next = typeof detail === 'boolean' ? detail : !open;
-        setOpen(next);
+        (window as any).__zt_lastArchiveOpen = Date.now();
+        return;
       }
+      if (typeof detail === 'boolean') {
+        setOpen(detail);
+      } else {
+        setOpen((prev) => !prev);
+      }
+      (window as any).__zt_lastArchiveOpen = Date.now();
     };
-    
     window.addEventListener('toggleArchive', handler as EventListener);
     return () => window.removeEventListener('toggleArchive', handler as EventListener);
-  }, [open]);
+  }, []);
 
   return (
     <Library 
