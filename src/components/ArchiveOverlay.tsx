@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Library } from '../features/archive/Library';
+import SimpleDrafts from './SimpleDrafts';
 
 // Overlay that shows the new Library system
 // Opens/closes via `toggleArchive` CustomEvent
@@ -7,6 +7,13 @@ import { Library } from '../features/archive/Library';
 const ArchiveOverlay: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [initialSessionId, setInitialSessionId] = useState<string | undefined>();
+  const [error, setError] = useState<string | null>(null);
+
+  // Log mount
+  useEffect(() => {
+    console.log('[ArchiveOverlay] Component mounted');
+    return () => console.log('[ArchiveOverlay] Component unmounted');
+  }, []);
 
   // Open if header requested before mount
   useEffect(() => {
@@ -59,11 +66,27 @@ const ArchiveOverlay: React.FC = () => {
     return () => window.removeEventListener('toggleArchive', handler as EventListener);
   }, []);
 
+  // Show error banner if Library crashes
+  if (error) {
+    return (
+      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[2100] bg-love/90 text-white px-4 py-2 rounded-lg">
+        Library Error: {error}
+      </div>
+    );
+  }
+
+  // Visual debug indicator when open is true but Library might not be visible
+  if (open) {
+    console.log('[ArchiveOverlay] Rendering Library with open=true');
+  }
+
   return (
-    <Library 
+    <SimpleDrafts 
       isOpen={open} 
-      onClose={() => setOpen(false)}
-      initialSessionId={initialSessionId}
+      onClose={() => {
+        console.log('[ArchiveOverlay] SimpleDrafts onClose called');
+        setOpen(false);
+      }}
     />
   );
 };

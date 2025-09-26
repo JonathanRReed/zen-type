@@ -44,12 +44,17 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
   // Respond to global toggle events
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as boolean;
-      setOpen(detail);
-      if (detail) {
-        // Ensure other overlays are closed to prevent click interception
+      const detail = (e as CustomEvent).detail;
+      console.log('[PauseMenu] togglePause received:', detail);
+      // Accept boolean or undefined (toggle)
+      if (typeof detail === 'boolean') {
+        setOpen(detail);
+      } else {
+        setOpen(prev => !prev);
+      }
+      if (detail !== false) {
+        // Close other overlays when opening pause
         try { window.dispatchEvent(new CustomEvent('toggleHelp', { detail: false })); } catch {}
-        try { window.dispatchEvent(new CustomEvent('toggleArchive', { detail: false })); } catch {}
         setSettings(getSettings());
         setStats(getStats());
       }
@@ -151,15 +156,21 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
               
               <button
                 onClick={() => {
-                  // Try both: direct opener and event dispatch, plus a short retry.
-                  const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
-                  try { if (typeof opener === 'function') opener(); } catch {}
-                  try { window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true })); } catch {}
-                  window.setTimeout(() => {
-                    const op2 = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
-                    try { if (typeof op2 === 'function') op2(); } catch {}
-                    try { window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true })); } catch {}
-                  }, 50);
+                  console.log('[PauseMenu] Archive button clicked');
+                  // Close pause menu first
+                  setOpen(false);
+                  onClose?.();
+                  // Then open archive
+                  setTimeout(() => {
+                    const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
+                    if (typeof opener === 'function') {
+                      console.log('[PauseMenu] Calling openLibraryOverlay');
+                      opener();
+                    } else {
+                      console.log('[PauseMenu] openLibraryOverlay not found, using event');
+                      window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
+                    }
+                  }, 100);
                 }}
                 className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 
                          border border-muted/20 rounded-lg
@@ -333,11 +344,11 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
               <div>
                 <div className="flex justify-between text-sm">
                   <span className="text-text">Fade (sec)</span>
-                  <span className="text-muted">{settings.fadeSec.toFixed(1)}</span>
+                  <span className="text-muted">{(settings.fadeSec ?? 4).toFixed(1)}</span>
                 </div>
                 <input
                   type="range" min={2} max={8} step={0.5}
-                  value={settings.fadeSec}
+                  value={settings.fadeSec ?? 4}
                   onChange={(e) => handleSettingChange('fadeSec', Number(e.target.value))}
                   className="w-full"
                 />
@@ -347,11 +358,11 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
               <div>
                 <div className="flex justify-between text-sm">
                   <span className="text-text">Drift amplitude</span>
-                  <span className="text-muted">{settings.driftAmp.toFixed(1)} px</span>
+                  <span className="text-muted">{(settings.driftAmp ?? 6).toFixed(1)} px</span>
                 </div>
                 <input
                   type="range" min={2} max={12} step={0.5}
-                  value={settings.driftAmp}
+                  value={settings.driftAmp ?? 6}
                   onChange={(e) => handleSettingChange('driftAmp', Number(e.target.value))}
                   className="w-full"
                 />
@@ -361,11 +372,11 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
               <div>
                 <div className="flex justify-between text-sm">
                   <span className="text-text">Spawn density</span>
-                  <span className="text-muted">{settings.spawnDensity.toFixed(2)}</span>
+                  <span className="text-muted">{(settings.spawnDensity ?? 1.0).toFixed(2)}</span>
                 </div>
                 <input
                   type="range" min={0.5} max={1.5} step={0.05}
-                  value={settings.spawnDensity}
+                  value={settings.spawnDensity ?? 1.0}
                   onChange={(e) => handleSettingChange('spawnDensity', Number(e.target.value))}
                   className="w-full"
                 />
@@ -375,7 +386,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
               <div className="grid grid-cols-2 gap-3 items-center">
                 <span className="text-text">Focus lanes</span>
                 <select
-                  value={settings.laneStyle}
+                  value={settings.laneStyle ?? 'soft'}
                   onChange={(e) => handleSettingChange('laneStyle', e.target.value as Settings['laneStyle'])}
                   className="bg-surface border border-muted/20 rounded px-3 py-2"
                 >

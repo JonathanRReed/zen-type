@@ -80,13 +80,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     }
   }, [reducedMotion]);
 
-  // Archive persistence: create entry on mount, autosave periodically, finalize on unmount or event
+  // Archive persistence: create entry on first user input after mount, autosave periodically, finalize on unmount or event
   useEffect(() => {
-    try {
-      const entry = createArchiveEntry({ text: '', wordCount: 0, charCount: 0, startedAt: new Date().toISOString() });
-      archiveIdRef.current = entry.id;
-    } catch {}
-
     const persist = () => {
       if (!archiveIdRef.current || !archiveDirtyRef.current) return;
       const text = transcriptRef.current;
@@ -197,6 +192,16 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const lastChar = value[value.length - 1];
+    // Ensure archive entry exists once typing starts
+    if (!archiveIdRef.current) {
+      try {
+        const entry = createArchiveEntry({ text: '', wordCount: 0, charCount: 0, startedAt: new Date().toISOString() });
+        archiveIdRef.current = entry.id;
+      } catch (err) {
+        console.error('[ZenCanvas] Failed to create archive entry', err);
+      }
+    }
+
     // Append to transcript and ghost log for typed characters
     if (value.length > currentWord.length) {
       const ch = value[value.length - 1] ?? '';

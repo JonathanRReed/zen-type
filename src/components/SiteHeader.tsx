@@ -60,10 +60,28 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
       </div>
       <div className="flex items-center gap-3">
         {mode === 'zen' && (
-          <button
-            className="button-ghost px-3 py-2 rounded-lg text-sm"
-            aria-label="Open drafts"
-            onClick={() => {
+          <>
+            {/* Emergency test button */}
+            <button
+              className="px-2 py-1 bg-love/80 text-white rounded text-xs"
+              onClick={() => {
+                console.log('[TEST] Direct Library open attempt');
+                const opener = (window as any).openLibraryOverlay;
+                if (opener) {
+                  console.log('[TEST] openLibraryOverlay exists, calling it');
+                  opener();
+                } else {
+                  console.log('[TEST] openLibraryOverlay not found');
+                  alert('Library opener not found. Check console.');
+                }
+              }}
+            >
+              TEST
+            </button>
+            <button
+              className="button-ghost px-3 py-2 rounded-lg text-sm"
+              aria-label="Open drafts"
+              onClick={() => {
               try { localStorage.setItem('zt.openArchiveNext', '1'); } catch {}
               const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
               // Fire both: direct open (if available) and event, so we don't depend on mount order.
@@ -103,6 +121,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
           >
             Drafts
           </button>
+          </>
         )}
         {mode === 'quote' && (
           <>
