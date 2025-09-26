@@ -464,8 +464,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     );
   };
 
+  const containerClass = isComplete
+    ? 'flex flex-col items-center min-h-screen w-full px-6 pt-16 pb-56 gap-10'
+    : 'flex flex-col items-center justify-center min-h-screen w-full px-6 py-12 pb-40';
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8">
+    <div className={containerClass}>
       <div className="w-full max-w-4xl">
         {/* Quote display */}
         <div className="glass rounded-2xl p-8 mb-8">

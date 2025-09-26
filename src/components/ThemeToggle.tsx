@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getSettings, saveSettings, type Settings } from '../utils/storage';
 
-type Theme = 'Plain' | 'Forest' | 'Ocean' | 'Cosmic';
+type Theme = 'Void' | 'Forest' | 'Ocean' | 'Cosmic';
 
 const ThemeToggle: React.FC = () => {
-  const [theme, setTheme] = useState<Theme>('Plain');
+  const [theme, setTheme] = useState<Theme>('Void');
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ const ThemeToggle: React.FC = () => {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-plain', 'theme-forest', 'theme-ocean', 'theme-cosmic');
+    root.classList.remove('theme-void', 'theme-forest', 'theme-ocean', 'theme-cosmic');
 
     // Add new theme class
     root.classList.add(`theme-${newTheme.toLowerCase()}`);
@@ -88,7 +88,7 @@ const ThemeToggle: React.FC = () => {
         );
         break;
       default:
-        // Plain (Rosé Pine OLED-dark gradient)
+        // Void (Rosé Pine OLED-dark gradient)
         root.style.setProperty(
           '--theme-gradient',
           'linear-gradient(var(--theme-gradient-angle, 180deg), color-mix(in oklab, var(--rp-base) 92%, #000000 8%) 0%, color-mix(in oklab, var(--rp-overlay) 96%, #000000 4%) 100%)'
@@ -134,8 +134,8 @@ const ThemeToggle: React.FC = () => {
           const hue = Math.sin((tick / 90) * Math.PI * 2) * 2; // ±2deg
           root.style.setProperty('--theme-hue-shift', `${hue}deg`);
         }
-        // Plain: Minimal vertical gradient scroll
-        if (theme === 'Plain') {
+        // Void: Slow vertical gradient scroll
+        if (theme === 'Void') {
           const angle = 180 + Math.sin((tick / 90) * Math.PI * 2) * 2; // ±2deg very subtle
           root.style.setProperty('--theme-gradient-angle', `${angle}deg`);
         }
@@ -190,7 +190,7 @@ const ThemeToggle: React.FC = () => {
     setIsOpen(false);
   };
 
-  const themes: Theme[] = ['Plain', 'Forest', 'Ocean', 'Cosmic'];
+  const themes: Theme[] = ['Void', 'Forest', 'Ocean', 'Cosmic'];
 
   return (
     <div className="relative">

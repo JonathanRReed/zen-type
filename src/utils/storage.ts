@@ -28,7 +28,7 @@ export function setJSON(key: string, value: any): void {
 
 // Type definitions
 export interface Settings {
-  theme: 'Plain' | 'Forest' | 'Ocean' | 'Cosmic';
+  theme: 'Void' | 'Forest' | 'Ocean' | 'Cosmic';
   reducedMotion: boolean;
   showStats: boolean;
   highContrast: boolean;
@@ -105,7 +105,7 @@ export const STORAGE_KEYS = {
 
 // Defaults
 export const DEFAULT_SETTINGS: Settings = {
-  theme: 'Plain',
+  theme: 'Void',
   reducedMotion: false,
   showStats: true,
   highContrast: false,
@@ -138,7 +138,19 @@ export const DEFAULT_STATS: Stats = {
 
 // Settings helpers
 export function getSettings(): Settings {
-  return getJSON(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+  const raw = getJSON(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS as Settings);
+  const normalized = { ...DEFAULT_SETTINGS, ...raw } as Settings;
+
+  if ((raw as any).theme === 'Plain') {
+    normalized.theme = 'Void';
+  }
+
+  const allowedThemes: Settings['theme'][] = ['Void', 'Forest', 'Ocean', 'Cosmic'];
+  if (!allowedThemes.includes(normalized.theme)) {
+    normalized.theme = 'Void';
+  }
+
+  return normalized;
 }
 
 export function saveSettings(settings: Settings): void {
