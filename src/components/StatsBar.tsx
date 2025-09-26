@@ -57,7 +57,7 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
 
   return (
     <div className="stats-cq">
-      <div className="stats-bar fixed bottom-24 md:bottom-20 left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-4">
+      <div className="stats-bar fixed bottom-24 md:bottom-20 left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-4" data-stats-bar>
         <div className="glass rounded-3xl px-6 py-3 flex flex-wrap items-center justify-center gap-6">
           {/* Time */}
           <div className="flex items-center gap-2">

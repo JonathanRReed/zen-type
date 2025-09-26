@@ -127,7 +127,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
         aria-label="Close pause menu"
       />
       <div
-        className="glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain relative z-10"
+        className={`glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain relative z-10 ${showSettings ? 'settings-shell settings-scroll' : ''}`}
         tabIndex={-1}
       >
         {!showSettings && !showAbout ? (

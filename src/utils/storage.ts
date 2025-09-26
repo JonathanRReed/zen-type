@@ -26,12 +26,27 @@ export function setJSON(key: string, value: any): void {
   }
 }
 
+export const FONT_OPTIONS = ['JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro'] as const;
+export type FontOption = typeof FONT_OPTIONS[number];
+
+const FONT_STACKS: Record<FontOption, string> = {
+  'JetBrains Mono': "'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  'Fira Code': "'Fira Code', 'JetBrains Mono', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  'IBM Plex Mono': "'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  'Source Code Pro': "'Source Code Pro', 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+};
+
+export function getFontStack(font: FontOption): string {
+  return FONT_STACKS[font] ?? FONT_STACKS['JetBrains Mono'];
+}
+
 // Type definitions
 export interface Settings {
   theme: 'Void' | 'Forest' | 'Ocean' | 'Cosmic';
   reducedMotion: boolean;
   showStats: boolean;
   highContrast: boolean;
+  fontFamily?: FontOption;
   autoAdvanceQuotes?: boolean;
   autoAdvanceDelayMs?: number; // 0 for immediate; default 1500
   performanceMode?: boolean;
@@ -109,6 +124,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: false,
   showStats: true,
   highContrast: false,
+  fontFamily: FONT_OPTIONS[0],
   autoAdvanceQuotes: false,
   autoAdvanceDelayMs: 1500,  // 1.5s affirmation delay
   performanceMode: false,
@@ -148,6 +164,10 @@ export function getSettings(): Settings {
   const allowedThemes: Settings['theme'][] = ['Void', 'Forest', 'Ocean', 'Cosmic'];
   if (!allowedThemes.includes(normalized.theme)) {
     normalized.theme = 'Void';
+  }
+
+  if (!normalized.fontFamily || !FONT_OPTIONS.includes(normalized.fontFamily)) {
+    normalized.fontFamily = DEFAULT_SETTINGS.fontFamily;
   }
 
   return normalized;

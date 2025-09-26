@@ -184,8 +184,11 @@ const ThemeToggle: React.FC = () => {
     setTheme(newTheme);
     applyTheme(newTheme);
     
-    const settings = getSettings();
-    saveSettings({ ...settings, theme: newTheme });
+    const currentSettings = getSettings();
+    const nextSettings = { ...currentSettings, theme: newTheme } as Settings;
+    saveSettings(nextSettings);
+    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: nextSettings }));
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: newTheme }));
     
     setIsOpen(false);
   };
