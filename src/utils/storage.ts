@@ -41,6 +41,50 @@ export function getFontStack(font: FontOption): string {
   return FONT_STACKS[font] ?? FONT_STACKS['JetBrains Mono'];
 }
 
+export function syncTypingFont(font: FontOption): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.style.setProperty('--typing-font', getFontStack(font));
+
+  const fonts = (document as any).fonts;
+  if (fonts?.load) {
+    const family = font.replace(/"/g, '\\"');
+    const weights = ['400', '600', '700'];
+    for (const weight of weights) {
+      void fonts.load(`${weight} 1rem "${family}"`).catch(() => {});
+    }
+  }
+}
+
+export function applySettingsSideEffects(patch: Partial<Settings>, next: Settings, options?: { broadcast?: boolean }): void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const broadcast = options?.broadcast ?? true;
+
+  if ('fontFamily' in patch && next.fontFamily) {
+    syncTypingFont(next.fontFamily);
+    if (broadcast && patch.fontFamily) {
+      window.dispatchEvent(new CustomEvent('fontChanged', { detail: patch.fontFamily }));
+    }
+  }
+
+  if ('reducedMotion' in patch) {
+    document.documentElement.classList.toggle('reduce-motion', !!next.reducedMotion);
+  }
+
+  if ('highContrast' in patch) {
+    document.documentElement.classList.toggle('high-contrast', !!next.highContrast);
+  }
+
+  if ('showStats' in patch) {
+    if (broadcast) {
+      window.dispatchEvent(new CustomEvent('toggleStats', { detail: !!next.showStats }));
+    }
+  }
+
+  if ('performanceMode' in patch) {
+    document.documentElement.classList.toggle('perf-mode', !!next.performanceMode);
+  }
+}
+
 // Type definitions
 export interface Settings {
   theme: 'Void' | 'Forest' | 'Ocean' | 'Cosmic';

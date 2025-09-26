@@ -5,7 +5,11 @@ import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   integrations: [
-    react(),
+    react({
+      babel: {
+        plugins: ['babel-plugin-react-compiler']
+      }
+    }),
     tailwind({
       applyBaseStyles: false,
     })

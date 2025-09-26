@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { saveSettings, resetAllData, type Settings, FONT_OPTIONS, getFontStack } from '../utils/storage';
+import { saveSettings, resetAllData, type Settings, applySettingsSideEffects } from '../utils/storage';
 
 interface SettingsPanelProps {
   settings: Settings;
@@ -20,23 +20,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
       window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
     }
 
-    if ('fontFamily' in patch && patch.fontFamily) {
-      document.documentElement.style.setProperty('--typing-font', getFontStack(patch.fontFamily));
-      window.dispatchEvent(new CustomEvent('fontChanged', { detail: patch.fontFamily }));
-    }
-
-    if ('reducedMotion' in patch && broadcast) {
-      document.documentElement.classList.toggle('reduce-motion', !!next.reducedMotion);
-    }
-    if ('highContrast' in patch && broadcast) {
-      document.documentElement.classList.toggle('high-contrast', !!next.highContrast);
-    }
-    if ('showStats' in patch && broadcast) {
-      window.dispatchEvent(new CustomEvent('toggleStats', { detail: !!next.showStats }));
-    }
-    if ('performanceMode' in patch && broadcast) {
-      document.documentElement.classList.toggle('perf-mode', !!next.performanceMode);
-    }
+    applySettingsSideEffects(patch, next, { broadcast });
 
     return next;
   }, [settings, onSettingChange]);
@@ -116,19 +100,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
         <section>
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Accessibility</h3>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3 items-center">
-              <span className="text-text">Typing font</span>
-              <select
-                value={settings.fontFamily ?? FONT_OPTIONS[0]}
-                onChange={(e) => handleSettingChange('fontFamily', e.target.value as Settings['fontFamily'])}
-                className="bg-surface border border-muted/20 rounded px-3 py-2"
-              >
-                {FONT_OPTIONS.map(font => (
-                  <option key={font} value={font}>{font}</option>
-                ))}
-              </select>
-            </div>
-
             <label className="flex items-center justify-between">
               <span className="text-text">Reduced Motion</span>
               <input

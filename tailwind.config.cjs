@@ -24,7 +24,16 @@ module.exports = {
       },
       fontFamily: {
         sans: ["Nebula Sans", "Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"]
+        mono: [
+          "var(--typing-font)",
+          "JetBrains Mono",
+          "Fira Code",
+          "IBM Plex Mono",
+          "Source Code Pro",
+          "ui-monospace",
+          "SFMono-Regular",
+          "monospace"
+        ]
       }
     }
   },

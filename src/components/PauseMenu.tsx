@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getSettings, saveSettings, getStats, updateStats, updateStreak, type Settings } from '../utils/storage';
+import { getSettings, saveSettings, getStats, updateStats, updateStreak, type Settings, FONT_OPTIONS, applySettingsSideEffects } from '../utils/storage';
 import { SettingsPanel } from './SettingsPanel';
 import { AboutPanel } from './AboutPanel';
 
@@ -81,18 +81,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
         window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
       }
 
-      if ('reducedMotion' in patch && broadcast) {
-        document.documentElement.classList.toggle('reduce-motion', !!next.reducedMotion);
-      }
-      if ('highContrast' in patch && broadcast) {
-        document.documentElement.classList.toggle('high-contrast', !!next.highContrast);
-      }
-      if ('showStats' in patch && broadcast) {
-        window.dispatchEvent(new CustomEvent('toggleStats', { detail: !!next.showStats }));
-      }
-      if ('performanceMode' in patch && broadcast) {
-        document.documentElement.classList.toggle('perf-mode', !!next.performanceMode);
-      }
+      applySettingsSideEffects(patch, next, { broadcast });
 
       return next;
     });
@@ -105,6 +94,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
       highContrast: settings.highContrast,
       showStats: settings.showStats,
       performanceMode: settings.performanceMode,
+      fontFamily: settings.fontFamily,
     }, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -183,7 +173,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
               >
                 Settings
               </button>
-              
+
               <button
                 onClick={() => setShowAbout(true)}
                 className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 
@@ -192,6 +182,22 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
               >
                 About
               </button>
+
+              <div className="space-y-2">
+                <label htmlFor="pause-font-select" className="block text-sm text-muted/80 font-sans">
+                  Typing font
+                </label>
+                <select
+                  id="pause-font-select"
+                  value={settings.fontFamily ?? FONT_OPTIONS[0]}
+                  onChange={(e) => applySettingsPatch({ fontFamily: e.target.value as Settings['fontFamily'] })}
+                  className="w-full px-3 py-2 bg-surface/60 hover:bg-surface/70 border border-muted/20 rounded-lg text-text transition-all focus:outline-none focus:ring-2 focus:ring-iris/50"
+                >
+                  {FONT_OPTIONS.map(font => (
+                    <option key={font} value={font}>{font}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Quick stats */}
