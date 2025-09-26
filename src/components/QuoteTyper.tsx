@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useTransition } from 'react';
 import { updateStats, updateStreak, exportSessionCard, exportSessionCardSVG, getSettings, saveSettings, type Settings } from '../utils/storage';
-import { loadQuotes, getRandomQuote, type Quote } from '../utils/quotes';
+import { loadQuotes, getRandomQuote, getFallbackQuotes, type Quote } from '../utils/quotes';
 
 interface QuoteTyperProps {
   quote: string;
@@ -52,6 +52,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   const [streakCorrect, setStreakCorrect] = useState(0);
   const [streakTotal, setStreakTotal] = useState(0);
   const quotesRef = useRef<Quote[]>([]);
+  const fallbackQuotesRef = useRef<Quote[]>(getFallbackQuotes());
+  const [isPending, startTransition] = useTransition();
 
   // Chunking
   type Chunk = { start: number; end: number; wordStart: number; wordEnd: number; };
@@ -163,6 +165,9 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
             pool = [];
           }
         }
+        if (!pool.length) {
+          pool = fallbackQuotesRef.current;
+        }
         if (pool.length) {
           let next = getRandomQuote(pool);
           let guard = 0;
@@ -175,11 +180,14 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       }
 
       if (typeof nextQuote === 'string') {
-        setActiveQuote(nextQuote);
-        setActiveAuthor(nextAuthor);
+        startTransition(() => {
+          setActiveQuote(nextQuote!);
+          setActiveAuthor(nextAuthor);
+          handleReset();
+        });
+      } else {
+        handleReset();
       }
-
-      handleReset();
     };
     window.addEventListener('settingsChanged', onSettings as EventListener);
     window.addEventListener('newQuote', onNew as EventListener);
@@ -492,6 +500,13 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   return (
     <div className={containerClass}>
       <div className="w-full max-w-4xl">
+        {isPending && (
+          <div className="mb-6 flex items-center justify-center" role="status" aria-live="polite">
+            <span className="animate-pulse text-sm text-muted">
+              Loading the next quote…
+            </span>
+          </div>
+        )}
         {/* Quote display */}
         <div className="glass rounded-2xl p-8 mb-8">
           <div className="text-2xl leading-relaxed mb-4 select-none">

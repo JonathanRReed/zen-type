@@ -9,6 +9,14 @@ export interface Quote {
 
 let quotesCache: Quote[] | null = null;
 
+const loadClientQuotes = async (): Promise<Quote[]> => {
+  const response = await fetch('/quotes.json');
+  if (!response.ok) {
+    throw new Error(`Failed to load quotes: ${response.status}`);
+  }
+  return await response.json() as Quote[];
+};
+
 export async function loadQuotes(): Promise<Quote[]> {
   // Return cached quotes if available
   if (quotesCache) {
@@ -16,23 +24,15 @@ export async function loadQuotes(): Promise<Quote[]> {
   }
 
   try {
-    if (typeof window === 'undefined') {
-      // SSR/build: read from public/quotes.json using Node fs
-      const fs = await import('node:fs/promises');
-      const path = `${process.cwd()}/public/quotes.json`;
-      const raw = await fs.readFile(path, 'utf-8');
-      const arr = JSON.parse(raw) as Quote[];
-      quotesCache = arr;
-      return arr;
+    let arr: Quote[];
+    if (import.meta.env.SSR) {
+      const { loadServerQuotes } = await import('./quotes.server.js');
+      arr = await loadServerQuotes();
     } else {
-      const response = await fetch('/quotes.json');
-      if (!response.ok) {
-        throw new Error(`Failed to load quotes: ${response.status}`);
-      }
-      const arr = await response.json() as Quote[];
-      quotesCache = arr;
-      return arr;
+      arr = await loadClientQuotes();
     }
+    quotesCache = arr;
+    return arr;
   } catch (error) {
     console.error('Error loading quotes:', error);
     // Return fallback quotes if fetch fails

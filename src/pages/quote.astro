@@ -62,14 +62,14 @@ const randomQuote = getRandomQuote(quotes);
 				</div>
 
 				<StatsBar
-					client:load
+					client:idle
 					mode="quote"
 					visible={true}
 					metrics={{}}
 				/>
 
 				<PauseMenu
-					client:load
+					client:idle
 					mode="quote"
 					onReset={() => {
 						// Smoothly load a new quote without reload
@@ -79,20 +79,18 @@ const randomQuote = getRandomQuote(quotes);
 				/>
 
 				<HelpSheet
-					client:load
+					client:idle
 					isOpen={false}
 					onClose={() => {}}
 				/>
-				<ArchiveOverlay client:load />
-				<AboutOverlay client:load />
-				<SiteFooter client:load />
+				<ArchiveOverlay client:idle />
+				<AboutOverlay client:idle />
+				<SiteFooter client:idle />
 			</div>
 		</ErrorBoundary>
 
 		<script>
 			let isPaused = false;
-
-			// Handle keyboard shortcuts
 			document.addEventListener('keydown', (e) => {
 				const ae = document.activeElement;
 				const tag = ae && ae.tagName ? ae.tagName.toLowerCase() : '';

@@ -53,7 +53,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 
 				<!-- Stats bar -->
 				<StatsBar 
-					client:load
+					client:idle
 					mode="zen"
 					visible={true}
 					metrics={{}}
@@ -61,7 +61,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 
 				<!-- Pause menu -->
 				<PauseMenu
-					client:load
+					client:idle
 					mode="zen"
 					onReset={() => { window.location.reload(); }}
 					data-pause-menu
@@ -69,15 +69,15 @@ import ErrorBoundary from '../components/ErrorBoundary';
 
 				<!-- Help sheet -->
 				<HelpSheet 
-					client:load
+					client:idle
 					isOpen={false}
 					onClose={() => {}}
 				/>
 
 				<!-- Archive & About overlays (hidden by default) -->
-				<ArchiveOverlay client:load />
-				<AboutOverlay client:load />
-				<SiteFooter client:load />
+				<ArchiveOverlay client:idle />
+				<AboutOverlay client:idle />
+				<SiteFooter client:idle />
 			</div>
 		</ErrorBoundary>
 
