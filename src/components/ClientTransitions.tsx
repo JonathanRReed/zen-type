@@ -18,6 +18,17 @@ const shouldUseViewTransition = () => {
 };
 
 const ClientTransitions: React.FC = () => {
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    root.classList.remove('page-exit');
+    root.classList.add('page-enter');
+    const raf = window.requestAnimationFrame(() => {
+      root.classList.remove('page-enter');
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, []);
+
   const runTransition = useCallback((navigate: () => void) => {
     // @ts-ignore experimental API
     const vt = typeof document !== 'undefined' ? (document as any).startViewTransition : undefined;
@@ -42,26 +53,35 @@ const ClientTransitions: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!shouldUseViewTransition()) {
+    if (typeof document === 'undefined') {
       return;
     }
 
-    // Initialize performance monitoring
-    initializeWebVitals();
-
     const root = document.documentElement;
+    const supportsViewTransition = shouldUseViewTransition();
+
+    if (supportsViewTransition) {
+      initializeWebVitals();
+    }
 
     const navigateTo = (to: string) => {
       const go = () => {
         window.location.assign(to);
       };
 
-      const currentTheme = root.className
-        .split(/\s+/)
-        .find(cls => cls.startsWith('theme-')) ?? '';
-      if (currentTheme) root.setAttribute('data-transition-theme', currentTheme);
+      root.classList.remove('page-enter');
+      root.classList.add('page-exit');
 
-      runTransition(go);
+      if (supportsViewTransition) {
+        const currentTheme = root.className
+          .split(/\s+/)
+          .find(cls => cls.startsWith('theme-')) ?? '';
+        if (currentTheme) root.setAttribute('data-transition-theme', currentTheme);
+        runTransition(go);
+        return;
+      }
+
+      go();
     };
 
     const onClick = (e: MouseEvent) => {

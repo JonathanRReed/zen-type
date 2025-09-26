@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { getSettings, saveSettings, getStats, updateStats, updateStreak, resetAllData, type Settings } from '../utils/storage';
+import React, { useState, useCallback } from 'react';
+import { saveSettings, resetAllData, type Settings } from '../utils/storage';
 
 interface SettingsPanelProps {
   settings: Settings;
@@ -13,6 +13,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
   const applySettingsPatch = useCallback((patch: Partial<Settings>, broadcast = true) => {
     const next = { ...settings, ...patch } as Settings;
     saveSettings(next);
+    Object.entries(patch).forEach(([key, value]) => {
+      onSettingChange(key as keyof Settings, value);
+    });
     if (broadcast) {
       window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
     }
@@ -31,7 +34,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
     }
 
     return next;
-  }, [settings]);
+  }, [settings, onSettingChange]);
 
   const handleSettingChange = (key: keyof Settings, value: any) => {
     applySettingsPatch({ [key]: value } as Partial<Settings>);

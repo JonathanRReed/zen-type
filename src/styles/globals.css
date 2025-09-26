@@ -18,8 +18,9 @@
   --rp-hi-low: #21202e;
   --rp-hi-med: #403d52;
   --rp-hi-high: #524f67;
-  --shadow-soft: 0 8px 30px rgba(0,0,0,.35);
+  --shadow-soft: 0 8px 30px rgba(0,0,0,var(--glow-strength));
   --blur: 12px;
+  --glow-strength: 0.35;
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
   /* Default ambient gradient (Rosé Pine on OLED-dark) */
   --theme-gradient: linear-gradient(180deg, var(--rp-base) 0%, var(--rp-overlay) 100%);
@@ -27,6 +28,18 @@
   --theme-gradient-center-x: 50%;
   --theme-gradient-center-y: 50%;
   --theme-hue-shift: 0deg;
+}
+
+@property --blur {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 12px;
+}
+
+@property --glow-strength {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.35;
 }
 
 html {
@@ -42,6 +55,11 @@ body {
   padding: 0;
   min-height: 100vh;
   transition: opacity .2s var(--ease-smooth), transform .2s var(--ease-smooth);
+  scrollbar-gutter: stable both-edges;
+}
+
+h1, h2, h3, h4 {
+  text-wrap: balance;
 }
 
 .glass {
@@ -109,6 +127,12 @@ html.high-contrast :focus-visible {
   box-shadow: 0 10px 36px rgba(0,0,0,.4);
 }
 
+.stats-bar .glass,
+[data-archive-shell] h2,
+[data-archive-shell] h3 {
+  text-wrap: balance;
+}
+
 /* Context-aware highlights using :has() (scoped for supporting browsers) */
 @supports selector(:has(*)) {
   .glass:has(input:focus-visible),
@@ -127,17 +151,56 @@ html.high-contrast :focus-visible {
 
 /* Container queries for StatsBar responsive placement */
 .stats-cq { container-type: inline-size; }
-@container (max-width: 560px) {
-  .stats-bar { left: auto; right: 1rem; transform: none; bottom: 1rem; }
-  .stats-bar .glass { padding: .5rem .75rem; }
+@container (max-width: 720px) {
+  .stats-bar {
+    position: static;
+    transform: none;
+    margin: 1rem auto 0;
+    left: auto;
+    right: auto;
+    bottom: auto;
+  }
+
+  .stats-bar .glass {
+    justify-content: space-between;
+    width: min(100% - 1.5rem, 28rem);
+  }
 }
+
+@container (max-width: 560px) {
+  .stats-bar {
+    margin-bottom: 0.5rem;
+  }
+  .stats-bar .glass {
+    padding: .5rem .75rem;
+    gap: 1.25rem;
+  }
+}
+
 @container (min-width: 1000px) {
   .stats-bar .glass { gap: 2rem; }
 }
 
 /* Page transitions */
-html.page-enter body { opacity: 0.001; transform: translateY(6px); }
-html.page-exit body { opacity: 0; transform: translateY(-6px); }
+html.page-enter body {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+html.page-enter body,
+html.page-exit body {
+  transition: opacity 260ms var(--ease-smooth), transform 260ms var(--ease-smooth);
+}
+
+html.page-enter.body-ready body {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+html.page-exit body {
+  opacity: 0;
+  transform: translateY(-12px);
+}
 
 /* Lightweight grain overlay */
 .grain {
@@ -152,6 +215,11 @@ html.page-exit body { opacity: 0; transform: translateY(-6px); }
 
 /* Theme base layer */
 .theme-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: var(--theme-gradient, linear-gradient(180deg, var(--rp-base), var(--rp-overlay)));
   filter: none;
 }
@@ -337,11 +405,11 @@ html.theme-ocean .theme-layer::after {
   content:""; position:absolute; inset:0; pointer-events:none;
   /* Subtle top glow that fades smoothly into the scene */
   background: linear-gradient(180deg,
-              rgba(255,255,255,0.04) 0%,
-              rgba(255,255,255,0.03) 6%,
-              rgba(255,255,255,0.015) 12%,
-              rgba(255,255,255,0.008) 20%,
-              rgba(255,255,255,0.0) 36%);
+              rgba(255,255,255,0.02) 0%,
+              rgba(255,255,255,0.015) 6%,
+              rgba(255,255,255,0.008) 15%,
+              rgba(255,255,255,0.004) 28%,
+              rgba(255,255,255,0.0) 40%);
   background-repeat: no-repeat;
 }
 /* Remove dotted wallpaper for Ocean */
@@ -535,5 +603,39 @@ html.high-contrast.theme-void .theme-layer::after {
 
   html.theme-ocean .theme-layer::after {
     opacity: .08 !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --shadow-soft: 0 0 0 1px rgba(255,255,255,0.35);
+  }
+
+  .glass,
+  .card {
+    border-color: color-mix(in oklab, var(--rp-iris) 35%, transparent);
+    background: color-mix(in oklab, var(--rp-surface) 92%, transparent);
+  }
+
+  :where(button, a, input, textarea, select) {
+    border-color: color-mix(in oklab, var(--rp-foam) 40%, transparent) !important;
+  }
+}
+
+@supports (scrollbar-color: auto) {
+  body {
+    scrollbar-color: rgba(144,140,170,0.65) transparent;
+  }
+
+  .stats-bar ::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+  }
+
+  .stats-bar ::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb {
+    background: rgba(144,140,170,0.4);
+    border-radius: 999px;
   }
 }

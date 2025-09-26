@@ -32,14 +32,7 @@ const randomQuote = getRandomQuote(quotes);
 	<body>
 		<ClientTransitions client:load />
 		<ErrorBoundary>
-			<!-- Skip to main content link for accessibility -->
-			<a
-				href="#quote-app"
-				className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-iris focus:text-base focus:rounded-lg focus:shadow-lg"
-			>
-				Skip to main content
-			</a>
-			<div id="quote-app" className="relative w-full min-h-screen">
+			<div id="quote-app" class="relative w-full min-h-screen">
 				<SiteHeader client:load mode="quote" />
 
 				<!-- Main quote typer -->
