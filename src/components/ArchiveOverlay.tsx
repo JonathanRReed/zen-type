@@ -19,7 +19,16 @@ const ArchiveOverlay: React.FC = () => {
     } catch {}
   }, []);
 
-  // Open/close handler
+  // Imperative global open helper for reliability (used by header button)
+  useEffect(() => {
+    (window as any).openLibraryOverlay = (sessionId?: string) => {
+      if (sessionId) setInitialSessionId(sessionId);
+      setOpen(true);
+    };
+    return () => { try { delete (window as any).openLibraryOverlay; } catch {} };
+  }, []);
+
+  // Open/close handler via event
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;

@@ -65,7 +65,13 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
             aria-label="Open drafts"
             onClick={() => {
               try { localStorage.setItem('zt.openArchiveNext', '1'); } catch {}
-              window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true }));
+              // Prefer direct open if ArchiveOverlay is mounted
+              const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
+              if (typeof opener === 'function') {
+                opener();
+              } else {
+                window.dispatchEvent(new CustomEvent('toggleArchive', { detail: true }));
+              }
             }}
           >
             Drafts

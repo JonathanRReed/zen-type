@@ -254,7 +254,7 @@ export const Library: React.FC<LibraryProps> = ({ isOpen, onClose, initialSessio
   if (!isOpen) return null;
 
   return (
-    <div className="library fixed inset-0 z-50 bg-base flex">
+    <div className="library fixed inset-0 z-[1000] bg-base flex" role="dialog" aria-modal="true" aria-label="Library">
       {/* Left Sidebar */}
       <Sidebar
         currentView={currentView}

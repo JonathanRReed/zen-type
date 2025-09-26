@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 interface HelpSheetProps {
   isOpen?: boolean;
@@ -7,6 +7,7 @@ interface HelpSheetProps {
 
 const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
   const [open, setOpen] = useState<boolean>(isOpen);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setOpen(isOpen);
@@ -21,14 +22,35 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
     return () => window.removeEventListener('toggleHelp', handler as EventListener);
   }, []);
 
+  // Escape-only close, focus management, and body scroll lock
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setOpen(false);
+        onClose?.();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    // focus the close button for accessibility
+    closeBtnRef.current?.focus();
+    // lock background scroll
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-base/80 backdrop-blur-md"
-      // Allow closing via click and keyboard for accessibility
-      role="button"
-      tabIndex={0}
+      className="fixed inset-0 z-[1100] flex items-center justify-center bg-base/80 backdrop-blur-md"
+      role="presentation"
+      tabIndex={-1}
       onClick={(e) => {
         // Only close when clicking on the overlay background, not the dialog content
         if (e.currentTarget === e.target) {
@@ -37,23 +59,24 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
         }
       }}
       onKeyDown={(e) => {
-        if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+        if (e.key === 'Escape') {
           e.preventDefault();
           setOpen(false);
           onClose?.();
         }
       }}
-      aria-label="Close help"
     >
       <div
         className="glass rounded-2xl p-8 max-w-lg w-full mx-4"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="help-title"
         tabIndex={-1}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-sans text-foam">Keyboard Shortcuts</h2>
+          <h2 id="help-title" className="text-2xl font-sans text-foam">Keyboard Shortcuts</h2>
           <button
+            ref={closeBtnRef}
             onClick={() => { setOpen(false); onClose?.(); }}
             className="text-muted hover:text-text transition-colors"
             aria-label="Close help"
@@ -92,6 +115,10 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
               <div className="flex items-center justify-between">
                 <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">?</kbd>
                 <span className="text-text">Show this help menu</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">A</kbd>
+                <span className="text-text">Open Drafts / Library</span>
               </div>
             </div>
           </div>
@@ -139,6 +166,10 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
               <li className="flex items-start">
                 <span className="mr-2">•</span>
                 <span>Enable reduced motion in settings for accessibility</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Uppercase shortcuts like F, T, B, A and ? are active when not typing</span>
               </li>
             </ul>
             {/* Live demo line */}

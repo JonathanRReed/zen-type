@@ -1,45 +1,51 @@
 import { useEffect } from 'react';
 
-// Adds a short fade/slide transition when navigating between pages
-// Respects prefers-reduced-motion
+// Minimal navigation smoother: use View Transitions if available; otherwise immediate nav.
+// Avoids double-load look by not applying any enter animations on arrival.
 const ClientTransitions: React.FC = () => {
   useEffect(() => {
     const reduceMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (!reduceMotion) {
-      let navLock = false;
-      document.documentElement.classList.add('page-enter');
-      const t = window.setTimeout(() => {
-        document.documentElement.classList.remove('page-enter');
-      }, 200);
+    const navigate = (to: string) => {
+      const go = () => { window.location.href = to; };
+      // @ts-ignore experimental API
+      const vt = (document as any).startViewTransition;
+      if (!reduceMotion && typeof vt === 'function') {
+        // @ts-ignore
+        vt(go);
+      } else {
+        // Fallback: immediate navigation, no extra CSS animations
+        go();
+      }
+    };
 
-      const onClick = (e: MouseEvent) => {
-        const target = e.target as HTMLElement | null;
-        if (!target) return;
-        // Find nearest anchor
-        const a = target.closest('a') as HTMLAnchorElement | null;
-        if (!a) return;
-        const url = new URL(a.href, window.location.origin);
-        if (url.origin !== window.location.origin) return; // external
-        if (a.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-        // If navigating to same path, do nothing
-        const same = url.pathname + url.search + url.hash === window.location.pathname + window.location.search + window.location.hash;
-        if (same) { e.preventDefault(); return; }
-        // Prevent double nav
-        if (navLock) { e.preventDefault(); return; }
-        e.preventDefault();
-        navLock = true;
-        document.documentElement.classList.add('page-exit');
-        window.setTimeout(() => { window.location.href = url.pathname + url.search + url.hash; }, 200);
-      };
-      document.addEventListener('click', onClick);
-      return () => {
-        document.documentElement.classList.remove('page-enter');
-        document.documentElement.classList.remove('page-exit');
-        window.clearTimeout(t);
-        document.removeEventListener('click', onClick);
-      };
-    }
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const a = target.closest('a') as HTMLAnchorElement | null;
+      if (!a) return;
+      const url = new URL(a.href, window.location.origin);
+      if (url.origin !== window.location.origin) return; // external
+      if (a.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      const same = url.pathname + url.search + url.hash === window.location.pathname + window.location.search + window.location.hash;
+      if (same) { e.preventDefault(); return; }
+      e.preventDefault();
+      navigate(url.pathname + url.search + url.hash);
+    };
+
+    document.addEventListener('click', onClick);
+
+    const onAppNavigate = (e: Event) => {
+      const url = (e as CustomEvent<string>).detail;
+      if (!url) return;
+      navigate(url);
+    };
+    window.addEventListener('app:navigate', onAppNavigate as EventListener);
+
+    return () => {
+      document.removeEventListener('click', onClick);
+      window.removeEventListener('app:navigate', onAppNavigate as EventListener);
+    };
   }, []);
   return null;
 };

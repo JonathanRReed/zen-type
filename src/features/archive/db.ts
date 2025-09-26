@@ -1,5 +1,5 @@
 // IndexedDB storage layer using Dexie for the Archive/Editor system
-import Dexie, { Table } from 'dexie';
+import Dexie, { type Table } from 'dexie';
 import { diffChars } from 'diff';
 
 // Database interfaces
