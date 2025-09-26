@@ -15,7 +15,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "astro": "^5.13.11",
+    "astro": "5.14.1",
     "dexie": "^4.2.0",
     "diff": "^8.0.2",
     "fuse.js": "^7.1.0",
@@ -23,7 +23,7 @@
     "react-compiler-runtime": "^19.1.0-rc.3"
   },
   "devDependencies": {
-    "@astrojs/react": "^4.3.1",
+    "@astrojs/react": "4.4.0",
     "@astrojs/tailwind": "^6.0.2",
     "@tailwindcss/postcss": "^4.1.13",
     "@tailwindcss/typography": "^0.5.19",
