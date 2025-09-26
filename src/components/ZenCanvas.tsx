@@ -46,7 +46,7 @@ interface ZenCanvasProps {
   fontFamily?: string;
   reducedMotion?: boolean;
   maxTokens?: number;
-  onStats?: (stats: { words: number; chars: number; time: number }) => void;
+  onStats?: (stats: { words: number; chars: number; time: number; wpm: number }) => void;
 }
 
 const ZenCanvas: React.FC<ZenCanvasProps> = ({
@@ -612,7 +612,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     // Emit stats every second
     if (now - lastStatsEmitRef.current >= 1000) {
       const elapsedTime = (now - stats.startTime) / 1000;
-      const payload = { words: stats.words, chars: stats.chars, time: Math.floor(elapsedTime) };
+      const minutes = elapsedTime > 0 ? (elapsedTime / 60) : 0;
+      const wpm = minutes > 0 ? Math.round(((stats.chars / 5) || 0) / minutes) : 0;
+      const payload = { words: stats.words, chars: stats.chars, time: Math.floor(elapsedTime), wpm };
       // Optional callback
       if (onStats) onStats(payload);
       // Dispatch global event for StatsBar and others
@@ -795,6 +797,10 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const typingFontVar = css.getPropertyValue('--typing-font');
       if (typingFontVar) {
         document.documentElement.style.setProperty('--typing-font', typingFontVar);
+      }
+      const uiFontVar = css.getPropertyValue('--ui-font');
+      if (uiFontVar) {
+        document.documentElement.style.setProperty('--ui-font', uiFontVar);
       }
     };
 

@@ -13,6 +13,12 @@ const ThemeToggle: React.FC = () => {
     setTheme(settings.theme);
     applyTheme(settings.theme);
 
+    const themeChangedTimer = window.setTimeout(() => {
+      try {
+        window.dispatchEvent(new CustomEvent('themeChanged', { detail: settings.theme }));
+      } catch {}
+    }, 0);
+
     const updateMotionAttr = (reduced: boolean) => {
       root.setAttribute('data-motion', reduced ? 'off' : 'on');
     };
@@ -44,6 +50,7 @@ const ThemeToggle: React.FC = () => {
 
     window.addEventListener('settingsChanged', onSettings as EventListener);
     return () => {
+      clearTimeout(themeChangedTimer);
       window.removeEventListener('settingsChanged', onSettings as EventListener);
       if (typeof media.removeEventListener === 'function') {
         media.removeEventListener('change', onMediaChange);

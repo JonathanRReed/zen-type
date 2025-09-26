@@ -69,6 +69,7 @@
   --theme-gradient-center-y: 50%;
   --theme-hue-shift: 0deg;
   --typing-font: 'Nebula Sans', 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --ui-font: 'Nebula Sans', 'Inter', 'Manrope', 'Space Grotesk', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 @property --blur {
@@ -91,7 +92,7 @@ html {
 body {
   background: var(--theme-gradient, var(--rp-base));
   color: var(--rp-text);
-  font-family: theme('fontFamily.sans');
+  font-family: var(--ui-font);
   margin: 0;
   padding: 0;
   min-height: 100vh;

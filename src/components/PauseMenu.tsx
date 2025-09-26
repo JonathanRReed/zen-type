@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getSettings, saveSettings, getStats, updateStats, updateStreak, type Settings, FONT_OPTIONS, applySettingsSideEffects } from '../utils/storage';
+import { getSettings, saveSettings, getStats, updateStats, updateStreak, type Settings, FONT_OPTIONS, applySettingsSideEffects, DEFAULT_STATS_BAR_METRICS, type StatsBarMetricKey } from '../utils/storage';
 import { SettingsPanel } from './SettingsPanel';
 import { AboutPanel } from './AboutPanel';
 
@@ -15,6 +15,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
   const [settings, setSettings] = useState<Settings>(getSettings());
   const [stats, setStats] = useState(getStats());
   const [markers, setMarkers] = useState<number[]>([]);
+  const [statsMetricMode, setStatsMetricMode] = useState<'zen' | 'quote'>('zen');
 
   const closeMenu = useCallback(() => {
     setOpen(false);
@@ -55,13 +56,15 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
       if (detail !== false) {
         // Close other overlays when opening pause
         try { window.dispatchEvent(new CustomEvent('toggleHelp', { detail: false })); } catch {}
-        setSettings(getSettings());
+        const nextSettings = getSettings();
+        setSettings(nextSettings);
+        setStatsMetricMode(_mode);
         setStats(getStats());
       }
     };
     window.addEventListener('togglePause', handler as EventListener);
     return () => window.removeEventListener('togglePause', handler as EventListener);
-  }, []);
+  }, [_mode]);
 
   // Listen for session markers updates
   useEffect(() => {
@@ -198,6 +201,77 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                   ))}
                 </select>
               </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted/80 font-sans">Stats metrics</span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setStatsMetricMode('zen')}
+                      className={`px-3 py-1 text-xs rounded-lg border transition-colors ${statsMetricMode === 'zen' ? 'border-foam/50 text-foam bg-foam/10' : 'border-muted/20 text-muted hover:border-muted/40'}`}
+                    >
+                      Zen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatsMetricMode('quote')}
+                      className={`px-3 py-1 text-xs rounded-lg border transition-colors ${statsMetricMode === 'quote' ? 'border-foam/50 text-foam bg-foam/10' : 'border-muted/20 text-muted hover:border-muted/40'}`}
+                    >
+                      Quote
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 rounded-xl border border-muted/20 bg-surface/60 p-3">
+                  {DEFAULT_STATS_BAR_METRICS[statsMetricMode].map(metric => {
+                    const metricsForMode = settings.statsBarMetrics?.[statsMetricMode] ?? DEFAULT_STATS_BAR_METRICS[statsMetricMode];
+                    const checked = metricsForMode.includes(metric);
+                    const disabled = checked && metricsForMode.length === 1;
+                    const labelMap: Record<StatsBarMetricKey, string> = {
+                      time: 'Time elapsed',
+                      words: 'Words typed',
+                      wpm: 'Words per minute',
+                      accuracy: 'Accuracy',
+                    };
+                    return (
+                      <label key={metric} className="flex items-center justify-between text-sm text-text">
+                        <span>{labelMap[metric]}</span>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={disabled || (statsMetricMode === 'zen' && metric === 'accuracy')}
+                          onChange={() => {
+                            setSettings(prev => {
+                              const base = prev.statsBarMetrics?.[statsMetricMode] ?? DEFAULT_STATS_BAR_METRICS[statsMetricMode];
+                              const hasMetric = base.includes(metric);
+                              if (hasMetric && base.length === 1) {
+                                return prev;
+                              }
+                              const baseOrder = DEFAULT_STATS_BAR_METRICS[statsMetricMode];
+                              const nextMetrics = hasMetric
+                                ? base.filter(item => item !== metric)
+                                : [...base, metric].sort((a, b) => baseOrder.indexOf(a) - baseOrder.indexOf(b));
+                              const nextSettings = {
+                                ...prev,
+                                statsBarMetrics: {
+                                  zen: [...(prev.statsBarMetrics?.zen ?? DEFAULT_STATS_BAR_METRICS.zen)],
+                                  quote: [...(prev.statsBarMetrics?.quote ?? DEFAULT_STATS_BAR_METRICS.quote)],
+                                  [statsMetricMode]: nextMetrics,
+                                },
+                              } as Settings;
+                              saveSettings(nextSettings);
+                              window.dispatchEvent(new CustomEvent('settingsChanged', { detail: nextSettings }));
+                              return nextSettings;
+                            });
+                          }}
+                          className="w-4 h-4 accent-iris"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             {/* Quick stats */}
@@ -245,9 +319,11 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
           <SettingsPanel
             settings={settings}
             onSettingChange={(key, value) => {
-              const next = { ...settings, [key]: value } as Settings;
-              setSettings(next);
-              saveSettings(next);
+              setSettings(prev => {
+                const next = { ...prev, [key]: value } as Settings;
+                saveSettings(next);
+                return next;
+              });
             }}
             onClose={() => setShowSettings(false)}
           />
