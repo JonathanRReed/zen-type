@@ -23,7 +23,16 @@ module.exports = {
         soft: "var(--blur)"
       },
       fontFamily: {
-        sans: ["Nebula Sans", "Inter", "system-ui", "sans-serif"],
+        sans: [
+          "var(--ui-font)",
+          "Nebula Sans",
+          "Inter",
+          "Manrope",
+          "Space Grotesk",
+          "Roboto",
+          "system-ui",
+          "sans-serif"
+        ],
         mono: [
           "var(--typing-font)",
           "JetBrains Mono",

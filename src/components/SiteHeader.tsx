@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ThemeToggle from './ThemeToggle';
-import { getSettings, saveSettings, type Settings, getFontStack } from '../utils/storage';
+import { getSettings, saveSettings, type Settings, syncTypingFont, applySettingsSideEffects } from '../utils/storage';
 
 interface SiteHeaderProps {
   mode: 'landing' | 'zen' | 'quote';
@@ -19,7 +19,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
         setSettings(s);
         setAutoNext(!!s.autoAdvanceQuotes);
         if (s.fontFamily) {
-          document.documentElement.style.setProperty('--typing-font', getFontStack(s.fontFamily));
+          syncTypingFont(s.fontFamily);
         }
       } catch {}
     };
@@ -30,7 +30,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   useEffect(() => {
     const initial = getSettings().fontFamily;
     if (initial) {
-      document.documentElement.style.setProperty('--typing-font', getFontStack(initial));
+      syncTypingFont(initial);
     }
   }, []);
 
@@ -58,19 +58,29 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   }, []);
 
   const _updateSetting = (key: keyof Settings, value: any) => {
-    const next = { ...settings, [key]: value } as Settings;
-    setSettings(next);
-    try { saveSettings(next); } catch {}
-    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+    setSettings(prev => {
+      const next = { ...prev, [key]: value } as Settings;
+      try { saveSettings(next); } catch {}
+      applySettingsSideEffects({ [key]: value } as Partial<Settings>, next);
+      window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+      return next;
+    });
   };
 
   const handleAutoNextToggle = (checked: boolean) => {
     setAutoNext(checked);
     // Ensure immediate advance by default when toggled on
-    const next = { ...settings, autoAdvanceQuotes: checked, autoAdvanceDelayMs: checked ? 0 : (settings.autoAdvanceDelayMs ?? 0) } as Settings;
-    setSettings(next);
-    try { saveSettings(next); } catch {}
-    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+    setSettings(prev => {
+      const patch: Partial<Settings> = {
+        autoAdvanceQuotes: checked,
+        autoAdvanceDelayMs: checked ? 0 : (prev.autoAdvanceDelayMs ?? 0),
+      };
+      const next = { ...prev, ...patch } as Settings;
+      try { saveSettings(next); } catch {}
+      applySettingsSideEffects(patch, next);
+      window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+      return next;
+    });
   };
 
   return (

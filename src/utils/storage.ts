@@ -26,7 +26,18 @@ export function setJSON(key: string, value: any): void {
   }
 }
 
-export const FONT_OPTIONS = ['Nebula Sans', 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro'] as const;
+export const FONT_OPTIONS = [
+  'Nebula Sans',
+  'JetBrains Mono',
+  'Fira Code',
+  'IBM Plex Mono',
+  'Source Code Pro',
+  'Inter',
+  'Manrope',
+  'Space Grotesk',
+  'Roboto',
+  'Lato'
+] as const;
 export type FontOption = typeof FONT_OPTIONS[number];
 
 const FONT_STACKS: Record<FontOption, string> = {
@@ -35,25 +46,41 @@ const FONT_STACKS: Record<FontOption, string> = {
   'Fira Code': "'Fira Code', 'JetBrains Mono', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   'IBM Plex Mono': "'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   'Source Code Pro': "'Source Code Pro', 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  'Inter': "'Inter', 'Manrope', 'Space Grotesk', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+  'Manrope': "'Manrope', 'Inter', 'Space Grotesk', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+  'Space Grotesk': "'Space Grotesk', 'Manrope', 'Inter', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+  'Roboto': "'Roboto', 'Inter', 'Manrope', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+  'Lato': "'Lato', 'Inter', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
 };
 
 export function getFontStack(font: FontOption): string {
-  return FONT_STACKS[font] ?? FONT_STACKS['JetBrains Mono'];
+  return FONT_STACKS[font] ?? FONT_STACKS['Nebula Sans'];
 }
 
 export function syncTypingFont(font: FontOption): void {
   if (typeof document === 'undefined') return;
-  document.documentElement.style.setProperty('--typing-font', getFontStack(font));
+  const stack = getFontStack(font);
+  document.documentElement.style.setProperty('--typing-font', stack);
+  document.documentElement.style.setProperty('--ui-font', stack);
 
   const fonts = (document as any).fonts;
   if (fonts?.load) {
     const family = font.replace(/"/g, '\\"');
-    const weights = ['400', '600', '700'];
+    const weights = ['400', '500', '600', '700'];
     for (const weight of weights) {
       void fonts.load(`${weight} 1rem "${family}"`).catch(() => {});
     }
   }
 }
+
+export type StatsBarMetricKey = 'time' | 'words' | 'wpm' | 'accuracy';
+
+export const DEFAULT_STATS_BAR_METRICS: Readonly<Record<'zen' | 'quote', StatsBarMetricKey[]>> = {
+  zen: ['time', 'words', 'wpm'],
+  quote: ['time', 'words', 'wpm', 'accuracy'],
+};
+
+const ALLOWED_STATS_BAR_METRICS: readonly StatsBarMetricKey[] = ['time', 'words', 'wpm', 'accuracy'];
 
 export function applySettingsSideEffects(patch: Partial<Settings>, next: Settings, options?: { broadcast?: boolean }): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -110,6 +137,7 @@ export interface Settings {
   ghostWindowMin: number;   // rolling ghost buffer window minutes
   // Theme
   themeShiftLocked?: boolean; // lock ambient theme shift
+  statsBarMetrics?: Partial<Record<'zen' | 'quote', StatsBarMetricKey[]>>;
 }
 
 export interface Stats {
@@ -184,6 +212,10 @@ export const DEFAULT_SETTINGS: Settings = {
   markersEveryMin: 2,
   ghostWindowMin: 5,
   themeShiftLocked: false,
+  statsBarMetrics: {
+    zen: [...DEFAULT_STATS_BAR_METRICS.zen],
+    quote: [...DEFAULT_STATS_BAR_METRICS.quote],
+  },
 };
 
 export const DEFAULT_STATS: Stats = {
@@ -214,6 +246,21 @@ export function getSettings(): Settings {
   if (!normalized.fontFamily || !FONT_OPTIONS.includes(normalized.fontFamily)) {
     normalized.fontFamily = DEFAULT_SETTINGS.fontFamily;
   }
+
+  const sanitizeMetrics = (mode: 'zen' | 'quote', metrics?: StatsBarMetricKey[]): StatsBarMetricKey[] => {
+    const allowedForMode = DEFAULT_STATS_BAR_METRICS[mode];
+    const list = (metrics && Array.isArray(metrics) ? metrics : []).filter((key): key is StatsBarMetricKey =>
+      (ALLOWED_STATS_BAR_METRICS as readonly string[]).includes(key)
+    );
+    const unique = Array.from(new Set(list.filter(key => allowedForMode.includes(key))));
+    return unique.length > 0 ? unique : [...DEFAULT_STATS_BAR_METRICS[mode]];
+  };
+
+  const rawMetrics = (raw as Settings | undefined)?.statsBarMetrics;
+  normalized.statsBarMetrics = {
+    zen: sanitizeMetrics('zen', rawMetrics?.zen),
+    quote: sanitizeMetrics('quote', rawMetrics?.quote),
+  };
 
   return normalized;
 }
