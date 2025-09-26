@@ -71,6 +71,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const firefliesRef = useRef<Firefly[]>([]);
   const lastLeafSpawnRef = useRef<number>(0);
   const lastBubbleSpawnRef = useRef<number>(0);
+  const mediaQueryRef = useRef<MediaQueryList | null>(null);
+  const forcedReducedRef = useRef<boolean>(reducedMotion);
   // Back buffer for rendering (OffscreenCanvas if available)
   const backCanvasRef = useRef<OffscreenCanvas | HTMLCanvasElement | null>(null);
   const backCtxRef = useRef<OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null>(null);
@@ -96,14 +98,51 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
   // Initialize reduced-motion from settings and media query
   useEffect(() => {
+    forcedReducedRef.current = reducedMotion;
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    let media: MediaQueryList | null = null;
+
+    const handleMediaChange = (event: MediaQueryListEvent) => {
+      const settings = settingsRef.current;
+      const shouldReduce = forcedReducedRef.current || !!(settings?.reducedMotion) || event.matches;
+      setRm(shouldReduce);
+    };
+
     try {
       const settings = getSettings();
       settingsRef.current = settings;
-      const media = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      setRm(reducedMotion || settings.reducedMotion || media);
+      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+        media = window.matchMedia('(prefers-reduced-motion: reduce)');
+        mediaQueryRef.current = media;
+        const initialReduce = forcedReducedRef.current || !!settings.reducedMotion || media.matches;
+        setRm(initialReduce);
+
+        if (typeof media.addEventListener === 'function') {
+          media.addEventListener('change', handleMediaChange);
+        } else if (typeof media.addListener === 'function') {
+          media.addListener(handleMediaChange);
+        }
+      } else {
+        setRm(forcedReducedRef.current || !!settings.reducedMotion);
+        mediaQueryRef.current = null;
+      }
     } catch {
-      setRm(reducedMotion);
+      setRm(forcedReducedRef.current);
     }
+
+    return () => {
+      if (!media) return;
+      if (typeof media.removeEventListener === 'function') {
+        media.removeEventListener('change', handleMediaChange);
+      } else if (typeof media.removeListener === 'function') {
+        media.removeListener(handleMediaChange);
+      }
+      if (mediaQueryRef.current === media) {
+        mediaQueryRef.current = null;
+      }
+    };
   }, [reducedMotion]);
 
   // Archive persistence: create entry on first user input after mount, autosave periodically, finalize on unmount or event
@@ -148,6 +187,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     const onSettings = (e: Event) => {
       const s = (e as CustomEvent).detail as Settings;
       settingsRef.current = s;
+      const mediaMatches = mediaQueryRef.current?.matches ?? false;
+      const shouldReduce = forcedReducedRef.current || !!s.reducedMotion || mediaMatches;
+      setRm(shouldReduce);
     };
     const onToggleBreath = () => {
       const s = settingsRef.current ?? getSettings();

@@ -6,6 +6,7 @@ type Theme = 'Void' | 'Forest' | 'Ocean' | 'Cosmic';
 const ThemeToggle: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('Void');
   const [isOpen, setIsOpen] = useState(false);
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -13,29 +14,36 @@ const ThemeToggle: React.FC = () => {
     setTheme(settings.theme);
     applyTheme(settings.theme);
 
-    const themeChangedTimer = window.setTimeout(() => {
+    let themeChangedTimer: number | null = window.setTimeout(() => {
       try {
         window.dispatchEvent(new CustomEvent('themeChanged', { detail: settings.theme }));
       } catch {}
     }, 0);
 
-    const updateMotionAttr = (reduced: boolean) => {
+    const syncMotion = (reduced: boolean) => {
       root.setAttribute('data-motion', reduced ? 'off' : 'on');
+      setReduceMotionEnabled(reduced);
     };
 
-    // Initialize data-motion from settings and system preference
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    updateMotionAttr(settings.reducedMotion || media.matches);
+    let media: MediaQueryList | null = null;
+    if (typeof window.matchMedia === 'function') {
+      media = window.matchMedia('(prefers-reduced-motion: reduce)');
+      syncMotion(!!settings.reducedMotion || media.matches);
+    } else {
+      syncMotion(!!settings.reducedMotion);
+    }
 
     const onMediaChange = (e: MediaQueryListEvent) => {
       const s = getSettings();
-      updateMotionAttr(s.reducedMotion || e.matches);
+      syncMotion(!!s.reducedMotion || e.matches);
     };
 
-    if (typeof media.addEventListener === 'function') {
-      media.addEventListener('change', onMediaChange);
-    } else {
-      media.addListener(onMediaChange);
+    if (media) {
+      if (typeof media.addEventListener === 'function') {
+        media.addEventListener('change', onMediaChange);
+      } else if (typeof media.addListener === 'function') {
+        media.addListener(onMediaChange);
+      }
     }
 
     // Listen for external settings changes
@@ -45,17 +53,22 @@ const ThemeToggle: React.FC = () => {
         setTheme(s.theme as Theme);
         applyTheme(s.theme as Theme);
       }
-      updateMotionAttr(!!s.reducedMotion || media.matches);
+      const mediaMatches = media?.matches ?? false;
+      syncMotion(!!s.reducedMotion || mediaMatches);
     };
 
     window.addEventListener('settingsChanged', onSettings as EventListener);
     return () => {
-      clearTimeout(themeChangedTimer);
+      if (themeChangedTimer !== null) {
+        clearTimeout(themeChangedTimer);
+      }
       window.removeEventListener('settingsChanged', onSettings as EventListener);
-      if (typeof media.removeEventListener === 'function') {
-        media.removeEventListener('change', onMediaChange);
-      } else {
-        media.removeListener(onMediaChange);
+      if (media) {
+        if (typeof media.removeEventListener === 'function') {
+          media.removeEventListener('change', onMediaChange);
+        } else if (typeof media.removeListener === 'function') {
+          media.removeListener(onMediaChange);
+        }
       }
     };
   }, []);
@@ -117,9 +130,23 @@ const ThemeToggle: React.FC = () => {
       root.style.setProperty('--theme-hue-shift', '0deg');
     };
 
+    const stopShift = () => {
+      if (interval !== null) {
+        clearInterval(interval);
+        interval = null;
+      }
+      resetGradientHelpers();
+    };
+
+    const isMotionDisabled = () => reduceMotionEnabled || motionQuery.matches;
+
     const startShift = () => {
-      if (interval !== null) return;
+      if (interval !== null || isMotionDisabled()) return;
       interval = window.setInterval(() => {
+        if (isMotionDisabled()) {
+          stopShift();
+          return;
+        }
         const s = getSettings();
         if (s.themeShiftLocked) return;
         tick = (tick + 1) % 90;
@@ -149,43 +176,34 @@ const ThemeToggle: React.FC = () => {
       }, 1000);
     };
 
-    const stopShift = () => {
-      if (interval !== null) {
-        clearInterval(interval);
-        interval = null;
-      }
-      resetGradientHelpers();
-    };
-
-    if (!motionQuery.matches) {
-      startShift();
+    if (isMotionDisabled()) {
+      stopShift();
     } else {
-      resetGradientHelpers();
+      startShift();
     }
 
     const handleMotionChange = (event: MediaQueryListEvent) => {
-      if (event.matches) {
+      if (event.matches || reduceMotionEnabled) {
         stopShift();
       } else {
         startShift();
       }
     };
 
+    let removeMotionListener: (() => void) | undefined;
     if (typeof motionQuery.addEventListener === 'function') {
       motionQuery.addEventListener('change', handleMotionChange);
-    } else {
+      removeMotionListener = () => motionQuery.removeEventListener('change', handleMotionChange);
+    } else if (typeof motionQuery.addListener === 'function') {
       motionQuery.addListener(handleMotionChange);
+      removeMotionListener = () => motionQuery.removeListener(handleMotionChange);
     }
 
     return () => {
       stopShift();
-      if (typeof motionQuery.removeEventListener === 'function') {
-        motionQuery.removeEventListener('change', handleMotionChange);
-      } else {
-        motionQuery.removeListener(handleMotionChange);
-      }
+      removeMotionListener?.();
     };
-  }, [theme]);
+  }, [theme, reduceMotionEnabled]);
 
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);
