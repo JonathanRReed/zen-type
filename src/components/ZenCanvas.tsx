@@ -790,12 +790,23 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     };
 
     handleResize();
+    const updateFont = () => {
+      const css = getComputedStyle(document.documentElement);
+      const typingFontVar = css.getPropertyValue('--typing-font');
+      if (typingFontVar) {
+        document.documentElement.style.setProperty('--typing-font', typingFontVar);
+      }
+    };
+
+    handleResize();
     window.addEventListener('resize', handleResize);
     window.addEventListener('themeChanged', regenerateThemeParticles as EventListener);
+    window.addEventListener('fontChanged', updateFont);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('themeChanged', regenerateThemeParticles as EventListener);
+      window.removeEventListener('fontChanged', updateFont);
     };
   }, []);
 

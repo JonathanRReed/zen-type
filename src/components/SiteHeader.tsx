@@ -23,6 +23,10 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
         const s = (e as CustomEvent).detail as Settings;
         setSettings(s);
         setAutoNext(!!s.autoAdvanceQuotes);
+        if (s.fontFamily) {
+          setFontFamily(s.fontFamily);
+          document.documentElement.style.setProperty('--typing-font', getFontStack(s.fontFamily));
+        }
       } catch {}
     };
     window.addEventListener('settingsChanged', onSettings as EventListener);
@@ -31,6 +35,9 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
 
   useEffect(() => {
     setHasPopover(detectPopoverSupport());
+    const initial = getSettings().fontFamily ?? FONT_OPTIONS[0];
+    setFontFamily(initial);
+    document.documentElement.style.setProperty('--typing-font', getFontStack(initial));
   }, []);
 
   useEffect(() => {
