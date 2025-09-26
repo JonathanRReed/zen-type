@@ -10,6 +10,15 @@ const SiteFooter: React.FC = () => {
           <span className="text-muted/50">•</span>
           <a
             className="text-iris hover:text-foam transition-colors"
+            href="https://jonathanrreed.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Website
+          </a>
+          <span className="text-muted/50">•</span>
+          <a
+            className="text-iris hover:text-foam transition-colors"
             href="https://bsky.app/profile/thereedy.bsky.social"
             target="_blank"
             rel="noopener noreferrer"

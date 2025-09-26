@@ -14,7 +14,16 @@ interface Token {
   birth: number;
 }
 
-interface Star { x: number; y: number; r: number; a: number; twinkle?: number; }
+interface Star {
+  x: number;
+  y: number;
+  r: number;
+  a: number;
+  color: string;
+  twinkle: number;
+  speed: number;
+  amp: number;
+}
 interface Leaf { x: number; y: number; vx: number; vy: number; size: number; a: number; age: number; rot: number; rotSpeed: number; }
 interface Bubble { x: number; y: number; vy: number; r: number; a: number; wobble: number; }
 
@@ -419,13 +428,10 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     if (isCosmic && !perfMode && starsRef.current.length) {
       ctx.save();
       for (const s of starsRef.current) {
-        // Update twinkle phase
-        if (s.twinkle !== undefined) {
-          s.twinkle += 0.02;
-        }
-        const twinkleFactor = s.twinkle ? (0.7 + 0.3 * Math.sin(s.twinkle)) : 1;
-        ctx.globalAlpha = s.a * twinkleFactor;
-        ctx.fillStyle = '#ffffff';
+        s.twinkle += s.speed;
+        const twinkleFactor = 1 - s.amp + s.amp * (1 + Math.sin(s.twinkle)) / 2;
+        ctx.globalAlpha = Math.max(0.05, s.a * twinkleFactor);
+        ctx.fillStyle = s.color;
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fill();
@@ -609,16 +615,30 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       bubblesRef.current = [];
       
       if (isCosmic && !perfMode) {
-        // Fewer, brighter stars that twinkle
-        const count = Math.floor((window.innerWidth * window.innerHeight) / 20000);
+        const css = getComputedStyle(document.documentElement);
+        const palette = [
+          (css.getPropertyValue('--rp-text') || '#e0def4').trim(),
+          (css.getPropertyValue('--rp-foam') || '#9ccfd8').trim(),
+          (css.getPropertyValue('--rp-gold') || '#f6c177').trim(),
+          (css.getPropertyValue('--rp-iris') || '#c4a7e7').trim(),
+        ];
+        const area = window.innerWidth * window.innerHeight;
+        const count = Math.min(220, Math.max(60, Math.floor(area / 14000)));
         const stars: Star[] = [];
         for (let i = 0; i < count; i++) {
+          const color = palette[Math.floor(Math.random() * palette.length)];
+          const radius = 0.6 + Math.random() * 1.8;
+          const baseAlpha = 0.25 + Math.random() * 0.55;
+          const amp = 0.25 + Math.random() * 0.4;
           stars.push({
             x: Math.random() * window.innerWidth,
             y: Math.random() * window.innerHeight,
-            r: Math.random() * 2 + 0.5,
-            a: Math.random() * 0.5 + 0.3,
-            twinkle: Math.random() * Math.PI * 2
+            r: radius,
+            a: baseAlpha,
+            color,
+            twinkle: Math.random() * Math.PI * 2,
+            speed: 0.008 + Math.random() * 0.02,
+            amp,
           });
         }
         starsRef.current = stars;

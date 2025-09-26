@@ -587,6 +587,37 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen = false, onClose, onReset,
                   <div><kbd className="px-2 py-1 bg-surface rounded">T</kbd> Toggle stats</div>
                 </div>
               </div>
+              <div className="pt-4 border-t border-muted/20 text-xs text-muted space-y-2">
+                <div className="uppercase tracking-wider text-muted/70">Made by Jonathan Reed</div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <a
+                    className="text-iris hover:text-foam transition-colors"
+                    href="https://jonathanrreed.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Website
+                  </a>
+                  <span className="text-muted/50">•</span>
+                  <a
+                    className="text-iris hover:text-foam transition-colors"
+                    href="https://bsky.app/profile/thereedy.bsky.social"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Bluesky
+                  </a>
+                  <span className="text-muted/50">•</span>
+                  <a
+                    className="text-iris hover:text-foam transition-colors"
+                    href="https://www.linkedin.com/in/jonathanrreed0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    LinkedIn
+                  </a>
+                </div>
+              </div>
             </div>
           </>
         ) : null}
