@@ -30,16 +30,16 @@ import ErrorBoundary from '../components/ErrorBoundary';
 			<!-- Skip to main content link for accessibility -->
 			<a
 				href="#zen-app"
-				className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-iris focus:text-base focus:rounded-lg focus:shadow-lg"
+				class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-iris focus:text-base focus:rounded-lg focus:shadow-lg"
 			>
 				Skip to main content
 			</a>
-			<div id="zen-app" className="relative w-full h-screen overflow-hidden">
+			<div id="zen-app" class="relative w-full min-h-screen overflow-hidden">
 				<SiteHeader client:load mode="zen" />
 
 				<!-- Main canvas -->
 				<!-- Theme background layers (behind tokens) -->
-				<div class="pointer-events-none absolute inset-0 z-0 theme-layer"></div>
+				<div class="pointer-events-none fixed inset-0 z-0 theme-layer"></div>
 
 				<ZenCanvas 
 					client:load
@@ -96,15 +96,21 @@ import ErrorBoundary from '../components/ErrorBoundary';
 			});
 
 			// Handle pause menu state changes
-			window.addEventListener('togglePause', function(e) {
-				const detail = e.detail;
-				isPaused = typeof detail === 'boolean' ? detail : !isPaused;
-				// Update the pause menu component
-				const pauseMenu = document.querySelector('[data-pause-menu]');
-				if (pauseMenu) {
-					pauseMenu.setAttribute('data-is-open', isPaused.toString());
+			window.addEventListener(
+				'togglePause',
+				function (event) {
+					let detail;
+					if (typeof event === 'object' && event !== null && 'detail' in event) {
+						detail = /** @type {CustomEvent<boolean | undefined>} */ (event).detail;
+					}
+					isPaused = typeof detail === 'boolean' ? detail : !isPaused;
+					// Update the pause menu component
+					const pauseMenu = document.querySelector('[data-pause-menu]');
+					if (pauseMenu) {
+						pauseMenu.setAttribute('data-is-open', isPaused.toString());
+					}
 				}
-			});
+			);
 		</script>
 	</body>
 </html>
