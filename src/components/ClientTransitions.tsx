@@ -64,24 +64,66 @@ const ClientTransitions: React.FC = () => {
       initializeWebVitals();
     }
 
+    let isNavigating = false;
+
     const navigateTo = (to: string) => {
+      if (isNavigating) {
+        return;
+      }
+
+      isNavigating = true;
       const go = () => {
         window.location.assign(to);
       };
 
-      root.classList.remove('page-enter');
-      root.classList.add('page-exit');
+      const startExit = () => {
+        root.classList.remove('page-enter');
+        root.classList.add('page-exit');
+      };
 
       if (supportsViewTransition) {
         const currentTheme = root.className
           .split(/\s+/)
           .find(cls => cls.startsWith('theme-')) ?? '';
         if (currentTheme) root.setAttribute('data-transition-theme', currentTheme);
+        startExit();
         runTransition(go);
         return;
       }
 
-      go();
+      const body = document.body;
+
+      if (!body) {
+        startExit();
+        go();
+        return;
+      }
+
+      let fallbackTimeout = 0;
+
+      const cleanup = () => {
+        body.removeEventListener('transitionend', handleTransitionEnd);
+        if (fallbackTimeout) {
+          window.clearTimeout(fallbackTimeout);
+        }
+      };
+
+      const handleTransitionEnd = (event: TransitionEvent) => {
+        if (event.target !== body) return;
+        cleanup();
+        go();
+      };
+
+      body.addEventListener('transitionend', handleTransitionEnd);
+
+      fallbackTimeout = window.setTimeout(() => {
+        cleanup();
+        go();
+      }, 320);
+
+      window.requestAnimationFrame(() => {
+        startExit();
+      });
     };
 
     const onClick = (e: MouseEvent) => {
