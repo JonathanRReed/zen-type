@@ -135,7 +135,11 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   // Load quotes on client and listen for setting changes and manual newQuote requests
   useEffect(() => {
     let mounted = true;
-    loadQuotes().then(arr => { if (mounted) quotesRef.current = arr; });
+    loadQuotes()
+      .then(arr => { if (mounted) quotesRef.current = arr; })
+      .catch(err => {
+        console.error('Failed to load quotes', err);
+      });
     const onSettings = (e: Event) => {
       try {
         const s = (e as CustomEvent).detail as Settings;
@@ -143,21 +147,38 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         setAdvanceDelay(Math.max(0, Number(s.autoAdvanceDelayMs ?? 0)));
       } catch {}
     };
-    const onNew = (e: Event) => {
+    const onNew = async (e: Event) => {
       const d = (e as CustomEvent).detail as { quote?: string; author?: string } | undefined;
-      if (d?.quote) {
-        setActiveQuote(d.quote);
-        setActiveAuthor(d.author);
-      } else {
-        const pool = quotesRef.current;
+      let nextQuote = d?.quote;
+      let nextAuthor = d?.author;
+
+      if (!nextQuote) {
+        let pool = quotesRef.current;
+        if (!pool.length) {
+          try {
+            pool = await loadQuotes();
+            quotesRef.current = pool;
+          } catch (error) {
+            console.error('Failed to refresh quotes', error);
+            pool = [];
+          }
+        }
         if (pool.length) {
           let next = getRandomQuote(pool);
           let guard = 0;
-          while (next.text === activeQuote && guard++ < 5) next = getRandomQuote(pool);
-          setActiveQuote(next.text);
-          setActiveAuthor(next.author);
+          while (next.text === activeQuote && guard++ < 5) {
+            next = getRandomQuote(pool);
+          }
+          nextQuote = next.text;
+          nextAuthor = next.author;
         }
       }
+
+      if (typeof nextQuote === 'string') {
+        setActiveQuote(nextQuote);
+        setActiveAuthor(nextAuthor);
+      }
+
       handleReset();
     };
     window.addEventListener('settingsChanged', onSettings as EventListener);
