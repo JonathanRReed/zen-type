@@ -91,7 +91,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
     }`;
 
   const primaryButtonClass =
-    'group inline-flex items-center gap-2 px-5 h-11 rounded-xl border border-iris/25 bg-[color:var(--rp-surface)]/45 text-sm font-medium text-foam/90 transition-colors shadow-[0_8px_20px_-16px_rgba(102,76,255,0.45)] hover:bg-[color:var(--rp-surface)]/60 hover:border-iris/40 hover:text-foam focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/55';
+    'group inline-flex items-center justify-center gap-2 px-5 h-11 min-w-[10rem] rounded-xl border border-iris/25 bg-[color:var(--rp-surface)]/45 text-sm font-medium text-foam/90 transition-colors shadow-[0_8px_20px_-16px_rgba(102,76,255,0.45)] hover:bg-[color:var(--rp-surface)]/60 hover:border-iris/40 hover:text-foam focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/55';
 
   const utilityIconButtonClass =
     'flex h-10 w-10 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/70';
@@ -177,25 +177,25 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 px-6 py-5 bg-base/80 backdrop-blur-md">
-      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-6">
-        <nav aria-label="Mode toggle" className="flex items-center gap-2">
-          <a
-            href="/zen"
-            aria-current={mode === 'zen' ? 'page' : undefined}
-            className={navLinkClass(mode === 'zen')}
-          >
-            Zen
-          </a>
-          <a
-            href="/quote"
-            aria-current={mode === 'quote' ? 'page' : undefined}
-            className={navLinkClass(mode === 'quote')}
-          >
-            Quote
-          </a>
-        </nav>
+      <div className="flex flex-wrap items-center justify-between gap-4 md:gap-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <nav aria-label="Mode toggle" className="flex items-center gap-2">
+            <a
+              href="/zen"
+              aria-current={mode === 'zen' ? 'page' : undefined}
+              className={navLinkClass(mode === 'zen')}
+            >
+              Zen
+            </a>
+            <a
+              href="/quote"
+              aria-current={mode === 'quote' ? 'page' : undefined}
+              className={navLinkClass(mode === 'quote')}
+            >
+              Quote
+            </a>
+          </nav>
 
-        <div className="flex justify-center">
           {mode === 'zen' && (
             <button
               type="button"
@@ -300,34 +300,46 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2.5">
-          {mode === 'quote' && (
-            <button
-              type="button"
-              className={`${utilityIconButtonClass} ${
-                autoNext
+        <div className="flex items-center gap-2.5 justify-end md:justify-end">
+          <button
+            type="button"
+            className={`${utilityIconButtonClass} ${
+              mode === 'quote'
+                ? autoNext
                   ? 'bg-iris/20 border-iris/50 text-iris shadow-sm'
                   : 'border-muted/30 text-muted hover:text-text hover:border-muted/50'
-              }`}
-              onClick={() => handleAutoNextToggle(!autoNext)}
-              aria-pressed={autoNext}
-              aria-label={autoNext ? 'Disable auto next quotes' : 'Enable auto next quotes'}
-              title={autoNext ? 'Auto Next: On' : 'Auto Next: Off'}
+                : 'invisible pointer-events-none'
+            }`}
+            onClick={() => {
+              if (mode === 'quote') {
+                handleAutoNextToggle(!autoNext);
+              }
+            }}
+            aria-pressed={mode === 'quote' ? autoNext : undefined}
+            aria-label={
+              mode === 'quote'
+                ? autoNext
+                  ? 'Disable auto next quotes'
+                  : 'Enable auto next quotes'
+                : undefined
+            }
+            title={mode === 'quote' ? (autoNext ? 'Auto Next: On' : 'Auto Next: Off') : undefined}
+            tabIndex={mode === 'quote' ? 0 : -1}
+            aria-hidden={mode === 'quote' ? undefined : true}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path d="M5 5L10 10L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M11 5L16 10L11 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="sr-only">Auto next</span>
-            </button>
-          )}
+              <path d="M5 5L10 10L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M11 5L16 10L11 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="sr-only">Auto next</span>
+          </button>
 
           <button
             className="pause-btn"

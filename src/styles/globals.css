@@ -255,8 +255,13 @@ html.high-contrast .pause-btn {
 .pause-btn-icon svg {
   display: block;
   stroke: currentColor;
-  stroke-width: 1.2;
+  stroke-width: 1.5;
   fill: none;
+}
+
+.pause-btn-icon svg * {
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .pause-btn-label {

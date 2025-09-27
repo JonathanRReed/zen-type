@@ -50,7 +50,7 @@ Zen Type is a typing app built with Astro 5 and React 19, themed with the Rosé 
 ### Installation & Dev Server
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/jonathanreed/zen-type.git
 cd zen-type
 
 bun install
@@ -103,7 +103,7 @@ src/
 
 ## License
 
-This project is licensed under the MIT License. See `LICENSE` for details.
+This project is licensed under the MIT License.
 
 ## Acknowledgements
 
@@ -114,5 +114,3 @@ This project is licensed under the MIT License. See `LICENSE` for details.
 - **Bun** for the development runtime
 
 ---
-
-Maintained by the Zen Type team.
