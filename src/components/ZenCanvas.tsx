@@ -114,6 +114,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const archiveDirtyRef = useRef<boolean>(false);
   const archiveTimerRef = useRef<number | null>(null);
   const archiveIdleRef = useRef<number | null>(null);
+  const archiveSuspendedRef = useRef<boolean>(false);
   const styleCacheRef = useRef<StyleCache | null>(null);
   // Markers
   const markersRef = useRef<number[]>([]);
@@ -132,6 +133,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   };
 
   const flushArchive = useCallback(() => {
+    if (archiveSuspendedRef.current) return;
     const id = archiveIdRef.current;
     if (!id || !archiveDirtyRef.current) return;
     const text = transcriptRef.current;
@@ -141,10 +143,14 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     try {
       updateArchiveEntry(id, { text, wordCount: words, charCount: chars });
       archiveDirtyRef.current = false;
-    } catch {}
+    } catch (err) {
+      console.error('[ZenCanvas] Failed to update archive entry', err);
+      archiveSuspendedRef.current = true;
+    }
   }, []);
 
   const finalizeArchive = useCallback(() => {
+    if (archiveSuspendedRef.current) return;
     const id = archiveIdRef.current;
     if (!id) return;
     const text = transcriptRef.current;
@@ -154,10 +160,26 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     try {
       updateArchiveEntry(id, { text, wordCount: words, charCount: chars, endedAt: new Date().toISOString() });
       archiveDirtyRef.current = false;
-    } catch {}
+    } catch (err) {
+      console.error('[ZenCanvas] Failed to finalize archive entry', err);
+      archiveSuspendedRef.current = true;
+    }
+  }, []);
+
+  const trimAmbientParticles = useCallback(() => {
+    if (leavesRef.current.length > 4) {
+      leavesRef.current = leavesRef.current.slice(-4);
+    }
+    if (firefliesRef.current.length > 10) {
+      firefliesRef.current = firefliesRef.current.slice(0, 10);
+    }
+    if (driftRef.current.length > 24) {
+      driftRef.current = driftRef.current.slice(0, 24);
+    }
   }, []);
 
   const scheduleArchivePersist = useCallback(() => {
+    if (archiveSuspendedRef.current) return;
     if (typeof window === 'undefined') return;
     if (archiveTimerRef.current !== null) {
       window.clearTimeout(archiveTimerRef.current);
@@ -180,6 +202,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   }, [flushArchive]);
 
   const markArchiveDirty = useCallback(() => {
+    if (archiveSuspendedRef.current) return;
     archiveDirtyRef.current = true;
     scheduleArchivePersist();
   }, [scheduleArchivePersist]);
@@ -315,6 +338,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         archiveIdRef.current = entry.id;
       } catch (err) {
         console.error('[ZenCanvas] Failed to create archive entry', err);
+        archiveSuspendedRef.current = true;
       }
     }
 
@@ -344,9 +368,10 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     }
 
     // Check if we should commit the word (space or punctuation)
-    if (lastChar === ' ' || /[.,!?;:]/.test(lastChar)) {
+    if (lastChar === ' ' || /[.,!?;:]/.test(lastChar ?? '')) {
       if (currentWord.length > 0) {
-        commitWord(currentWord, lastChar || ' ');
+        const delimiter: string = lastChar ?? ' ';
+        commitWord(currentWord, delimiter);
         setStats(prev => ({
           words: prev.words + 1,
           chars: prev.chars + currentWord.length,
@@ -400,7 +425,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     const laneStyle = s.laneStyle ?? 'soft';
     if (laneStyle !== 'none') {
       const lanes = [canvas.width * 0.25, canvas.width * 0.5, canvas.width * 0.75];
-      const lane = lanes[Math.floor(Math.random() * lanes.length)];
+      const lane = lanes[Math.floor(Math.random() * lanes.length)] ?? canvas.width * 0.5;
       const jitter = laneStyle === 'tight' ? 18 : 40;
       x = lane + (Math.random() * 2 - 1) * jitter;
     }
@@ -430,6 +455,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
   // Animation loop
   const animate = useCallback(() => {
+    if (typeof document !== 'undefined' && document.hidden) {
+      frameTimesRef.current = [];
+      animationFrameRef.current = null;
+      return;
+    }
+
     const canvas = canvasRef.current;
     const frontCtx = canvas?.getContext('2d');
     if (!canvas || !frontCtx) return;
@@ -504,19 +535,28 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const canopyTop = canvas.height * 0.2;
       const canopyBottom = canvas.height * 0.78;
       const targetFireflies = reduced ? 8 : 12;
-      while (firefliesRef.current.length < targetFireflies) {
-        const color = fireflyPalette[Math.floor(Math.random() * fireflyPalette.length)];
-        firefliesRef.current.push({
-          baseX: Math.random() * canvas.width,
-          baseY: canopyBottom - Math.random() * (canopyBottom - canopyTop),
-          ampX: 14 + Math.random() * 18,
-          ampY: 8 + Math.random() * 12,
-          phase: Math.random() * Math.PI * 2,
-          speed: 0.00055 + Math.random() * 0.00032,
-          radius: 1.1 + Math.random() * 1.2,
-          alpha: 0.18 + Math.random() * 0.1,
-          color,
-        });
+      let paletteSize = fireflyPalette.length;
+      if (paletteSize === 0) {
+        firefliesRef.current = [];
+      } else {
+        while (firefliesRef.current.length < targetFireflies) {
+          paletteSize = fireflyPalette.length;
+          if (paletteSize === 0) break;
+          const paletteIndex = Math.min(paletteSize - 1, Math.floor(Math.random() * paletteSize));
+          const candidate = fireflyPalette[paletteIndex];
+          const color: string = typeof candidate === 'string' ? candidate : hexToRgba(rpGold, 0.85);
+          firefliesRef.current.push({
+            baseX: Math.random() * canvas.width,
+            baseY: canopyBottom - Math.random() * (canopyBottom - canopyTop),
+            ampX: 14 + Math.random() * 18,
+            ampY: 8 + Math.random() * 12,
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.00055 + Math.random() * 0.00032,
+            radius: 1.1 + Math.random() * 1.2,
+            alpha: 0.18 + Math.random() * 0.1,
+            color,
+          });
+        }
       }
 
       ctx.save();
@@ -707,11 +747,14 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     if (frames.length > 120) frames.shift();
     if (frames.length > 30) {
       // Approx average FPS
-      const totalDt = frames[frames.length - 1] - frames[0];
+      const first = frames[0] ?? nowMs;
+      const last = frames[frames.length - 1] ?? nowMs;
+      const totalDt = last - first;
       const avgFps = (frames.length - 1) * 1000 / Math.max(1, totalDt);
       if (avgFps < 55 && !perfGuardRef.current) {
         perfGuardRef.current = true;
         dynCapRef.current = 80; // guardrail cap
+        trimAmbientParticles();
       } else if (avgFps > 57 && perfGuardRef.current) {
         perfGuardRef.current = false;
         dynCapRef.current = maxTokens;
@@ -728,7 +771,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       }
       animationFrameRef.current = requestAnimationFrame(animate);
     }
-  }, [stats, fontFamily, rm, onStats, maxTokens, computeStyleCache]);
+  }, [stats, fontFamily, rm, onStats, maxTokens, computeStyleCache, trimAmbientParticles]);
 
   // Start/stop animation based on document visibility
   useEffect(() => {
@@ -793,17 +836,20 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       if (isCosmic && !perfMode) {
         computeStyleCache();
         const paletteSource = styleCacheRef.current ?? FALLBACK_STYLE_CACHE;
-        const palette = [
+        const palette: string[] = [
           paletteSource.rpText,
           paletteSource.rpFoam,
           paletteSource.rpGold,
           paletteSource.rpIris,
         ];
+        const paletteSize = palette.length;
+        const fallbackColor = paletteSource.rpText;
         const area = window.innerWidth * window.innerHeight;
         const count = Math.min(220, Math.max(60, Math.floor(area / 14000)));
         const stars: Star[] = [];
         for (let i = 0; i < count; i++) {
-          const color = palette[Math.floor(Math.random() * palette.length)];
+          const colorIndex = paletteSize > 0 ? Math.floor(Math.random() * paletteSize) : 0;
+          const color = palette[colorIndex] ?? fallbackColor;
           const radius = 0.6 + Math.random() * 1.8;
           const baseAlpha = 0.25 + Math.random() * 0.55;
           const amp = 0.25 + Math.random() * 0.4;

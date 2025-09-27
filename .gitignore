@@ -1,25 +1,39 @@
 # build output
 dist/
-# generated types
 .astro/
+.netlify/
+.vercel/
 
 # dependencies
 node_modules/
+
+# bun
+bun.lockb
 
 # logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
+bun-debug.log*
 
 # environment variables
 .env
-.env.production
+.env.*
+!.env.example
+
+# test coverage
+coverage/
+
+# caches
+.eslintcache
+*.tsbuildinfo
 
 # macOS-specific files
 .DS_Store
 
-# jetbrains setting folder
+# editor settings
 .idea/
-design doc.md
+.vscode/
+*.swp
+# miscpro
