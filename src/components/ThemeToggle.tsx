@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { getSettings, saveSettings, type Settings } from '../utils/storage';
 import { useMotionPreference } from '../hooks/useMotionPreference';
+import IconButton from './IconButton';
 
 type Theme = 'Void' | 'Forest' | 'Ocean' | 'Cosmic';
 
-const ThemeToggle: React.FC = () => {
+interface ThemeToggleProps {
+  className?: string;
+}
+
+const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
   const [theme, setTheme] = useState<Theme>('Void');
   const [isOpen, setIsOpen] = useState(false);
   const { reducedMotion } = useMotionPreference({ syncAttribute: true });
@@ -165,14 +170,14 @@ const ThemeToggle: React.FC = () => {
   const themes: Theme[] = ['Void', 'Forest', 'Ocean', 'Cosmic'];
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="glass px-4 py-2 rounded-lg flex items-center gap-2 
-                   hover:bg-iris/10 transition-all duration-200
-                   text-text text-sm font-sans"
+    <div className={`relative ${className}`.trim()}>
+      <IconButton
+        shape="pill"
+        subtle
+        className="px-4 gap-2 text-sm font-semibold tracking-[0.08em]"
         aria-label="Toggle theme"
         aria-expanded={isOpen}
+        onClick={() => setIsOpen(!isOpen)}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="5"/>
@@ -186,7 +191,7 @@ const ThemeToggle: React.FC = () => {
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
         <span>{theme}</span>
-      </button>
+      </IconButton>
 
       {isOpen && (
         <div className="absolute top-full mt-2 right-0 z-50">
