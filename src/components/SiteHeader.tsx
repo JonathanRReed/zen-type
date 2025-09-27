@@ -96,6 +96,85 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   const utilityIconButtonClass =
     'flex h-10 w-10 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/70';
 
+  const quickSettingIcons = {
+    reducedMotion: (
+      <svg
+        className="h-4 w-4 text-muted"
+        width="18"
+        height="18"
+        viewBox="0 0 18 18"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <path
+          d="M3.5 6.5c1.2 0 1.2 2 2.4 2s1.2-2 2.4-2 1.2 2 2.4 2 1.2-2 2.4-2"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M4.8 11.5c1 .8 2 .8 3 0s2-.8 3 0"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+    highContrast: (
+      <svg
+        className="h-4 w-4 text-muted"
+        width="18"
+        height="18"
+        viewBox="0 0 18 18"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <circle cx="9" cy="9" r="4.2" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M9 4.8v8.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        <path d="M9 4.8a4.2 4.2 0 0 1 0 8.4V4.8Z" fill="currentColor" fillOpacity="0.28" />
+      </svg>
+    ),
+    showStats: (
+      <svg
+        className="h-4 w-4 text-muted"
+        width="18"
+        height="18"
+        viewBox="0 0 18 18"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <path d="M3.5 12.5h11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        <path d="M4.8 12.5V9.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9 12.5V6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M13.2 12.5V8.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    performanceMode: (
+      <svg
+        className="h-4 w-4 text-muted"
+        width="18"
+        height="18"
+        viewBox="0 0 18 18"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <path
+          d="M3 10.5l2.8-3.8 2.1 4.5 2.1-5.4 3.8 7"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  } as const;
+
   return (
     <header className="fixed top-0 left-0 right-0 z-40 px-6 py-5 bg-base/80 backdrop-blur-md">
       <div className="grid grid-cols-[auto_1fr_auto] items-center gap-6">
@@ -252,16 +331,21 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
 
           <button
             className="pause-btn"
-            aria-label="Open pause menu"
+            aria-label="Open settings menu"
             onClick={() => window.dispatchEvent(new CustomEvent('togglePause', { detail: true }))}
           >
             <span className="pause-btn-icon" aria-hidden="true">
-              <svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="1" width="4" height="14" rx="1.5" />
-                <rect x="9" y="1" width="4" height="14" rx="1.5" />
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M7.25 3.75h3.5l0.62 1.74a1 1 0 0 0 .6.6l1.74.62v3.5l-1.74.62a1 1 0 0 0-.6.6l-.62 1.74h-3.5l-.62-1.74a1 1 0 0 0-.6-.6l-1.74-.62v-3.5l1.74-.62a1 1 0 0 0 .6-.6Z"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinejoin="round"
+                />
+                <circle cx="9" cy="9" r="1.9" stroke="currentColor" strokeWidth="1.2" />
               </svg>
             </span>
-            <span className="pause-btn-label">Pause</span>
+            <span className="pause-btn-label">Settings</span>
           </button>
 
           <div ref={quickWrapperRef} className="relative">
@@ -285,13 +369,12 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                 xmlns="http://www.w3.org/2000/svg"
                 aria-hidden="true"
               >
-                <path
-                  d="M7.25 3.75h3.5l0.62 1.74a1 1 0 0 0 .6.6l1.74.62v3.5l-1.74.62a1 1 0 0 0-.6.6l-.62 1.74h-3.5l-.62-1.74a1 1 0 0 0-.6-.6l-1.74-.62v-3.5l1.74-.62a1 1 0 0 0 .6-.6Z"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinejoin="round"
-                />
-                <circle cx="9" cy="9" r="1.9" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M4 5.5h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                <circle cx="7.5" cy="5.5" r="1.6" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M4 9h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                <circle cx="11.5" cy="9" r="1.6" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M4 12.5h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                <circle cx="6.5" cy="12.5" r="1.6" stroke="currentColor" strokeWidth="1.2" />
               </svg>
               <span className="sr-only">Quick settings</span>
             </button>
@@ -304,7 +387,10 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                 <div className="space-y-2">
                   <div className="text-xs uppercase tracking-widest text-muted">Accessibility</div>
                   <label className="flex items-center justify-between gap-3">
-                    <span>Reduced motion</span>
+                    <span className="flex items-center gap-2 text-text">
+                      {quickSettingIcons.reducedMotion}
+                      <span>Reduced motion</span>
+                    </span>
                     <input
                       type="checkbox"
                       checked={!!settings.reducedMotion}
@@ -313,7 +399,10 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                     />
                   </label>
                   <label className="flex items-center justify-between gap-3">
-                    <span>High contrast</span>
+                    <span className="flex items-center gap-2 text-text">
+                      {quickSettingIcons.highContrast}
+                      <span>High contrast</span>
+                    </span>
                     <input
                       type="checkbox"
                       checked={!!settings.highContrast}
@@ -325,7 +414,10 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                 <div className="space-y-2">
                   <div className="text-xs uppercase tracking-widest text-muted">Display</div>
                   <label className="flex items-center justify-between gap-3">
-                    <span>Show stats bar</span>
+                    <span className="flex items-center gap-2 text-text">
+                      {quickSettingIcons.showStats}
+                      <span>Show stats bar</span>
+                    </span>
                     <input
                       type="checkbox"
                       checked={!!settings.showStats}
@@ -334,7 +426,10 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                     />
                   </label>
                   <label className="flex items-center justify-between gap-3">
-                    <span>Performance mode</span>
+                    <span className="flex items-center gap-2 text-text">
+                      {quickSettingIcons.performanceMode}
+                      <span>Performance mode</span>
+                    </span>
                     <input
                       type="checkbox"
                       checked={!!settings.performanceMode}
