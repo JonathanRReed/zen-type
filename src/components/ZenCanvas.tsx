@@ -26,7 +26,6 @@ interface Star {
   amp: number;
 }
 interface Leaf { x: number; y: number; vx: number; vy: number; size: number; a: number; age: number; rot: number; rotSpeed: number; }
-interface Bubble { x: number; y: number; vy: number; r: number; a: number; wobble: number; }
 interface DriftSpeck { x: number; y: number; baseX: number; vy: number; amp: number; phase: number; alpha: number; radius: number; }
 interface Firefly { baseX: number; baseY: number; ampX: number; ampY: number; phase: number; speed: number; radius: number; alpha: number; color: string; }
 
@@ -93,11 +92,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const { reducedMotion: rm } = useMotionPreference({ forced: reducedMotion });
   const starsRef = useRef<Star[]>([]);
   const leavesRef = useRef<Leaf[]>([]);
-  const bubblesRef = useRef<Bubble[]>([]);
   const driftRef = useRef<DriftSpeck[]>([]);
   const firefliesRef = useRef<Firefly[]>([]);
   const lastLeafSpawnRef = useRef<number>(0);
-  const lastBubbleSpawnRef = useRef<number>(0);
   // Back buffer for rendering (OffscreenCanvas if available)
   const backCanvasRef = useRef<OffscreenCanvas | HTMLCanvasElement | null>(null);
   const backCtxRef = useRef<OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D | null>(null);
@@ -445,7 +442,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       computeStyleCache();
     }
     const styleCache = styleCacheRef.current ?? { ...FALLBACK_STYLE_CACHE, typingFont: fontFamily };
-    const { rpText, moss, leaf: leafColor, typingFont, rpFoam, rpPine, rpSurface, rpGold, rpLove } = styleCache;
+    const { rpText, moss, leaf: leafColor, typingFont, rpFoam, rpGold, rpLove } = styleCache;
     const isCosmic = document.documentElement.classList.contains('theme-cosmic');
     const sNow = getSettingsSnapshot();
     const perfMode = !!sNow.performanceMode;
@@ -457,45 +454,45 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     if (isForest && !perfMode) {
       const now = Date.now();
       const reduced = rm;
-      const leafCap = reduced ? 4 : 6;
-      const spawnWindow = reduced ? 14000 : 9000;
+      const leafCap = perfGuardRef.current ? 3 : reduced ? 4 : 6;
+      const spawnWindow = reduced ? 12000 : 8000;
+      const elapsedSinceSpawn = now - lastLeafSpawnRef.current;
+      const spawnDelay = spawnWindow * (0.6 + Math.random() * 0.5);
 
-      if (now - lastLeafSpawnRef.current > (spawnWindow + Math.random() * spawnWindow) && leavesRef.current.length < leafCap) {
-        const size = 11 + Math.random() * 10; // 11–21 px
+      if (elapsedSinceSpawn > spawnDelay && leavesRef.current.length < leafCap) {
+        const size = 12 + Math.random() * 8;
         leavesRef.current.push({
           x: Math.random() * canvas.width,
           y: -size,
-          vx: (Math.random() - 0.5) * 0.12,
-          vy: (4 + Math.random() * 5) / 60, // 4–9 px/s
+          vx: (Math.random() - 0.5) * 0.08,
+          vy: (reduced ? 2.5 : 3.5 + Math.random() * 2.5) / 60,
           size,
-          a: 0.16 + Math.random() * 0.08,
+          a: 0.14 + Math.random() * 0.06,
           age: 0,
           rot: Math.random() * Math.PI * 2,
-          rotSpeed: (Math.random() * 0.08 - 0.04) / 60 // slow rotation rad/frame
+          rotSpeed: (Math.random() * 0.06 - 0.03) / 60
         });
         lastLeafSpawnRef.current = now;
       }
       
-      // Update and draw leaves
       ctx.save();
       const updatedLeaves: Leaf[] = [];
       for (const leaf of leavesRef.current) {
-        leaf.age += 1/60;
+        leaf.age += 1 / 60;
         leaf.rot += leaf.rotSpeed;
-        leaf.x += leaf.vx + Math.sin(leaf.age * 1.4) * 0.4;
+        leaf.x += leaf.vx + Math.sin(leaf.age * 1.05) * 0.32;
         leaf.y += leaf.vy;
-        
-        if (leaf.y < canvas.height + leaf.size && leaf.age < (reduced ? 22 : 36)) {
-          // Draw leaf shape
-          ctx.globalAlpha = leaf.a * Math.max(0, 1 - leaf.age / (reduced ? 22 : 36));
-          const fill = leaf.age < 12 ? moss : hexToRgba(moss, 0.7);
-          ctx.fillStyle = fill;
+        const lifeSpan = reduced ? 24 : 40;
+        if (leaf.y < canvas.height + leaf.size && leaf.age < lifeSpan) {
+          const fade = Math.max(0, 1 - leaf.age / lifeSpan);
+          ctx.globalAlpha = leaf.a * fade;
+          ctx.fillStyle = hexToRgba(moss, leaf.age < 10 ? 0.92 : 0.58);
           ctx.beginPath();
-          ctx.ellipse(leaf.x, leaf.y, leaf.size * 0.5, leaf.size * 0.36, leaf.rot, 0, Math.PI * 2);
+          ctx.ellipse(leaf.x, leaf.y, leaf.size * 0.48, leaf.size * 0.34, leaf.rot, 0, Math.PI * 2);
           ctx.fill();
-          ctx.globalAlpha *= 0.45;
-          ctx.strokeStyle = hexToRgba(leafColor, 0.35);
-          ctx.lineWidth = 0.6;
+          ctx.globalAlpha = Math.min(0.32, leaf.a * 0.4 * fade);
+          ctx.strokeStyle = hexToRgba(leafColor, 0.32);
+          ctx.lineWidth = 0.5;
           ctx.stroke();
           updatedLeaves.push(leaf);
         }
@@ -503,22 +500,21 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       leavesRef.current = updatedLeaves;
       ctx.restore();
 
-      // Fireflies – soft golden pulses
-      const fireflyPalette = [rpGold, rpLove, rpFoam];
-      const canopyTop = canvas.height * 0.18;
-      const canopyBottom = canvas.height * 0.82;
-      const targetFireflies = reduced ? 10 : 16;
+      const fireflyPalette = [hexToRgba(rpGold, 0.85), hexToRgba(rpLove, 0.72), hexToRgba(rpFoam, 0.78)];
+      const canopyTop = canvas.height * 0.2;
+      const canopyBottom = canvas.height * 0.78;
+      const targetFireflies = reduced ? 8 : 12;
       while (firefliesRef.current.length < targetFireflies) {
         const color = fireflyPalette[Math.floor(Math.random() * fireflyPalette.length)];
         firefliesRef.current.push({
           baseX: Math.random() * canvas.width,
           baseY: canopyBottom - Math.random() * (canopyBottom - canopyTop),
-          ampX: 16 + Math.random() * 22,
-          ampY: 10 + Math.random() * 14,
+          ampX: 14 + Math.random() * 18,
+          ampY: 8 + Math.random() * 12,
           phase: Math.random() * Math.PI * 2,
-          speed: 0.00065 + Math.random() * 0.0004,
-          radius: 1.2 + Math.random() * 1.6,
-          alpha: 0.22 + Math.random() * 0.12,
+          speed: 0.00055 + Math.random() * 0.00032,
+          radius: 1.1 + Math.random() * 1.2,
+          alpha: 0.18 + Math.random() * 0.1,
           color,
         });
       }
@@ -528,18 +524,18 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const updatedFireflies: Firefly[] = [];
       for (const firefly of firefliesRef.current) {
         firefly.phase += firefly.speed;
-        firefly.baseY -= reduced ? 0.015 : 0.028;
+        firefly.baseY -= reduced ? 0.01 : 0.02;
         if (firefly.baseY < canopyTop) {
-          firefly.baseY = canopyBottom + Math.random() * 28;
+          firefly.baseY = canopyBottom + Math.random() * 18;
           firefly.baseX = Math.random() * canvas.width;
         }
-        firefly.baseX += (Math.random() - 0.5) * 0.2;
+        firefly.baseX += (Math.random() - 0.5) * 0.16;
         if (firefly.baseX < -20) firefly.baseX = canvas.width + 20;
         if (firefly.baseX > canvas.width + 20) firefly.baseX = -20;
 
-        const x = firefly.baseX + Math.sin(firefly.phase * 2.6) * firefly.ampX;
-        const y = firefly.baseY + Math.cos(firefly.phase * 2.1) * firefly.ampY;
-        const pulse = 0.55 + 0.45 * Math.sin(firefly.phase * 3.4);
+        const x = firefly.baseX + Math.sin(firefly.phase * 2.2) * firefly.ampX;
+        const y = firefly.baseY + Math.cos(firefly.phase * 1.9) * firefly.ampY;
+        const pulse = 0.5 + 0.35 * Math.sin(firefly.phase * 2.8);
         ctx.globalAlpha = firefly.alpha * pulse;
         ctx.fillStyle = firefly.color;
         ctx.beginPath();
@@ -554,70 +550,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     
     // Ocean theme: bubbles and plankton ambience (kept subtle with reduced motion)
     if (isOcean && !perfMode) {
-      const now = Date.now();
       const foam = rpFoam;
-      const pine = rpPine;
-      const surface = rpSurface;
       const reduced = rm;
-
-      const bubbleCap = perfGuardRef.current ? 10 : (reduced ? 12 : 16);
-      const spawnDelay = reduced ? 2000 : 900;
-
-      if (now - lastBubbleSpawnRef.current > (spawnDelay + Math.random() * spawnDelay) && bubblesRef.current.length < bubbleCap) {
-        bubblesRef.current.push({
-          x: Math.random() * canvas.width,
-          y: canvas.height + 12,
-          vy: reduced ? -(1.2 + Math.random() * 1.8) / 60 : -(4.5 + Math.random() * 7) / 60,
-          r: (reduced ? 3.6 : 4.4) + Math.random() * (reduced ? 1.8 : 3.0),
-          a: (reduced ? 0.28 : 0.22) + Math.random() * 0.18,
-          wobble: Math.random() * Math.PI * 2,
-        });
-        lastBubbleSpawnRef.current = now;
-      }
-
-      ctx.save();
-      const updatedBubbles: Bubble[] = [];
-      for (const bubble of bubblesRef.current) {
-        bubble.wobble += reduced ? 0.028 : 0.05;
-        bubble.x += Math.sin(bubble.wobble) * (reduced ? 0.16 : 0.45);
-        bubble.y += bubble.vy;
-
-        if (bubble.y > -24) {
-          ctx.save();
-          ctx.globalAlpha = bubble.a;
-          ctx.fillStyle = hexToRgba(foam, reduced ? 0.42 : 0.28);
-          ctx.beginPath();
-          ctx.arc(bubble.x, bubble.y, bubble.r, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.globalAlpha = Math.min(0.9, bubble.a + 0.25);
-          ctx.lineWidth = 0.85;
-          ctx.strokeStyle = hexToRgba('#ffffff', reduced ? 0.48 : 0.4);
-          ctx.stroke();
-
-          ctx.globalAlpha = Math.min(0.7, bubble.a + 0.2);
-          ctx.fillStyle = hexToRgba('#ffffff', reduced ? 0.45 : 0.35);
-          ctx.beginPath();
-          ctx.arc(bubble.x - bubble.r * 0.35, bubble.y - bubble.r * 0.35, bubble.r * 0.22, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.restore();
-          updatedBubbles.push(bubble);
-        }
-      }
-      bubblesRef.current = updatedBubbles;
-      ctx.restore();
-
-      ctx.save();
-      const t = performance.now() * 0.000015;
-      const highlightShift = 0.12 + 0.05 * Math.sin(t * 0.9);
-      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      grad.addColorStop(0, hexToRgba(foam, 0.28 + highlightShift * 0.3));
-      grad.addColorStop(0.42, hexToRgba(pine, 0.19 + highlightShift * 0.3));
-      grad.addColorStop(1, hexToRgba(surface, 0.08));
-      ctx.globalAlpha = reduced ? 0.34 : 0.5;
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.restore();
 
       const targetSpecks = perfGuardRef.current ? 18 : (reduced ? 22 : 34);
       while (driftRef.current.length < targetSpecks) {
@@ -855,7 +789,6 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       // Reset all theme particles
       starsRef.current = [];
       leavesRef.current = [];
-      bubblesRef.current = [];
       firefliesRef.current = [];
       
       if (isCosmic && !perfMode) {

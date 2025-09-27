@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ThemeToggle from './ThemeToggle';
+import IconButton from './IconButton';
 import { getSettings, saveSettings, type Settings, syncTypingFont, applySettingsSideEffects } from '../utils/storage';
 
 interface SiteHeaderProps {
@@ -92,9 +93,6 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
 
   const primaryButtonClass =
     'group inline-flex items-center justify-center gap-2 px-5 h-11 min-w-[10rem] rounded-xl border border-iris/25 bg-[color:var(--rp-surface)]/45 text-sm font-medium text-foam/90 transition-colors shadow-[0_8px_20px_-16px_rgba(102,76,255,0.45)] hover:bg-[color:var(--rp-surface)]/60 hover:border-iris/40 hover:text-foam focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/55';
-
-  const utilityIconButtonClass =
-    'flex h-10 w-10 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/70';
 
   const quickSettingIcons = {
     reducedMotion: (
@@ -301,73 +299,60 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
         </div>
 
         <div className="flex items-center gap-2.5 justify-end md:justify-end">
-          <button
-            type="button"
-            className={`${utilityIconButtonClass} ${
-              mode === 'quote'
-                ? autoNext
-                  ? 'bg-iris/20 border-iris/50 text-iris shadow-sm'
-                  : 'border-muted/30 text-muted hover:text-text hover:border-muted/50'
-                : 'invisible pointer-events-none'
-            }`}
-            onClick={() => {
-              if (mode === 'quote') {
-                handleAutoNextToggle(!autoNext);
-              }
-            }}
-            aria-pressed={mode === 'quote' ? autoNext : undefined}
-            aria-label={
-              mode === 'quote'
-                ? autoNext
-                  ? 'Disable auto next quotes'
-                  : 'Enable auto next quotes'
-                : undefined
-            }
-            title={mode === 'quote' ? (autoNext ? 'Auto Next: On' : 'Auto Next: Off') : undefined}
-            tabIndex={mode === 'quote' ? 0 : -1}
-            aria-hidden={mode === 'quote' ? undefined : true}
+          {mode === 'quote' && (
+            <IconButton
+              subtle
+              active={autoNext}
+              aria-pressed={autoNext}
+              aria-label={autoNext ? 'Disable auto advance' : 'Enable auto advance'}
+              title={autoNext ? 'Auto Next: On' : 'Auto Next: Off'}
+              onClick={() => handleAutoNextToggle(!autoNext)}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path d="M5 5L10 10L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M11 5L16 10L11 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="sr-only">Auto next</span>
+            </IconButton>
+          )}
+
+          <IconButton
+            shape="pill"
+            subtle
+            className="uppercase tracking-[0.28em] text-[0.7rem] font-semibold px-5"
+            aria-label="Open settings menu"
+            onClick={() => window.dispatchEvent(new CustomEvent('togglePause', { detail: true }))}
           >
             <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
               aria-hidden="true"
             >
-              <path d="M5 5L10 10L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M11 5L16 10L11 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M7.25 3.75h3.5l0.62 1.74a1 1 0 0 0 .6.6l1.74.62v3.5l-1.74.62a1 1 0 0 0-.6.6l-.62 1.74h-3.5l-.62-1.74a1 1 0 0 0-.6-.6l-1.74-.62v-3.5l1.74-.62a1 1 0 0 0 .6-.6Z"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinejoin="round"
+              />
+              <circle cx="9" cy="9" r="1.9" stroke="currentColor" strokeWidth="1.2" />
             </svg>
-            <span className="sr-only">Auto next</span>
-          </button>
-
-          <button
-            className="pause-btn"
-            aria-label="Open settings menu"
-            onClick={() => window.dispatchEvent(new CustomEvent('togglePause', { detail: true }))}
-          >
-            <span className="pause-btn-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M7.25 3.75h3.5l0.62 1.74a1 1 0 0 0 .6.6l1.74.62v3.5l-1.74.62a1 1 0 0 0-.6.6l-.62 1.74h-3.5l-.62-1.74a1 1 0 0 0-.6-.6l-1.74-.62v-3.5l1.74-.62a1 1 0 0 0 .6-.6Z"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinejoin="round"
-                />
-                <circle cx="9" cy="9" r="1.9" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
-            </span>
-            <span className="pause-btn-label">Settings</span>
-          </button>
+            <span>Settings</span>
+          </IconButton>
 
           <div ref={quickWrapperRef} className="relative">
-            <button
-              type="button"
-              className={`${utilityIconButtonClass} ${
-                showQuick
-                  ? 'bg-iris/20 border-iris/50 text-iris shadow-sm'
-                  : 'border-muted/30 text-muted hover:text-text hover:border-muted/50'
-              }`}
+            <IconButton
+              subtle
+              active={showQuick}
               aria-haspopup="menu"
               aria-expanded={showQuick}
               onClick={() => setShowQuick(prev => !prev)}
@@ -389,7 +374,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                 <circle cx="6.5" cy="12.5" r="1.6" stroke="currentColor" strokeWidth="1.2" />
               </svg>
               <span className="sr-only">Quick settings</span>
-            </button>
+            </IconButton>
             {showQuick && (
               <div
                 role="menu"
@@ -454,7 +439,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
             )}
           </div>
 
-          <ThemeToggle />
+          <ThemeToggle className="ml-1" />
         </div>
       </div>
     </header>
