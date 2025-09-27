@@ -42,10 +42,12 @@ export async function loadQuotes(): Promise<Quote[]> {
 
 export function getRandomQuote(quotes: Quote[]): Quote {
   if (quotes.length === 0) {
-    return getFallbackQuotes()[0];
+    const fallbacks = getFallbackQuotes();
+    return fallbacks[0] ?? { id: 'fallback', text: 'The journey of a thousand miles begins with one step.', author: 'Lao Tzu' };
   }
   const randomIndex = Math.floor(Math.random() * quotes.length);
-  return quotes[randomIndex];
+  const quote = quotes[randomIndex];
+  return quote ?? quotes[0] ?? { id: 'fallback', text: 'The journey of a thousand miles begins with one step.', author: 'Lao Tzu' };
 }
 
 export function getFallbackQuotes(): Quote[] {
