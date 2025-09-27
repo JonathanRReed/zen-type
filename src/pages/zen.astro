@@ -43,16 +43,19 @@ import ErrorBoundary from '../components/ErrorBoundary';
 
 				<!-- Main canvas -->
 				<!-- Theme background layers (behind tokens) -->
-				<div class="pointer-events-none fixed inset-0 z-0 theme-layer"></div>
+				<div class="pointer-events-none fixed inset-0 z-0 theme-layer">
+					<div class="forest-rays" aria-hidden="true"></div>
+					<div class="ocean-lights" aria-hidden="true"></div>
+				</div>
 
-				<ZenCanvas 
+				<ZenCanvas
 					client:load
 					fontFamily="JetBrains Mono"
 					maxTokens={160}
 				/>
 
 				<!-- Stats bar -->
-				<StatsBar 
+				<StatsBar
 					client:idle
 					mode="zen"
 					visible={true}
@@ -68,7 +71,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 				/>
 
 				<!-- Help sheet -->
-				<HelpSheet 
+				<HelpSheet
 					client:idle
 					isOpen={false}
 					onClose={() => {}}
