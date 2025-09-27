@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import image from '@astrojs/image';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
 
@@ -13,9 +12,6 @@ export default defineConfig({
     }),
     tailwind({
       applyBaseStyles: false,
-    }),
-    image({
-      serviceEntrypoint: '@astrojs/image/sharp'
     })
   ],
   vite: {

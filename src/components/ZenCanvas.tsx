@@ -702,7 +702,6 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     // Performance guard: monitor FPS and react
     const frames = frameTimesRef.current;
     const nowMs = performance.now();
-    const _prevMs = frames.length ? frames[frames.length - 1] : nowMs;
     frames.push(nowMs);
     // Keep last ~2s (120 frames)
     if (frames.length > 120) frames.shift();
