@@ -118,7 +118,6 @@ const ClientTransitions: React.FC = () => {
       const handleTransitionEnd = (event: TransitionEvent) => {
         if (event.target !== body) return;
         cleanup();
-        go();
       };
 
       body.addEventListener('transitionend', handleTransitionEnd);

@@ -279,13 +279,33 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
         <section>
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">History & Recovery</h3>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3 items-center">
-              <span className="text-text">Markers (min)</span>
+            <label className="flex items-center justify-between">
+              <span className="text-text">Show session markers</span>
               <input
-                type="number" min={1} max={5}
+                type="checkbox"
+                checked={settings.markersEveryMin > 0}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    const next = settings.markersEveryMin <= 0 ? 2 : settings.markersEveryMin;
+                    handleSettingChange('markersEveryMin', next);
+                  } else {
+                    handleSettingChange('markersEveryMin', 0);
+                  }
+                }}
+                className="w-5 h-5 rounded accent-iris"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3 items-center">
+              <span className="text-text">Marker interval (min)</span>
+              <input
+                type="number" min={0} max={5}
                 value={settings.markersEveryMin}
-                onChange={(e) => handleSettingChange('markersEveryMin', Math.max(1, Math.min(5, Number(e.target.value))))}
-                className="bg-surface border border-muted/20 rounded px-3 py-2"
+                disabled={settings.markersEveryMin <= 0}
+                onChange={(e) => {
+                  const next = Math.max(0, Math.min(5, Number(e.target.value)));
+                  handleSettingChange('markersEveryMin', next);
+                }}
+                className="bg-surface border border-muted/20 rounded px-3 py-2 disabled:opacity-50"
               />
             </div>
             <div className="grid grid-cols-2 gap-3 items-center">
