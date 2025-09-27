@@ -83,6 +83,7 @@ export function useMotionPreference(options: MotionPreferenceOptions = {}): Moti
     if (typeof media.addEventListener === 'function') {
       media.addEventListener('change', handleMediaChange);
     } else if (typeof media.addListener === 'function') {
+      // @ts-ignore - Legacy fallback for older browsers
       media.addListener(handleMediaChange);
     }
 
@@ -90,6 +91,7 @@ export function useMotionPreference(options: MotionPreferenceOptions = {}): Moti
       if (typeof media.removeEventListener === 'function') {
         media.removeEventListener('change', handleMediaChange);
       } else if (typeof media.removeListener === 'function') {
+        // @ts-ignore - Legacy fallback for older browsers
         media.removeListener(handleMediaChange);
       }
     };
