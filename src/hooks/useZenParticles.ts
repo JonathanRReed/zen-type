@@ -102,8 +102,9 @@ export function useZenParticles() {
   const lastLeafSpawnRef = useRef<number>(0);
 
   const getThemeConfig = useCallback((theme: string): ThemeConfig => {
-    const config = THEME_CONFIGS[theme.toLowerCase()];
-    return config ?? THEME_CONFIGS.void;
+    const normalizedTheme = theme.toLowerCase();
+    const config = THEME_CONFIGS[normalizedTheme as keyof typeof THEME_CONFIGS];
+    return (config || THEME_CONFIGS.void) as ThemeConfig;
   }, []);
 
   const hexToRgba = useCallback((hex: string, alpha: number) => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getSettings, saveSettings, getStats, updateStats, updateStreak, type Settings, FONT_OPTIONS, applySettingsSideEffects, DEFAULT_STATS_BAR_METRICS, type StatsBarMetricKey } from '../utils/storage';
+import { getSettings, saveSettings, getStats, updateStats, updateStreak, type Settings, FONT_OPTIONS, applySettingsSideEffects, DEFAULT_STATS_BAR_METRICS, type StatsBarMetricKey, type FontOption } from '../utils/storage';
 import { SettingsPanel } from './SettingsPanel';
 import { AboutPanel } from './AboutPanel';
 
@@ -96,8 +96,8 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
       reducedMotion: settings.reducedMotion,
       highContrast: settings.highContrast,
       showStats: settings.showStats,
-      performanceMode: settings.performanceMode,
-      fontFamily: settings.fontFamily,
+      performanceMode: settings.performanceMode ?? false,
+      ...(settings.fontFamily && { fontFamily: settings.fontFamily }),
     }, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -193,7 +193,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                 <select
                   id="pause-font-select"
                   value={settings.fontFamily ?? FONT_OPTIONS[0]}
-                  onChange={(e) => applySettingsPatch({ fontFamily: e.target.value as Settings['fontFamily'] })}
+                  onChange={(e) => applySettingsPatch({ fontFamily: e.target.value as FontOption })}
                   className="w-full px-3 py-2 bg-surface/60 hover:bg-surface/70 border border-muted/20 rounded-lg text-text transition-all focus:outline-none focus:ring-2 focus:ring-iris/50"
                 >
                   {FONT_OPTIONS.map(font => (

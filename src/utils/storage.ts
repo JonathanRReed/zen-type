@@ -1,6 +1,5 @@
 // Local storage utilities for Zen Typer
 // Handles settings, stats, streak, telemetry and exports
-
 export function getJSON<T>(key: string, fallback: T): T {
   try {
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
@@ -244,7 +243,7 @@ export function getSettings(): Settings {
   }
 
   if (!normalized.fontFamily || !FONT_OPTIONS.includes(normalized.fontFamily)) {
-    normalized.fontFamily = DEFAULT_SETTINGS.fontFamily;
+    normalized.fontFamily = DEFAULT_SETTINGS.fontFamily!;
   }
 
   const sanitizeMetrics = (mode: 'zen' | 'quote', metrics?: StatsBarMetricKey[]): StatsBarMetricKey[] => {
@@ -308,7 +307,11 @@ export function updateStats(sessionSummary: SessionSummary): void {
     const words = sessionSummary.wordsTyped || Math.round(sessionSummary.charactersTyped / 5);
     const wpm = sessionSummary.wpm ?? Math.round(words / Math.max(0.01, minutes));
     const accuracy = sessionSummary.accuracy;
-    tel.push({ date: new Date().toISOString(), mode: sessionSummary.mode, timeSec, words, wpm, accuracy });
+    const entry = { date: new Date().toISOString(), mode: sessionSummary.mode, timeSec, words, wpm };
+    if (accuracy !== undefined) {
+      (entry as any).accuracy = accuracy;
+    }
+    tel.push(entry as TelemetryEntry);
     while (tel.length > 10) tel.shift();
     setJSON(STORAGE_KEYS.TELEMETRY, tel);
   } catch (e) {
@@ -523,11 +526,13 @@ export function createArchiveEntry(init?: Partial<ArchiveEntry>): ArchiveEntry {
   const entry: ArchiveEntry = {
     id,
     startedAt: init?.startedAt ?? new Date().toISOString(),
-    endedAt: init?.endedAt,
     text: init?.text ?? '',
     wordCount: init?.wordCount ?? 0,
     charCount: init?.charCount ?? 0,
   };
+  if (init?.endedAt) {
+    entry.endedAt = init.endedAt;
+  }
   const list = getArchive();
   list.push(entry);
   saveArchive(list);

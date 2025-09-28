@@ -48,7 +48,7 @@ export const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) =
       return;
     }
     if (!selectedDraft || !filteredDrafts.some(d => d.id === selectedDraft.id)) {
-      setSelectedDraft(filteredDrafts[0]);
+      setSelectedDraft(filteredDrafts[0] ?? null);
     }
   }, [filteredDrafts, selectedDraft]);
 

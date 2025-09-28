@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useTransition } from 'react';
-import { updateStats, updateStreak, exportSessionCard, exportSessionCardSVG, getSettings, saveSettings, type Settings } from '../utils/storage';
+import { updateStats, updateStreak, getSettings, saveSettings, type Settings } from '../utils/storage';
 import { loadQuotes, getRandomQuote, getFallbackQuotes, type Quote } from '../utils/quotes';
+import { exportManager } from '../utils/exportManager';
 
 interface QuoteTyperProps {
   quote: string;
@@ -102,10 +103,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     while (wi < words.length) {
       // find the next occurrence of word in quote starting at idx
       const w = words[wi];
-      const found = activeQuote.indexOf(w, idx);
+      const found = activeQuote?.indexOf(w!, idx) ?? -1;
       if (found === -1) break;
       wordBoundaries.push(found);
-      idx = found + w.length;
+      idx = found + w!.length;
       wi++;
     }
     const ch: Chunk[] = [];
@@ -122,7 +123,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       let end = (wordBoundaries[we] ?? activeQuote.length - 1) + (words[we]?.length ?? 0);
       // Expand end to include trailing punctuation/space up to next word start
       if (we + 1 < wordBoundaries.length) {
-        end = wordBoundaries[we + 1];
+        end = wordBoundaries[we + 1] ?? activeQuote.length;
       } else {
         end = activeQuote.length;
       }
@@ -278,14 +279,14 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       setTypedChars(buf);
       setTotalTyped(totalTyped + 1);
 
-      const expected = activeQuote[cursor];
+      const expected = activeQuote?.[cursor];
       const isCorrect = e.key === expected;
 
       // Error classification
       let errType: 'slip' | 'skip' | 'extra' | null = null;
       if (!isCorrect) {
         const typedIsWs = /\s/.test(e.key);
-        const expectedIsWs = /\s/.test(expected);
+        const expectedIsWs = expected ? /\s/.test(expected) : false;
         if (typedIsWs && !expectedIsWs) errType = 'skip';
         else if (!typedIsWs && expectedIsWs) errType = 'extra';
         else errType = 'slip';
@@ -599,14 +600,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
               <button
                 onClick={() => {
                   if (!startTime || !endTime) return;
-                  exportSessionCard({
-                    mode: 'quote',
-                    date: new Date().toISOString(),
-                    time: Math.floor((endTime.getTime() - startTime.getTime()) / 1000),
-                    words: Math.floor(correctChars / 5),
-                    wpm: calculateWPM(),
-                    accuracy: calculateAccuracy(),
-                  });
+                  exportManager.exportData({
+                    format: 'png',
+                    includeStats: true
+                  }).catch(err => console.error('Export failed:', err));
                 }}
                 className="px-6 py-2 bg-gold/20 hover:bg-gold/30 \
                          border border-gold/40 rounded-lg
@@ -617,14 +614,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
               <button
                 onClick={() => {
                   if (!startTime || !endTime) return;
-                  exportSessionCardSVG({
-                    mode: 'quote',
-                    date: new Date().toISOString(),
-                    time: Math.floor((endTime.getTime() - startTime.getTime()) / 1000),
-                    words: Math.floor(correctChars / 5),
-                    wpm: calculateWPM(),
-                    accuracy: calculateAccuracy(),
-                  });
+                  exportManager.exportData({
+                    format: 'svg',
+                    includeStats: true
+                  }).catch(err => console.error('Export failed:', err));
                 }}
                 className="px-6 py-2 bg-foam/20 hover:bg-foam/30 border border-foam/40 rounded-lg text-foam font-sans transition-all"
               >
