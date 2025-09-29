@@ -1,5 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { DEFAULT_SETTINGS, getSettings, saveSettings, type Settings, createArchiveEntry, updateArchiveEntry } from '../utils/storage';
+import {
+  DEFAULT_SETTINGS,
+  getSettings,
+  saveSettings,
+  type Settings,
+  createArchiveEntry,
+  updateArchiveEntry,
+  getStoragePersistenceErrorEvent,
+  type StorageFailureDetail,
+} from '../utils/storage';
 import { useMotionPreference } from '../hooks/useMotionPreference';
 
 interface Token {
@@ -44,7 +53,7 @@ type StyleCache = {
 
 const FALLBACK_STYLE_CACHE: StyleCache = {
   rpText: '#e0def4',
-  moss: '#7fbf9e',
+  moss: '#6ec98b',
   leaf: '#a3d9b1',
   typingFont: 'monospace',
   rpFoam: '#9ccfd8',
@@ -120,6 +129,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const markersRef = useRef<number[]>([]);
   const lastCharRef = useRef<string>('');
   const lastTypeTsRef = useRef<number>(0);
+  const [storageWarning, setStorageWarning] = useState<string | null>(null);
 
   const getSettingsSnapshot = (): Settings => {
     if (!settingsRef.current) {
@@ -234,6 +244,24 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     computeStyleCache();
   }, [computeStyleCache]);
 
+  // Listen for storage persistence errors and warn users
+  useEffect(() => {
+    const handleStorageError = (e: Event) => {
+      const detail = (e as CustomEvent<StorageFailureDetail>).detail;
+      if (detail.action === 'write') {
+        setStorageWarning('Local storage is disabled or full. Your session will not be saved.');
+        console.warn('[ZenCanvas] Storage persistence disabled:', detail);
+      }
+    };
+
+    const eventName = getStoragePersistenceErrorEvent();
+    window.addEventListener(eventName, handleStorageError as EventListener);
+
+    return () => {
+      window.removeEventListener(eventName, handleStorageError as EventListener);
+    };
+  }, []);
+
   // Archive persistence: schedule saves after idle and finalize on teardown
   useEffect(() => {
     const handleFinalize = () => {
@@ -331,6 +359,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const lastChar = value[value.length - 1];
+    
     // Ensure archive entry exists once typing starts
     if (!archiveIdRef.current) {
       try {
@@ -414,6 +443,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const width = Math.max(1, canvas.width || 0);
+    const height = Math.max(1, canvas.height || 0);
+    if (!Number.isFinite(width) || !Number.isFinite(height)) {
+      return;
+    }
+
     const wordLength = text.length;
     const s = getSettingsSnapshot();
     const baseFade = rm ? Math.max(1.8, (s.fadeSec ?? 4) * 0.6) : (s.fadeSec ?? 4);
@@ -421,21 +456,32 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     const amp = rm ? 0 : (s.driftAmp ?? 6);
 
     // Focus lanes
-    let x = Math.random() * canvas.width;
+    let x = Math.random() * width;
     const laneStyle = s.laneStyle ?? 'soft';
     if (laneStyle !== 'none') {
-      const lanes = [canvas.width * 0.25, canvas.width * 0.5, canvas.width * 0.75];
-      const lane = lanes[Math.floor(Math.random() * lanes.length)] ?? canvas.width * 0.5;
+      const lanes = [width * 0.25, width * 0.5, width * 0.75];
+      const lane = lanes[Math.floor(Math.random() * lanes.length)] ?? width * 0.5;
       const jitter = laneStyle === 'tight' ? 18 : 40;
       x = lane + (Math.random() * 2 - 1) * jitter;
     }
-    
+    if (!Number.isFinite(x)) {
+      x = width / 2;
+    }
+    const horizontalPadding = Math.min(48, width / 6);
+    const minX = horizontalPadding;
+    const maxX = width - horizontalPadding;
+    if (maxX > minX) {
+      x = Math.min(maxX, Math.max(minX, x));
+    } else {
+      x = width / 2;
+    }
+
     const newToken: Token = {
       id: tokenIdRef.current++,
       text,
       x,
-      y: canvas.height - 100,
-      vy: 20 + Math.random() * 25, // 20-45 px/s
+      y: Math.max(0, height - 80),
+      vy: Math.min(80, Math.max(30, 45 + Math.random() * 35)), // Faster upward movement
       swayAmp: amp,
       swayFreq: 0.6 + Math.random() * 0.6, // 0.6-1.2Hz frequency
       lifetime,
@@ -481,27 +527,27 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     const isForest = document.documentElement.classList.contains('theme-forest');
     const isOcean = document.documentElement.classList.contains('theme-ocean');
     
-    // Forest theme: Subtle leaf drift (<5 leaves)
+    // Forest theme: Enhanced leaf drift and firefly ambience
     if (isForest && !perfMode) {
       const now = Date.now();
       const reduced = rm;
-      const leafCap = perfGuardRef.current ? 3 : reduced ? 4 : 6;
-      const spawnWindow = reduced ? 12000 : 8000;
+      const leafCap = perfGuardRef.current ? 4 : reduced ? 5 : 8;
+      const spawnWindow = reduced ? 10000 : 6500;
       const elapsedSinceSpawn = now - lastLeafSpawnRef.current;
-      const spawnDelay = spawnWindow * (0.6 + Math.random() * 0.5);
+      const spawnDelay = spawnWindow * (0.5 + Math.random() * 0.5);
 
       if (elapsedSinceSpawn > spawnDelay && leavesRef.current.length < leafCap) {
-        const size = 12 + Math.random() * 8;
+        const size = 14 + Math.random() * 10;
         leavesRef.current.push({
           x: Math.random() * canvas.width,
           y: -size,
-          vx: (Math.random() - 0.5) * 0.08,
-          vy: (reduced ? 2.5 : 3.5 + Math.random() * 2.5) / 60,
+          vx: (Math.random() - 0.5) * 0.12,
+          vy: (reduced ? 3 : 4 + Math.random() * 3) / 60,
           size,
-          a: 0.14 + Math.random() * 0.06,
+          a: 0.18 + Math.random() * 0.08,
           age: 0,
           rot: Math.random() * Math.PI * 2,
-          rotSpeed: (Math.random() * 0.06 - 0.03) / 60
+          rotSpeed: (Math.random() * 0.08 - 0.04) / 60
         });
         lastLeafSpawnRef.current = now;
       }
@@ -511,19 +557,19 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       for (const leaf of leavesRef.current) {
         leaf.age += 1 / 60;
         leaf.rot += leaf.rotSpeed;
-        leaf.x += leaf.vx + Math.sin(leaf.age * 1.05) * 0.32;
+        leaf.x += leaf.vx + Math.sin(leaf.age * 1.15) * 0.4;
         leaf.y += leaf.vy;
-        const lifeSpan = reduced ? 24 : 40;
+        const lifeSpan = reduced ? 28 : 45;
         if (leaf.y < canvas.height + leaf.size && leaf.age < lifeSpan) {
           const fade = Math.max(0, 1 - leaf.age / lifeSpan);
           ctx.globalAlpha = leaf.a * fade;
-          ctx.fillStyle = hexToRgba(moss, leaf.age < 10 ? 0.92 : 0.58);
+          ctx.fillStyle = hexToRgba(moss, leaf.age < 12 ? 0.96 : 0.68);
           ctx.beginPath();
-          ctx.ellipse(leaf.x, leaf.y, leaf.size * 0.48, leaf.size * 0.34, leaf.rot, 0, Math.PI * 2);
+          ctx.ellipse(leaf.x, leaf.y, leaf.size * 0.5, leaf.size * 0.36, leaf.rot, 0, Math.PI * 2);
           ctx.fill();
-          ctx.globalAlpha = Math.min(0.32, leaf.a * 0.4 * fade);
-          ctx.strokeStyle = hexToRgba(leafColor, 0.32);
-          ctx.lineWidth = 0.5;
+          ctx.globalAlpha = Math.min(0.4, leaf.a * 0.5 * fade);
+          ctx.strokeStyle = hexToRgba(leafColor, 0.42);
+          ctx.lineWidth = 0.6;
           ctx.stroke();
           updatedLeaves.push(leaf);
         }
@@ -531,10 +577,10 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       leavesRef.current = updatedLeaves;
       ctx.restore();
 
-      const fireflyPalette = [hexToRgba(rpGold, 0.85), hexToRgba(rpLove, 0.72), hexToRgba(rpFoam, 0.78)];
-      const canopyTop = canvas.height * 0.2;
-      const canopyBottom = canvas.height * 0.78;
-      const targetFireflies = reduced ? 8 : 12;
+      const fireflyPalette = [hexToRgba(rpGold, 0.92), hexToRgba(rpLove, 0.78), hexToRgba(rpFoam, 0.85), hexToRgba(moss, 0.88)];
+      const canopyTop = canvas.height * 0.18;
+      const canopyBottom = canvas.height * 0.8;
+      const targetFireflies = reduced ? 10 : 16;
       let paletteSize = fireflyPalette.length;
       if (paletteSize === 0) {
         firefliesRef.current = [];
@@ -544,16 +590,16 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
           if (paletteSize === 0) break;
           const paletteIndex = Math.min(paletteSize - 1, Math.floor(Math.random() * paletteSize));
           const candidate = fireflyPalette[paletteIndex];
-          const color: string = typeof candidate === 'string' ? candidate : hexToRgba(rpGold, 0.85);
+          const color: string = typeof candidate === 'string' ? candidate : hexToRgba(rpGold, 0.92);
           firefliesRef.current.push({
             baseX: Math.random() * canvas.width,
             baseY: canopyBottom - Math.random() * (canopyBottom - canopyTop),
-            ampX: 14 + Math.random() * 18,
-            ampY: 8 + Math.random() * 12,
+            ampX: 16 + Math.random() * 22,
+            ampY: 10 + Math.random() * 14,
             phase: Math.random() * Math.PI * 2,
-            speed: 0.00055 + Math.random() * 0.00032,
-            radius: 1.1 + Math.random() * 1.2,
-            alpha: 0.18 + Math.random() * 0.1,
+            speed: 0.0006 + Math.random() * 0.00038,
+            radius: 1.3 + Math.random() * 1.4,
+            alpha: 0.22 + Math.random() * 0.12,
             color,
           });
         }
@@ -564,22 +610,27 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const updatedFireflies: Firefly[] = [];
       for (const firefly of firefliesRef.current) {
         firefly.phase += firefly.speed;
-        firefly.baseY -= reduced ? 0.01 : 0.02;
+        firefly.baseY -= reduced ? 0.012 : 0.024;
         if (firefly.baseY < canopyTop) {
-          firefly.baseY = canopyBottom + Math.random() * 18;
+          firefly.baseY = canopyBottom + Math.random() * 20;
           firefly.baseX = Math.random() * canvas.width;
         }
-        firefly.baseX += (Math.random() - 0.5) * 0.16;
+        firefly.baseX += (Math.random() - 0.5) * 0.2;
         if (firefly.baseX < -20) firefly.baseX = canvas.width + 20;
         if (firefly.baseX > canvas.width + 20) firefly.baseX = -20;
 
-        const x = firefly.baseX + Math.sin(firefly.phase * 2.2) * firefly.ampX;
-        const y = firefly.baseY + Math.cos(firefly.phase * 1.9) * firefly.ampY;
-        const pulse = 0.5 + 0.35 * Math.sin(firefly.phase * 2.8);
+        const x = firefly.baseX + Math.sin(firefly.phase * 2.3) * firefly.ampX;
+        const y = firefly.baseY + Math.cos(firefly.phase * 2) * firefly.ampY;
+        const pulse = 0.55 + 0.4 * Math.sin(firefly.phase * 3);
         ctx.globalAlpha = firefly.alpha * pulse;
         ctx.fillStyle = firefly.color;
         ctx.beginPath();
         ctx.arc(x, y, firefly.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.globalAlpha = firefly.alpha * pulse * 0.35;
+        ctx.beginPath();
+        ctx.arc(x, y, firefly.radius * 2.2, 0, Math.PI * 2);
         ctx.fill();
 
         updatedFireflies.push(firefly);
@@ -663,8 +714,10 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       token.lifetime = threshold - age;
       if (age >= threshold) return; // Remove when past effective lifetime
       
-      // Update position
-      token.y -= (token.vy / 60); // Assuming 60fps
+      // Update position with ease-out for smoother deceleration
+      const ageProgress = Math.min(1, age / threshold);
+      const easeOut = 1 - Math.pow(1 - ageProgress, 2); // Quadratic ease-out
+      token.y -= (token.vy / 60) * (1 - easeOut * 0.3); // Slow down as it rises
       
       // Add horizontal sway if not reduced motion
       const effectiveAmp = (perfGuardRef.current || perfMode) ? 0 : token.swayAmp;
@@ -678,12 +731,24 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         return; // Remove off-screen tokens
       }
       
-      // Calculate opacity (fade out over effective lifetime)
-      const opacity = Math.max(0, 1 - (age / threshold));
+      // Smooth opacity fade in and fade out
+      let opacity = 1;
+      const fadeInDuration = 0.3; // Gentle fade in
+      const fadeOutStart = 0.65; // Start fading earlier for longer transition
       
-      // Draw token
+      if (age < fadeInDuration) {
+        // Cubic ease-in for smooth appearance
+        const t = age / fadeInDuration;
+        opacity = t * t * t;
+      } else if (ageProgress > fadeOutStart) {
+        // Long, gentle fade out
+        const fadeProgress = (ageProgress - fadeOutStart) / (1 - fadeOutStart);
+        opacity = Math.pow(1 - fadeProgress, 3); // Cubic ease-out
+      }
+      
+      // Draw token with minimal effects
       ctx.save();
-      ctx.globalAlpha = opacity;
+      ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
       ctx.fillStyle = rpText;
       ctx.font = `18px ${typingFont}`;
       ctx.fillText(token.text, token.x, token.y);
@@ -913,6 +978,33 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         aria-hidden="true"
       />
       
+      {storageWarning && (
+        <div
+          className="absolute top-4 left-1/2 -translate-x-1/2 max-w-md px-4 py-3 
+                     bg-love/20 border border-love/40 rounded-lg text-love text-sm
+                     shadow-lg backdrop-blur-sm"
+          role="alert"
+        >
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div className="flex-1">
+              <p className="font-medium">{storageWarning}</p>
+            </div>
+            <button
+              onClick={() => setStorageWarning(null)}
+              className="flex-shrink-0 text-love/70 hover:text-love transition-colors"
+              aria-label="Dismiss warning"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+      
       <input
         ref={inputRef}
         type="text"
@@ -928,7 +1020,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         onKeyDown={handleKeyDown}
         autoComplete="off"
         autoCorrect="off"
-        autoCapitalize="off"
+        autoCapitalize="none"
         spellCheck={false}
       />
     </div>
