@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import ThemeToggle from './ThemeToggle';
 import IconButton from './IconButton';
 import { getSettings, saveSettings, type Settings, syncTypingFont, applySettingsSideEffects } from '../utils/storage';
+import { debounce } from '../utils/debounce';
 
 interface SiteHeaderProps {
   mode: 'landing' | 'zen' | 'quote';
@@ -12,6 +13,13 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   const [autoNext, setAutoNext] = useState<boolean>(() => !!getSettings().autoAdvanceQuotes);
   const [showQuick, setShowQuick] = useState(false);
   const quickWrapperRef = useRef<HTMLDivElement | null>(null);
+  const persistSettings = useMemo(() => debounce((next: Settings) => {
+    try {
+      saveSettings(next);
+    } catch (error) {
+      console.error('[SiteHeader] Failed to persist settings', error);
+    }
+  }, 250), []);
 
   useEffect(() => {
     const onSettings = (e: Event) => {
@@ -61,7 +69,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   const _updateSetting = (key: keyof Settings, value: any) => {
     setSettings(prev => {
       const next = { ...prev, [key]: value } as Settings;
-      try { saveSettings(next); } catch {}
+      persistSettings(next);
       applySettingsSideEffects({ [key]: value } as Partial<Settings>, next);
       window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
       return next;
@@ -77,7 +85,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
         autoAdvanceDelayMs: checked ? 0 : (prev.autoAdvanceDelayMs ?? 0),
       };
       const next = { ...prev, ...patch } as Settings;
-      try { saveSettings(next); } catch {}
+      persistSettings(next);
       applySettingsSideEffects(patch, next);
       window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
       return next;

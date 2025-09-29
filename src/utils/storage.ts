@@ -1,28 +1,81 @@
 // Local storage utilities for Zen Typer
 // Handles settings, stats, streak, telemetry and exports
-export function getJSON<T>(key: string, fallback: T): T {
-  try {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-      return fallback;
+
+const STORAGE_PERSISTENCE_ERROR_EVENT = 'zen:storage-persistence-error';
+
+export type StorageFailureDetail = {
+  key: string;
+  action: 'read' | 'write';
+  error: unknown;
+};
+
+let storagePersistenceDisabled = false;
+let lastStorageFailure: StorageFailureDetail | null = null;
+
+const isStorageAccessible = (): boolean => {
+  return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+};
+
+const notifyStorageFailure = (detail: StorageFailureDetail) => {
+  lastStorageFailure = detail;
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent(STORAGE_PERSISTENCE_ERROR_EVENT, { detail }));
+    } catch (eventError) {
+      console.warn('Dispatching storage persistence error event failed', eventError);
     }
+  }
+};
+
+const markPersistenceDisabled = (detail: StorageFailureDetail) => {
+  if (storagePersistenceDisabled) return;
+  storagePersistenceDisabled = true;
+  console.error('[storage] Persistent failures detected. Disabling future writes.', detail.error);
+  notifyStorageFailure(detail);
+};
+
+export function getJSON<T>(key: string, fallback: T): T {
+  if (!isStorageAccessible() || storagePersistenceDisabled) {
+    return fallback;
+  }
+  try {
     const item = localStorage.getItem(key);
     if (!item) return fallback;
     return JSON.parse(item) as T;
   } catch (error) {
     console.error(`Error reading ${key} from localStorage:`, error);
+    notifyStorageFailure({ key, action: 'read', error });
     return fallback;
   }
 }
 
 export function setJSON(key: string, value: any): void {
+  if (!isStorageAccessible() || storagePersistenceDisabled) {
+    return;
+  }
   try {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-      return;
-    }
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
     console.error(`Error writing ${key} to localStorage:`, error);
+    markPersistenceDisabled({ key, action: 'write', error });
   }
+}
+
+export function isStoragePersistenceDisabled(): boolean {
+  return storagePersistenceDisabled;
+}
+
+export function getLastStorageFailure(): StorageFailureDetail | null {
+  return lastStorageFailure;
+}
+
+export function getStoragePersistenceErrorEvent(): string {
+  return STORAGE_PERSISTENCE_ERROR_EVENT;
+}
+
+export function __resetStoragePersistenceStateForTests(): void {
+  storagePersistenceDisabled = false;
+  lastStorageFailure = null;
 }
 
 export const FONT_OPTIONS = [

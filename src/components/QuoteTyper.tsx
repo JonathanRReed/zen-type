@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useTransition } from 'react';
-import { updateStats, updateStreak, getSettings, saveSettings, type Settings } from '../utils/storage';
+import {
+  updateStats,
+  updateStreak,
+  getSettings,
+  saveSettings,
+  type Settings,
+  getStoragePersistenceErrorEvent,
+  type StorageFailureDetail,
+} from '../utils/storage';
 import { loadQuotes, getRandomQuote, getFallbackQuotes, type Quote } from '../utils/quotes';
 import { exportManager } from '../utils/exportManager';
 
@@ -55,6 +63,9 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   const quotesRef = useRef<Quote[]>([]);
   const fallbackQuotesRef = useRef<Quote[]>(getFallbackQuotes());
   const [isPending, startTransition] = useTransition();
+  const [storageWarning, setStorageWarning] = useState<string | null>(null);
+  const [visibleChars, setVisibleChars] = useState(0);
+  const [isAnimatingQuote, setIsAnimatingQuote] = useState(true);
 
   // Chunking
   type Chunk = { start: number; end: number; wordStart: number; wordEnd: number; };
@@ -199,6 +210,48 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     };
   }, [activeQuote]);
 
+  // Listen for storage persistence errors and warn users
+  useEffect(() => {
+    const handleStorageError = (e: Event) => {
+      const detail = (e as CustomEvent<StorageFailureDetail>).detail;
+      if (detail.action === 'write') {
+        setStorageWarning('Local storage is disabled or full. Your stats will not be saved.');
+        console.warn('[QuoteTyper] Storage persistence disabled:', detail);
+      }
+    };
+
+    const eventName = getStoragePersistenceErrorEvent();
+    window.addEventListener(eventName, handleStorageError as EventListener);
+
+    return () => {
+      window.removeEventListener(eventName, handleStorageError as EventListener);
+    };
+  }, []);
+
+  // Typewriter effect for new quotes
+  useEffect(() => {
+    setIsAnimatingQuote(true);
+    setVisibleChars(0);
+    
+    const quoteLength = activeQuote.length;
+    const charsPerStep = Math.max(1, Math.ceil(quoteLength / 50)); // Animate in ~50 steps
+    const interval = 20; // 20ms per step for smooth animation
+    
+    let currentChar = 0;
+    const timer = setInterval(() => {
+      currentChar += charsPerStep;
+      if (currentChar >= quoteLength) {
+        setVisibleChars(quoteLength);
+        setIsAnimatingQuote(false);
+        clearInterval(timer);
+      } else {
+        setVisibleChars(currentChar);
+      }
+    }, interval);
+    
+    return () => clearInterval(timer);
+  }, [activeQuote]);
+
   // Current chunk index by cursor
   useEffect(() => {
     const i = chunks.findIndex(c => cursor >= c.start && cursor < c.end);
@@ -221,7 +274,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
   // Handle key press
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (isComplete) return;
+    if (isComplete || isAnimatingQuote) return;
     
     // Start timer on first keypress
     if (!startTime && e.key.length === 1) {
@@ -465,30 +518,35 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
   // Render character span
   const renderChar = (char: string, index: number) => {
+    // Hide characters not yet revealed by typewriter
+    if (isAnimatingQuote && index >= visibleChars) {
+      return null;
+    }
+    
     const isTyped = index < cursor;
     const isCurrent = index === cursor;
     const hasError = errors.has(index);
     const typedChar = typedChars[index];
     
-    let className = 'inline-block px-[2px] py-1 font-mono text-lg transition-all ';
+    let className = 'quote-char inline-block px-[2px] py-1 font-mono text-lg transition-all ';
     
     if (isCurrent) {
-      className += 'bg-iris/20 border-b-2 border-iris ';
+      className += 'bg-iris/20 border-b-2 border-iris zen-caret ';
     } else if (isTyped) {
       if (hasError) {
-        className += 'text-love underline decoration-wavy underline-offset-4 border-b-2 border-dashed border-love/70 ';
+        className += 'error underline decoration-wavy underline-offset-4 border-b-2 border-dashed border-love/70 ';
       } else {
-        className += 'text-foam border-b-2 border-foam/70 ';
+        className += 'correct border-b-2 border-foam/70 ';
       }
     } else {
-      className += 'text-muted border-b-2 border-dotted border-muted/40 ';
+      className += 'pending border-b-2 border-dotted border-muted/40 ';
     }
     
     // Handle spaces
     const displayChar = char === ' ' ? '\u00A0' : char;
     
     return (
-      <span key={index} className={className}>
+      <span key={index} className={className} style={{ animationDelay: `${index * 0.01}s` }}>
         {isTyped && typedChar ? (hasError ? typedChar : displayChar) : displayChar}
       </span>
     );
@@ -500,6 +558,32 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
   return (
     <div className={containerClass}>
+      {storageWarning && (
+        <div
+          className="absolute top-4 left-1/2 -translate-x-1/2 max-w-md px-4 py-3 z-50
+                     bg-love/20 border border-love/40 rounded-lg text-love text-sm
+                     shadow-lg backdrop-blur-sm"
+          role="alert"
+        >
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div className="flex-1">
+              <p className="font-medium">{storageWarning}</p>
+            </div>
+            <button
+              onClick={() => setStorageWarning(null)}
+              className="flex-shrink-0 text-love/70 hover:text-love transition-colors"
+              aria-label="Dismiss warning"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
       <div className="w-full max-w-4xl">
         {isPending && (
           <div className="mb-6 flex items-center justify-center" role="status" aria-live="polite">
