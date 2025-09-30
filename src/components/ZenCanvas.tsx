@@ -129,6 +129,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const markersRef = useRef<number[]>([]);
   const lastCharRef = useRef<string>('');
   const lastTypeTsRef = useRef<number>(0);
+  const lastProcessedValueRef = useRef<string>('');
+  const lastCommittedWordRef = useRef<{ word: string; timestamp: number } | null>(null);
+  const isResettingInputRef = useRef<boolean>(false);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
 
   const getSettingsSnapshot = (): Settings => {
@@ -337,6 +340,14 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
   // Commit a word using spawn density controls and update transcript/ghost
   const commitWord = (word: string, delimiter: string) => {
+    // Prevent duplicate commits of the same word within a short time window
+    const now = performance.now();
+    const lastCommit = lastCommittedWordRef.current;
+    if (lastCommit && lastCommit.word === word && (now - lastCommit.timestamp) < 100) {
+      return; // Skip duplicate commit
+    }
+    lastCommittedWordRef.current = { word, timestamp: now };
+    
     const s = getSettingsSnapshot();
     const density = Math.max(0.5, Math.min(1.5, s.spawnDensity ?? 1.0));
     if (density < 1) {
@@ -357,7 +368,19 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
   // Handle input changes
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Skip if we're programmatically resetting the input
+    if (isResettingInputRef.current) {
+      isResettingInputRef.current = false;
+      return;
+    }
+    
     const value = e.target.value;
+    
+    // Prevent duplicate processing of the same input value
+    if (value === lastProcessedValueRef.current) {
+      return;
+    }
+    
     const lastChar = value[value.length - 1];
     
     // Ensure archive entry exists once typing starts
@@ -379,6 +402,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const thr = Math.max(0, s.debounceMs || 0);
       const now = performance.now();
       if (thr > 0 && ch && ch === lastCharRef.current && (now - lastTypeTsRef.current) < thr) {
+        lastProcessedValueRef.current = value;
         return; // ignore this duplicate
       }
       lastCharRef.current = ch;
@@ -407,10 +431,13 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
           startTime: prev.startTime
         }));
       }
+      lastProcessedValueRef.current = '';
       setCurrentWord('');
+      isResettingInputRef.current = true;
       e.target.value = '';
       markArchiveDirty();
     } else {
+      lastProcessedValueRef.current = value;
       setCurrentWord(value);
       markArchiveDirty();
     }
@@ -427,8 +454,10 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       }));
       setCurrentWord('');
       if (inputRef.current) {
+        isResettingInputRef.current = true;
         inputRef.current.value = '';
       }
+      lastProcessedValueRef.current = '';
       markArchiveDirty();
     }
     if (e.key === 'Backspace') {
@@ -475,9 +504,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     } else {
       x = width / 2;
     }
+    
+    const tokenId = tokenIdRef.current++;
+    const birthTime = Date.now();
 
     const newToken: Token = {
-      id: tokenIdRef.current++,
+      id: tokenId,
       text,
       x,
       y: Math.max(0, height - 80),
@@ -486,16 +518,16 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       swayFreq: 0.6 + Math.random() * 0.6, // 0.6-1.2Hz frequency
       lifetime,
       maxLifetime: lifetime,
-      birth: Date.now()
+      birth: birthTime
     };
 
-    const arr = tokensRef.current.slice();
-    arr.push(newToken);
+    // Directly modify the ref to avoid race conditions with array copying
+    tokensRef.current.push(newToken);
+    
+    // Apply cap if needed
     const cap = dynCapRef.current;
-    if (arr.length > cap) {
-      tokensRef.current = arr.slice(-cap);
-    } else {
-      tokensRef.current = arr;
+    if (tokensRef.current.length > cap) {
+      tokensRef.current = tokensRef.current.slice(-cap);
     }
   };
 

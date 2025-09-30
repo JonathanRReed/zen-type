@@ -1,0 +1,138 @@
+/* Draft Mode Styling */
+
+.draft-underline-grammar {
+  text-decoration: underline;
+  text-decoration-color: var(--rp-love);
+  text-decoration-style: wavy;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.draft-underline-keyword {
+  background-color: rgba(246, 193, 119, 0.15);
+  border-bottom: 1px solid var(--rp-gold);
+  border-radius: 2px;
+}
+
+.draft-search-highlight {
+  background-color: rgba(156, 207, 216, 0.25);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.draft-search-highlight-current {
+  background-color: rgba(156, 207, 216, 0.45);
+  outline: 1px solid var(--rp-foam);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.draft-editor-wrapper {
+  position: relative;
+}
+
+.draft-editor-wrapper textarea {
+  line-height: 1.6;
+  tab-size: 2;
+}
+
+.draft-editor-wrapper textarea::selection {
+  background-color: var(--rp-iris);
+  color: var(--rp-base);
+}
+
+/* Scratchpad resize handle */
+.scratchpad-resize-handle {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.scratchpad-resize-handle:hover {
+  background-color: var(--rp-iris);
+  opacity: 0.4;
+}
+
+/* Outline item indent */
+.outline-item-level-0 { padding-left: 12px; }
+.outline-item-level-1 { padding-left: 24px; }
+.outline-item-level-2 { padding-left: 36px; }
+.outline-item-level-3 { padding-left: 48px; }
+.outline-item-level-4 { padding-left: 60px; }
+.outline-item-level-5 { padding-left: 72px; }
+.outline-item-level-6 { padding-left: 84px; }
+
+/* Version diff highlighting */
+.diff-added {
+  background-color: rgba(110, 236, 139, 0.2);
+  color: var(--rp-foam);
+}
+
+.diff-removed {
+  background-color: rgba(235, 111, 146, 0.2);
+  color: var(--rp-love);
+  text-decoration: line-through;
+}
+
+/* Reduced motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  .draft-editor-wrapper *,
+  .tools-panel *,
+  .command-palette * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Focus styles for accessibility */
+.draft-focus-visible:focus-visible {
+  outline: 2px solid var(--rp-iris);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Keyboard shortcut hints */
+kbd {
+  font-family: var(--ui-font), system-ui, sans-serif;
+  font-size: 0.875em;
+}
+
+/* Smooth scrolling for outline/search navigation */
+.draft-editor-wrapper textarea {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draft-editor-wrapper textarea {
+    scroll-behavior: auto;
+  }
+}
+
+/* Tools panel slide-over animation */
+.tools-panel-enter {
+  transform: translateX(100%);
+}
+
+.tools-panel-enter-active {
+  transform: translateX(0);
+  transition: transform 200ms ease-out;
+}
+
+.tools-panel-exit {
+  transform: translateX(0);
+}
+
+.tools-panel-exit-active {
+  transform: translateX(100%);
+  transition: transform 150ms ease-in;
+}
+
+/* Command palette backdrop */
+.command-palette-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .command-palette-backdrop {
+    backdrop-filter: none;
+  }
+}
