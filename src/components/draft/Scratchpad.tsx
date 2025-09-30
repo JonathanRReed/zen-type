@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface ScratchpadProps {
   value: string;
@@ -42,8 +43,9 @@ export const Scratchpad: React.FC<ScratchpadProps> = ({ value, onChange, onClose
       className="h-full bg-surface/30 backdrop-blur-sm border-l border-muted/20 flex flex-col relative"
       style={{ width: `${width}px` }}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
         className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-iris/40 transition-colors z-10 border-0 bg-transparent p-0"
         onMouseDown={(e) => {
           e.preventDefault();
@@ -54,16 +56,18 @@ export const Scratchpad: React.FC<ScratchpadProps> = ({ value, onChange, onClose
 
       <div className="p-3 border-b border-muted/20 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foam">Scratchpad</h3>
-        <button
+        <Button
           onClick={onClose}
-          className="text-muted hover:text-text transition-colors p-1"
+          variant="ghost"
+          size="icon"
+          className="text-muted hover:text-text transition-colors"
           aria-label="Close scratchpad"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
-        </button>
+        </Button>
       </div>
 
       <textarea

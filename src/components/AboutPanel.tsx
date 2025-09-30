@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 interface AboutPanelProps {
   onClose: () => void;
@@ -18,15 +19,17 @@ export const AboutPanel: React.FC<AboutPanelProps> = ({ onClose }) => {
       <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-br from-[color-mix(in_oklab,var(--rp-iris)75%,#0a0415_25%)]/40 via-transparent to-transparent pointer-events-none" />
       <div className="relative flex items-start justify-between mb-6">
         <h2 className="text-[clamp(1.4rem,2vw,1.8rem)] font-semibold tracking-tight text-foam">About</h2>
-        <button
+        <Button
           onClick={onClose}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-surface/70 text-muted/80 shadow-[0_6px_14px_rgba(12,6,24,0.45)] backdrop-blur-md transition-transform duration-200 hover:text-foam hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-iris/40"
+          variant="ghost"
+          size="icon"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-surface/70 text-muted/80 shadow-[0_6px_14px_rgba(12,6,24,0.45)] backdrop-blur-md transition-transform duration-200 hover:text-foam hover:scale-105"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
-        </button>
+        </Button>
       </div>
 
       <div className="relative space-y-4 text-text">

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   DEFAULT_SETTINGS,
   getSettings,
@@ -980,15 +981,17 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
             <div className="flex-1">
               <p className="font-medium">{storageWarning}</p>
             </div>
-            <button
+            <Button
               onClick={() => setStorageWarning(null)}
+              variant="ghost"
+              size="icon"
               className="flex-shrink-0 text-love/70 hover:text-love transition-colors"
               aria-label="Dismiss warning"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
       )}

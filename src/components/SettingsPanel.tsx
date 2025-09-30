@@ -1,5 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { saveSettings, resetAllData, type Settings, applySettingsSideEffects } from '../utils/storage';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface SettingsPanelProps {
   settings: Settings;
@@ -33,26 +40,24 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
     <>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-sans text-foam">Settings</h2>
-        <button
+        <Button
           onClick={onClose}
+          variant="ghost"
+          size="icon"
           className="text-muted hover:text-text transition-colors"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+          <X className="h-6 w-6" />
+        </Button>
       </div>
 
       <div className="space-y-5">
         <section>
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Profile</h3>
           <div className="grid grid-cols-2 gap-3 items-center">
-          <span className="text-text">Profile</span>
-          <select
+          <Label htmlFor="profile" className="text-text">Profile</Label>
+          <Select
             value={settings.profile || 'Practice'}
-            onChange={(e) => {
-              const p = e.target.value as NonNullable<Settings['profile']>;
+            onValueChange={(p: NonNullable<Settings['profile']>) => {
               if (p === 'Minimal') {
                 applySettingsPatch({
                   profile: p,
@@ -88,47 +93,48 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 });
               }
             }}
-            className="bg-surface border border-muted/20 rounded px-3 py-2"
           >
-            <option>Minimal</option>
-            <option>Practice</option>
-            <option>Meditative</option>
-          </select>
+            <SelectTrigger id="profile" className="bg-surface border border-muted/20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Minimal">Minimal</SelectItem>
+              <SelectItem value="Practice">Practice</SelectItem>
+              <SelectItem value="Meditative">Meditative</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         </section>
 
         <section>
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Accessibility</h3>
           <div className="space-y-3">
-            <label className="flex items-center justify-between">
-              <span className="text-text">Reduced Motion</span>
-              <input
-                type="checkbox"
+            <div className="flex items-center justify-between">
+              <Label htmlFor="reducedMotion" className="text-text">Reduced Motion</Label>
+              <Checkbox
+                id="reducedMotion"
                 checked={settings.reducedMotion}
-                onChange={(e) => handleSettingChange('reducedMotion', e.target.checked)}
-                className="w-5 h-5 rounded accent-iris"
+                onCheckedChange={(checked) => handleSettingChange('reducedMotion', checked)}
               />
-            </label>
+            </div>
 
-            <label className="flex items-center justify-between">
-              <span className="text-text">High Contrast</span>
-              <input
-                type="checkbox"
+            <div className="flex items-center justify-between">
+              <Label htmlFor="highContrast" className="text-text">High Contrast</Label>
+              <Checkbox
+                id="highContrast"
                 checked={settings.highContrast}
-                onChange={(e) => handleSettingChange('highContrast', e.target.checked)}
-                className="w-5 h-5 rounded accent-iris"
+                onCheckedChange={(checked) => handleSettingChange('highContrast', checked)}
               />
-            </label>
+            </div>
 
-            <label className="flex items-center justify-between">
-              <span className="text-text">Show Stats</span>
-              <input
-                type="checkbox"
+            <div className="flex items-center justify-between">
+              <Label htmlFor="showStats" className="text-text">Show Stats</Label>
+              <Checkbox
+                id="showStats"
                 checked={settings.showStats}
-                onChange={(e) => handleSettingChange('showStats', e.target.checked)}
-                className="w-5 h-5 rounded accent-iris"
+                onCheckedChange={(checked) => handleSettingChange('showStats', checked)}
               />
-            </label>
+            </div>
           </div>
         </section>
 
@@ -136,11 +142,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Flow</h3>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3 items-center">
-              <span className="text-text">Flow Preset</span>
-              <select
+              <Label htmlFor="zenPreset" className="text-text">Flow Preset</Label>
+              <Select
                 value={settings.zenPreset}
-                onChange={(e) => {
-                  const v = e.target.value as Settings['zenPreset'];
+                onValueChange={(v: Settings['zenPreset']) => {
                   const preset = {
                     Calm: { fadeSec: 6, driftAmp: 4, spawnDensity: 0.8 },
                     Neutral: { fadeSec: 4, driftAmp: 6, spawnDensity: 1.0 },
@@ -151,49 +156,59 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                   handleSettingChange('driftAmp', preset.driftAmp);
                   handleSettingChange('spawnDensity', preset.spawnDensity);
                 }}
-                className="bg-surface border border-muted/20 rounded px-3 py-2"
               >
-                <option>Calm</option>
-                <option>Neutral</option>
-                <option>Energetic</option>
-              </select>
+                <SelectTrigger id="zenPreset" className="bg-surface border border-muted/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Calm">Calm</SelectItem>
+                  <SelectItem value="Neutral">Neutral</SelectItem>
+                  <SelectItem value="Energetic">Energetic</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <div className="flex justify-between text-sm">
-                <span className="text-text">Fade (sec)</span>
+              <div className="flex justify-between text-sm mb-2">
+                <Label className="text-text">Fade (sec)</Label>
                 <span className="text-muted">{(settings.fadeSec ?? 4).toFixed(1)}</span>
               </div>
-              <input
-                type="range" min={2} max={8} step={0.5}
-                value={settings.fadeSec ?? 4}
-                onChange={(e) => handleSettingChange('fadeSec', Number(e.target.value))}
+              <Slider
+                min={2}
+                max={8}
+                step={0.5}
+                value={[settings.fadeSec ?? 4]}
+                onValueChange={([value]) => handleSettingChange('fadeSec', value)}
                 className="w-full"
               />
             </div>
 
             <div>
-              <div className="flex justify-between text-sm">
-                <span className="text-text">Drift amplitude</span>
+              <div className="flex justify-between text-sm mb-2">
+                <Label className="text-text">Drift amplitude</Label>
                 <span className="text-muted">{(settings.driftAmp ?? 6).toFixed(1)} px</span>
               </div>
-              <input
-                type="range" min={2} max={12} step={0.5}
-                value={settings.driftAmp ?? 6}
-                onChange={(e) => handleSettingChange('driftAmp', Number(e.target.value))}
+              <Slider
+                min={2}
+                max={12}
+                step={0.5}
+                value={[settings.driftAmp ?? 6]}
+                onValueChange={([value]) => handleSettingChange('driftAmp', value)}
                 className="w-full"
               />
             </div>
 
             <div>
-              <div className="flex justify-between text-sm">
-                <span className="text-text">Spawn density</span>
+              <div className="flex justify-between text-sm mb-2">
+                <Label className="text-text">Spawn density</Label>
                 <span className="text-muted">{(settings.spawnDensity ?? 1.0).toFixed(2)}</span>
               </div>
-              <input
-                type="range" min={0.5} max={1.5} step={0.05}
-                value={settings.spawnDensity ?? 1.0}
-                onChange={(e) => handleSettingChange('spawnDensity', Number(e.target.value))}
+              <Slider
+                min={0.5}
+                max={1.5}
+                step={0.05}
+                value={[settings.spawnDensity ?? 1.0]}
+                onValueChange={([value]) => handleSettingChange('spawnDensity', value)}
                 className="w-full"
               />
             </div>
@@ -204,59 +219,63 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Focus</h3>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3 items-center">
-              <span className="text-text">Focus lanes</span>
-              <select
+              <Label htmlFor="laneStyle" className="text-text">Focus lanes</Label>
+              <Select
                 value={settings.laneStyle ?? 'soft'}
-                onChange={(e) => handleSettingChange('laneStyle', e.target.value as Settings['laneStyle'])}
-                className="bg-surface border border-muted/20 rounded px-3 py-2"
+                onValueChange={(value: Settings['laneStyle']) => handleSettingChange('laneStyle', value)}
               >
-                <option value="none">None</option>
-                <option value="soft">Soft</option>
-                <option value="tight">Tight</option>
-              </select>
+                <SelectTrigger id="laneStyle" className="bg-surface border border-muted/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="soft">Soft</SelectItem>
+                  <SelectItem value="tight">Tight</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <label className="flex items-center justify-between">
-              <span className="text-text">Breathing overlay</span>
-              <input
-                type="checkbox"
+            <div className="flex items-center justify-between">
+              <Label htmlFor="breath" className="text-text">Breathing overlay</Label>
+              <Checkbox
+                id="breath"
                 checked={settings.breath}
-                onChange={(e) => handleSettingChange('breath', e.target.checked)}
-                className="w-5 h-5 rounded accent-iris"
+                onCheckedChange={(checked) => handleSettingChange('breath', checked)}
               />
-            </label>
+            </div>
 
-            <label className="flex items-center justify-between">
-              <span className="text-text">Lock theme shift</span>
-              <input
-                type="checkbox"
+            <div className="flex items-center justify-between">
+              <Label htmlFor="themeShiftLocked" className="text-text">Lock theme shift</Label>
+              <Checkbox
+                id="themeShiftLocked"
                 checked={settings.themeShiftLocked || false}
-                onChange={(e) => handleSettingChange('themeShiftLocked', e.target.checked)}
-                className="w-5 h-5 rounded accent-iris"
+                onCheckedChange={(checked) => handleSettingChange('themeShiftLocked', checked)}
               />
-            </label>
+            </div>
           </div>
         </section>
 
         <section>
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Quote Mode</h3>
           <div className="space-y-3">
-            <label className="flex items-center justify-between">
-              <span className="text-text">Auto-Advance Quotes</span>
-              <input
-                type="checkbox"
+            <div className="flex items-center justify-between">
+              <Label htmlFor="autoAdvanceQuotes" className="text-text">Auto-Advance Quotes</Label>
+              <Checkbox
+                id="autoAdvanceQuotes"
                 checked={!!settings.autoAdvanceQuotes}
-                onChange={(e) => handleSettingChange('autoAdvanceQuotes', e.target.checked)}
-                className="w-5 h-5 rounded accent-iris"
+                onCheckedChange={(checked) => handleSettingChange('autoAdvanceQuotes', checked)}
               />
-            </label>
+            </div>
             <div className="grid grid-cols-2 gap-3 items-center">
-              <span className="text-text">Auto-Advance Delay (ms)</span>
-              <input
-                type="number" min={0} max={3000}
+              <Label htmlFor="autoAdvanceDelayMs" className="text-text">Auto-Advance Delay (ms)</Label>
+              <Input
+                id="autoAdvanceDelayMs"
+                type="number"
+                min={0}
+                max={3000}
                 value={Math.max(0, Math.min(3000, settings.autoAdvanceDelayMs ?? 0))}
                 onChange={(e) => handleSettingChange('autoAdvanceDelayMs', Math.max(0, Math.min(3000, Number(e.target.value))))}
-                className="bg-surface border border-muted/20 rounded px-3 py-2 disabled:opacity-60"
+                className="bg-surface border-muted/20"
                 disabled={!settings.autoAdvanceQuotes}
               />
             </div>
@@ -265,62 +284,65 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
 
         <section>
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Performance</h3>
-          <label className="flex items-center justify-between">
-            <span className="text-text">Performance mode (low-power)</span>
-            <input
-              type="checkbox"
+          <div className="flex items-center justify-between">
+            <Label htmlFor="performanceMode" className="text-text">Performance mode (low-power)</Label>
+            <Checkbox
+              id="performanceMode"
               checked={!!settings.performanceMode}
-              onChange={(e) => handleSettingChange('performanceMode', e.target.checked)}
-              className="w-5 h-5 rounded accent-iris"
+              onCheckedChange={(checked) => handleSettingChange('performanceMode', checked)}
             />
-          </label>
+          </div>
         </section>
 
         <section>
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">History & Recovery</h3>
           <div className="space-y-3">
-            <label className="flex items-center justify-between">
-              <span className="text-text">Show session markers</span>
-              <input
-                type="checkbox"
+            <div className="flex items-center justify-between">
+              <Label htmlFor="sessionMarkers" className="text-text">Show session markers</Label>
+              <Checkbox
+                id="sessionMarkers"
                 checked={settings.markersEveryMin > 0}
-                onChange={(e) => {
-                  if (e.target.checked) {
+                onCheckedChange={(checked) => {
+                  if (checked) {
                     const next = settings.markersEveryMin <= 0 ? 2 : settings.markersEveryMin;
                     handleSettingChange('markersEveryMin', next);
                   } else {
                     handleSettingChange('markersEveryMin', 0);
                   }
                 }}
-                className="w-5 h-5 rounded accent-iris"
               />
-            </label>
+            </div>
             <div className="grid grid-cols-2 gap-3 items-center">
-              <span className="text-text">Marker interval (min)</span>
-              <input
-                type="number" min={0} max={5}
+              <Label htmlFor="markersEveryMin" className="text-text">Marker interval (min)</Label>
+              <Input
+                id="markersEveryMin"
+                type="number"
+                min={0}
+                max={5}
                 value={settings.markersEveryMin}
                 disabled={settings.markersEveryMin <= 0}
                 onChange={(e) => {
                   const next = Math.max(0, Math.min(5, Number(e.target.value)));
                   handleSettingChange('markersEveryMin', next);
                 }}
-                className="bg-surface border border-muted/20 rounded px-3 py-2 disabled:opacity-50"
+                className="bg-surface border-muted/20"
               />
             </div>
             <div className="grid grid-cols-2 gap-3 items-center">
-              <span className="text-text">Ghost window (min)</span>
-              <input
-                type="number" min={2} max={5}
+              <Label htmlFor="ghostWindowMin" className="text-text">Ghost window (min)</Label>
+              <Input
+                id="ghostWindowMin"
+                type="number"
+                min={2}
+                max={5}
                 value={settings.ghostWindowMin}
                 onChange={(e) => handleSettingChange('ghostWindowMin', Math.max(2, Math.min(5, Number(e.target.value))))}
-                className="bg-surface border border-muted/20 rounded px-3 py-2"
+                className="bg-surface border-muted/20"
               />
             </div>
             <div>
-              <button
+              <Button
                 onClick={() => {
-                  // Request last ghost window segment
                   const now = (window as any).__zenStats?.time || 0;
                   const end = now;
                   const start = Math.max(0, end - settings.ghostWindowMin * 60);
@@ -332,29 +354,32 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                   window.addEventListener('ghostText', handler as EventListener);
                   window.dispatchEvent(new CustomEvent('requestGhost', { detail: { startSec: start, endSec: end } }));
                 }}
-                className="w-full px-6 py-3 bg-gold/15 hover:bg-gold/25 border border-gold/30 rounded-lg text-gold"
+                variant="outline"
+                className="w-full bg-gold/15 hover:bg-gold/25 border-gold/30 text-gold"
               >
                 Restore from Ghost
-              </button>
+              </Button>
               {ghostPreview && (
                 <div className="mt-3">
                   <textarea className="w-full bg-surface/70 border border-muted/20 rounded p-3 text-sm" rows={4} value={ghostPreview} readOnly></textarea>
                   <div className="mt-2 flex gap-2">
-                    <button
-                      className="px-3 py-2 bg-iris/20 border border-iris/40 rounded text-iris"
+                    <Button
+                      variant="outline"
+                      className="bg-iris/20 border-iris/40 text-iris"
                       onClick={() => {
                         window.dispatchEvent(new CustomEvent('restoreGhost', { detail: { text: ghostPreview } }));
                         setGhostPreview('');
                       }}
                     >
                       Insert into input
-                    </button>
-                    <button
-                      className="px-3 py-2 bg-surface/60 border border-muted/30 rounded text-text"
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="bg-surface/60 border-muted/30 text-text"
                       onClick={() => setGhostPreview('')}
                     >
                       Clear
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -363,12 +388,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
         </section>
 
         <section className="settings-footer">
-          <button
+          <Button
             onClick={() => resetAllData()}
-            className="w-full px-6 py-3 bg-love/15 hover:bg-love/25 border border-love/30 rounded-lg text-love"
+            variant="outline"
+            className="w-full bg-love/15 hover:bg-love/25 border-love/30 text-love"
           >
             Clear local stats & telemetry
-          </button>
+          </Button>
         </section>
       </div>
     </>
