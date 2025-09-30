@@ -31,7 +31,7 @@ const IconButton: React.FC<IconButtonProps> = ({
   return (
     <button
       type={buttonType}
-      data-active={active || undefined}
+      data-active={active ? true : undefined}
       data-shape={shape}
       className={finalClass}
       {...rest}

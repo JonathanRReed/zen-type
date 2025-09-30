@@ -734,7 +734,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           aria-label="Type the quote shown above"
           autoComplete="off"
           autoCorrect="off"
-          autoCapitalize="off"
+          autoCapitalize="none"
           spellCheck={false}
         />
 
