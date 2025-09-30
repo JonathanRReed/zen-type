@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { diffLines } from 'diff';
 import type { DraftSnapshot } from '../../lib/draftStore';
+import { Button } from '@/components/ui/button';
 
 interface VersionHistoryProps {
   isOpen: boolean;
@@ -65,8 +66,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
       >
         <div className="p-4 border-b border-muted/20 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foam">Version History</h2>
-          <button
+          <Button
             onClick={onClose}
+            variant="ghost"
+            size="icon"
             className="text-muted hover:text-text transition-colors"
             aria-label="Close version history"
           >
@@ -74,7 +77,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-          </button>
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -121,12 +124,13 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                           </div>
                         )}
                       </div>
-                      <button
+                      <Button
                         onClick={() => handleRestore(snapshot)}
-                        className="px-3 py-1.5 bg-foam/20 hover:bg-foam/30 border border-foam/40 rounded-lg text-xs text-foam transition-colors"
+                        variant="outline"
+                        className="px-3 py-1.5 bg-foam/20 hover:bg-foam/30 border-foam/40 text-xs text-foam"
                       >
                         Restore
-                      </button>
+                      </Button>
                     </div>
                     <div className="mt-2 p-3 bg-overlay/30 rounded text-xs font-mono text-text/70 line-clamp-3">
                       {snapshot.body.substring(0, 150)}...
@@ -155,18 +159,20 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               This will replace your current draft with the selected snapshot. Your current version will be saved as a new snapshot.
             </p>
             <div className="flex items-center gap-3 justify-end">
-              <button
+              <Button
                 onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 bg-overlay/40 hover:bg-overlay/60 rounded-lg text-sm transition-colors"
+                variant="ghost"
+                className="px-4 py-2 bg-overlay/40 hover:bg-overlay/60 text-sm"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={confirmRestore}
-                className="px-4 py-2 bg-foam/20 hover:bg-foam/30 border border-foam/40 rounded-lg text-sm text-foam transition-colors"
+                variant="outline"
+                className="px-4 py-2 bg-foam/20 hover:bg-foam/30 border-foam/40 text-sm text-foam"
               >
                 Restore
-              </button>
+              </Button>
             </div>
           </div>
         </div>

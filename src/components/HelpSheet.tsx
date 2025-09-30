@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface HelpSheetProps {
   isOpen?: boolean;
@@ -82,9 +83,11 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
       >
         <div className="flex items-center justify-between mb-6">
           <h2 id="help-title" className="text-2xl font-sans text-foam">Keyboard Shortcuts</h2>
-          <button
+          <Button
             ref={closeBtnRef}
             onClick={() => { setOpen(false); onClose?.(); }}
+            variant="ghost"
+            size="icon"
             className="text-muted hover:text-text transition-colors"
             aria-label="Close help"
           >
@@ -92,7 +95,7 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
-          </button>
+          </Button>
         </div>
         <div className="space-y-6 pb-8">
           {/* General shortcuts */}

@@ -1,5 +1,7 @@
 import React from 'react';
 import type { DraftPrefs } from '../../lib/draftStore';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ToolsPanelProps {
   isOpen: boolean;
@@ -79,8 +81,10 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
       aria-label="Tools panel"
     >
       <div className="p-4 border-b border-muted/20 flex items-center justify-between sticky top-0 bg-surface/95 backdrop-blur-sm z-10">
-        <button
+        <Button
           onClick={onClose}
+          variant="ghost"
+          size="icon"
           className="text-muted hover:text-text transition-colors"
           aria-label="Close tools panel"
         >
@@ -88,7 +92,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
-        </button>
+        </Button>
       </div>
 
       <div className="p-4 space-y-6">
@@ -97,19 +101,20 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
           <h3 className="text-sm font-semibold text-text/80 mb-3">Presets</h3>
           <div className="space-y-2">
             {(['minimal', 'structural', 'editor-pro'] as const).map(preset => (
-              <button
+              <Button
                 key={preset}
                 onClick={() => applyPreset(preset)}
-                className={`w-full px-3 py-2 rounded-lg text-left text-sm transition-colors ${
+                variant={prefs.preset === preset ? 'default' : 'outline'}
+                className={`w-full justify-start text-sm ${
                   prefs.preset === preset
-                    ? 'bg-iris/20 border border-iris/40 text-iris'
-                    : 'bg-overlay/40 border border-transparent hover:bg-overlay/60 text-text/80'
+                    ? 'bg-iris/20 border-iris/40 text-iris'
+                    : 'bg-overlay/40 border-transparent hover:bg-overlay/60 text-text/80'
                 }`}
               >
                 {preset === 'minimal' && 'Minimal'}
                 {preset === 'structural' && 'Structural'}
                 {preset === 'editor-pro' && 'Editor Pro'}
-              </button>
+              </Button>
             ))}
           </div>
         </section>
@@ -228,11 +233,10 @@ interface ToggleItemProps {
 const ToggleItem: React.FC<ToggleItemProps> = ({ label, shortcut, checked, onChange }) => (
   <label className="flex items-center justify-between p-2 rounded-lg hover:bg-overlay/30 cursor-pointer group">
     <div className="flex items-center gap-2 flex-1">
-      <input
-        type="checkbox"
+      <Checkbox
         checked={checked}
-        onChange={onChange}
-        className="w-4 h-4 rounded border-muted/40 bg-overlay/40 text-iris focus:ring-iris/40 focus:ring-offset-0 cursor-pointer"
+        onCheckedChange={() => onChange()}
+        className="h-4 w-4 border-muted/40"
       />
       <span className="text-sm text-text/90">{label}</span>
     </div>

@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: ReactNode;
@@ -47,18 +48,20 @@ class ErrorBoundary extends Component<Props, State> {
               An unexpected error occurred. Please try refreshing the page.
             </p>
             <div className="flex gap-3 justify-center">
-              <button
+              <Button
                 onClick={this.handleReset}
-                className="px-4 py-2 bg-iris/20 hover:bg-iris/30 border border-iris/40 rounded-lg text-iris transition-colors"
+                variant="outline"
+                className="bg-iris/20 hover:bg-iris/30 border-iris/40 text-iris"
               >
                 Try Again
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-surface/70 hover:bg-surface/90 border border-muted/20 rounded-lg text-text transition-colors"
+                variant="outline"
+                className="bg-surface/70 hover:bg-surface/90 border-muted/20 text-text"
               >
                 Refresh Page
-              </button>
+              </Button>
             </div>
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-6 text-left">

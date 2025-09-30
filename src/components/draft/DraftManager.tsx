@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   getAllDrafts,
   getDraft,
@@ -338,8 +339,10 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
         <div className="p-4 border-b border-muted/20 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-sans text-foam">Drafts</h2>
-            <button
+            <Button
               onClick={onClose}
+              variant="ghost"
+              size="icon"
               className="text-muted hover:text-text transition-colors"
               aria-label="Close drafts"
             >
@@ -347,14 +350,15 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                 <line x1="18" y1="6" x2="6" y2="18"/>
                 <line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
-            </button>
+            </Button>
           </div>
-          <button
+          <Button
             onClick={handleCreateDraft}
-            className="w-full px-4 py-2 bg-foam/20 hover:bg-foam/30 border border-foam/40 rounded-lg text-sm text-foam font-medium transition-colors"
+            variant="ghost"
+            className="w-full justify-center rounded-xl border border-foam/40 bg-transparent text-foam text-sm font-medium hover:bg-foam/10 transition-colors"
           >
             + New Draft
-          </button>
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -362,31 +366,33 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
             <p className="text-muted text-center py-8 text-sm">No drafts yet. Create your first draft!</p>
           ) : (
             drafts.map(draft => {
-              const isActive = getActiveDraftId() === draft.id;
+              const isActive = currentDraft?.id === draft.id;
+              const updatedDate = new Date(draft.updatedAt).toLocaleDateString();
+              const displayTitle = (draft.title && draft.title.trim().length > 0)
+                ? draft.title.trim()
+                : `Zen Session: ${new Date(draft.updatedAt).toLocaleString()}`;
+
               return (
-                <button
+                <Button
                   key={draft.id}
                   onClick={() => handleSelectDraft(draft.id)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors relative ${
-                    currentDraft?.id === draft.id
-                      ? 'bg-iris/20 border border-iris/40'
-                      : 'bg-overlay/30 hover:bg-overlay/50 border border-transparent'
+                  variant="ghost"
+                  className={`w-full flex flex-col items-start gap-2 px-5 py-4 rounded-none border text-left min-h-[76px] transition-all ${
+                    isActive
+                      ? 'bg-iris/15 border-iris/45 shadow-[0_8px_22px_rgba(26,12,48,0.35)]'
+                      : 'bg-surface/40 border-muted/30 hover:bg-surface/55 hover:border-iris/35 hover:shadow-[0_6px_18px_rgba(26,12,48,0.28)]'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-text truncate">{draft.title}</p>
-                      <p className="text-xs text-muted mt-1">
-                        {new Date(draft.updatedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {isActive && (
-                      <span className="ml-2 px-2 py-0.5 bg-foam/20 border border-foam/40 rounded text-xs text-foam flex-shrink-0">
-                        Zen
-                      </span>
-                    )}
-                  </div>
-                </button>
+                  <span
+                    title={displayTitle}
+                    className="block w-full text-[15px] font-semibold text-text leading-[1.5] overflow-hidden line-clamp-2 mb-0.5 break-words"
+                  >
+                    {displayTitle}
+                  </span>
+                  <span className="text-xs tracking-wide text-muted/80 leading-[1.4]">
+                    {updatedDate}
+                  </span>
+                </Button>
               );
             })
           )}
@@ -394,20 +400,22 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
 
         {/* Actions */}
         <div className="p-4 border-t border-muted/20 space-y-2">
-          <button
+          <Button
             onClick={handleExportAll}
-            className="w-full px-4 py-2 bg-surface/60 hover:bg-surface/80 border border-muted/20 rounded-lg text-sm transition-colors"
+            variant="ghost"
+            className="w-full justify-center rounded-lg border border-muted/25 bg-surface/40 text-sm text-text hover:bg-surface/55"
             disabled={drafts.length === 0}
           >
             Export All Drafts
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleClearAll}
-            className="w-full px-4 py-2 bg-love/20 hover:bg-love/30 border border-love/40 rounded-lg text-sm text-love transition-colors"
+            variant="ghost"
+            className="w-full justify-center rounded-lg border border-love/40 bg-love/15 text-sm text-love hover:bg-love/25"
             disabled={drafts.length === 0}
           >
             Clear All Drafts
-          </button>
+          </Button>
           <p className="text-xs text-muted text-center pt-1">
             {drafts.length} draft{drafts.length !== 1 ? 's' : ''}
           </p>
@@ -436,13 +444,15 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                         className="px-2 py-1 bg-iris/20 text-iris text-xs rounded flex items-center gap-1.5"
                       >
                         {tag}
-                        <button
+                        <Button
                           onClick={() => handleRemoveTag(tag)}
-                          className="hover:text-love text-base leading-none"
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 p-0 hover:text-love"
                           aria-label={`Remove tag ${tag}`}
                         >
                           ×
-                        </button>
+                        </Button>
                       </span>
                     ))}
                     <input
@@ -464,24 +474,27 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                     {prefs.readTime && <span>{metrics.readTimeMinutes} min read</span>}
                   </div>
                 )}
-                <button
+                <Button
                   onClick={() => setVersionHistoryOpen(true)}
-                  className="px-4 py-2 bg-overlay/40 hover:bg-overlay/60 rounded-lg text-sm font-medium transition-colors"
+                  variant="ghost"
+                  className="px-4 py-2 rounded-lg border border-overlay/40 bg-overlay/30 text-sm font-medium hover:bg-overlay/45"
                   title="Version history"
                 >
                   History
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setToolsPanelOpen(true)}
-                  className="p-2 bg-overlay/40 hover:bg-overlay/60 rounded-lg transition-colors"
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-lg border border-overlay/40 bg-overlay/30 hover:bg-overlay/50 transition-colors"
                   aria-label="Open tools panel"
                   title="Tools (T)"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
-                    <path d="M9.67 5h4.67l.82 2.32a1.33 1.33 0 0 0 .8.8l2.32.82v4.67l-2.32.82a1.33 1.33 0 0 0-.8.8l-.82 2.32H9.67l-.82-2.32a1.33 1.33 0 0 0-.8-.8l-2.32-.82V9.66l2.32-.82a1.33 1.33 0 0 0 .8-.8Z" />
+                    <path d="M9.67 5h4.67l.82 2.32a1.33 1.33 0 0 0 .82.82l2.32.82v4.67l-2.32.82a1.33 1.33 0 0 0-.82.82l-.82 2.32H9.67l-.82-2.32a1.33 1.33 0 0 0-.82-.82l-2.32-.82V9.66l2.32-.82a1.33 1.33 0 0 0 .82-.82Z" />
                     <circle cx="12" cy="12" r="2.5" />
                   </svg>
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -552,12 +565,13 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
           <div className="flex-1 flex items-center justify-center text-muted">
             <div className="text-center">
               <p className="mb-4">No draft selected</p>
-              <button
+              <Button
                 onClick={handleCreateDraft}
-                className="px-4 py-2 bg-foam/20 hover:bg-foam/30 border border-foam/40 rounded-lg text-sm text-foam"
+                variant="ghost"
+                className="px-4 py-2 rounded-lg border border-foam/40 bg-foam/15 text-sm text-foam hover:bg-foam/25"
               >
                 Create First Draft
-              </button>
+              </Button>
             </div>
           </div>
         )}

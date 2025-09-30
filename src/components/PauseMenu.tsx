@@ -1,4 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { getSettings, saveSettings, getStats, updateStats, updateStreak, type Settings, FONT_OPTIONS, applySettingsSideEffects, DEFAULT_STATS_BAR_METRICS, type StatsBarMetricKey, type FontOption } from '../utils/storage';
 import { SettingsPanel } from './SettingsPanel';
 import { AboutPanel } from './AboutPanel';
@@ -113,12 +118,15 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
       aria-modal="true"
       aria-labelledby="pause-title"
     >
-      <button
+      <Button
         type="button"
-        className="absolute inset-0 bg-transparent focus:outline-none"
+        variant="ghost"
+        className="absolute inset-0 bg-transparent p-0 hover:bg-transparent"
         onClick={closeMenu}
         aria-label="Close pause menu"
-      />
+      >
+        <span className="sr-only">Dismiss pause menu</span>
+      </Button>
       <div
         className={`glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain relative z-10 ${showSettings ? 'settings-shell settings-scroll' : ''}`}
         tabIndex={-1}
@@ -128,17 +136,16 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
             <h2 id="pause-title" className="text-2xl font-sans text-foam mb-6">Paused</h2>
             
             <div className="space-y-3">
-              <button
+              <Button
                 onClick={closeMenu}
-                className="w-full px-6 py-3 bg-iris/20 hover:bg-iris/30 
-                         border border-iris/40 rounded-lg
-                         text-iris font-sans transition-all"
+                variant="outline"
+                className="w-full px-6 py-3 bg-iris/20 hover:bg-iris/30 border-iris/40 text-iris font-sans transition-all"
               >
                 Resume
-              </button>
+              </Button>
               
               {onReset && (
-                <button
+                <Button
                   onClick={() => {
                     try {
                       const z = (window as any).__zenStats || { time: 0, words: 0, chars: 0 };
@@ -160,69 +167,91 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                     onReset?.();
                     closeMenu();
                   }}
-                  className="w-full px-6 py-3 bg-love/20 hover:bg-love/30 
-                           border border-love/40 rounded-lg
-                           text-love font-sans transition-all"
+                  variant="outline"
+                  className="w-full px-6 py-3 bg-love/20 hover:bg-love/30 border-love/40 text-love font-sans transition-all"
                 >
                   Reset Session
-                </button>
+                </Button>
               )}
 
-              <button
-                onClick={() => setShowSettings(true)}
-                className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 
-                         border border-muted/20 rounded-lg
-                         text-text font-sans transition-all"
-              >
-                Settings
-              </button>
+              <div className="grid gap-3">
+                <Button
+                  onClick={() => setShowSettings(true)}
+                  variant="outline"
+                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-all"
+                >
+                  Settings
+                </Button>
 
-              <button
-                onClick={() => setShowAbout(true)}
-                className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 
-                         border border-muted/20 rounded-lg
-                         text-text font-sans transition-all"
-              >
-                About
-              </button>
+                <Button
+                  onClick={() => setShowAbout(true)}
+                  variant="outline"
+                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-all"
+                >
+                  About
+                </Button>
+              </div>
 
               <div className="space-y-2">
-                <label htmlFor="pause-font-select" className="block text-sm text-muted/80 font-sans">
+                <Label htmlFor="pause-font-select" className="text-sm text-muted/80 font-sans">
                   Typing font
-                </label>
-                <select
-                  id="pause-font-select"
+                </Label>
+                <Select
                   value={settings.fontFamily ?? FONT_OPTIONS[0]}
-                  onChange={(e) => applySettingsPatch({ fontFamily: e.target.value as FontOption })}
-                  className="w-full px-3 py-2 bg-surface/60 hover:bg-surface/70 border border-muted/20 rounded-lg text-text transition-all focus:outline-none focus:ring-2 focus:ring-iris/50"
+                  onValueChange={(value) => applySettingsPatch({ fontFamily: value as FontOption })}
                 >
-                  {FONT_OPTIONS.map(font => (
-                    <option key={font} value={font}>{font}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="pause-font-select" className="w-full bg-surface/60 border-muted/20 text-text">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map(font => (
+                      <SelectItem key={font} value={font}>{font}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3 text-text">
+                  <span>Reduced motion</span>
+                  <Switch
+                    checked={!!settings?.reducedMotion}
+                    onCheckedChange={(checked) => applySettingsPatch({ reducedMotion: !!checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3 text-text">
+                  <span>High contrast</span>
+                  <Switch
+                    checked={!!settings?.highContrast}
+                    onCheckedChange={(checked) => applySettingsPatch({ highContrast: !!checked })}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted/80 font-sans">Stats metrics</span>
+                  <span className="text-sm text-muted">Stats metrics</span>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       type="button"
+                      size="sm"
+                      variant={statsMetricMode === 'zen' ? 'default' : 'outline'}
+                      className="px-3 py-1 text-xs"
                       onClick={() => setStatsMetricMode('zen')}
-                      className={`px-3 py-1 text-xs rounded-lg border transition-colors ${statsMetricMode === 'zen' ? 'border-foam/50 text-foam bg-foam/10' : 'border-muted/20 text-muted hover:border-muted/40'}`}
                     >
                       Zen
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      size="sm"
+                      variant={statsMetricMode === 'quote' ? 'default' : 'outline'}
+                      className="px-3 py-1 text-xs"
                       onClick={() => setStatsMetricMode('quote')}
-                      className={`px-3 py-1 text-xs rounded-lg border transition-colors ${statsMetricMode === 'quote' ? 'border-foam/50 text-foam bg-foam/10' : 'border-muted/20 text-muted hover:border-muted/40'}`}
                     >
                       Quote
-                    </button>
+                    </Button>
                   </div>
                 </div>
-
                 <div className="space-y-2 rounded-xl border border-muted/20 bg-surface/60 p-3">
                   {DEFAULT_STATS_BAR_METRICS[statsMetricMode].map(metric => {
                     const metricsForMode = settings.statsBarMetrics?.[statsMetricMode] ?? DEFAULT_STATS_BAR_METRICS[statsMetricMode];
@@ -235,13 +264,12 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                       accuracy: 'Accuracy',
                     };
                     return (
-                      <label key={metric} className="flex items-center justify-between text-sm text-text">
+                      <div key={metric} className="flex items-center justify-between text-sm text-text gap-3">
                         <span>{labelMap[metric]}</span>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={checked}
                           disabled={disabled || (statsMetricMode === 'zen' && metric === 'accuracy')}
-                          onChange={() => {
+                          onCheckedChange={() => {
                             setSettings(prev => {
                               const base = prev.statsBarMetrics?.[statsMetricMode] ?? DEFAULT_STATS_BAR_METRICS[statsMetricMode];
                               const hasMetric = base.includes(metric);
@@ -265,9 +293,9 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                               return nextSettings;
                             });
                           }}
-                          className="w-4 h-4 accent-iris"
+                          className="border-muted/30"
                         />
-                      </label>
+                      </div>
                     );
                   })}
                 </div>
@@ -293,8 +321,10 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                   <div className="text-xs text-muted mb-2">Markers</div>
                   <div className="flex flex-wrap gap-2">
                     {markers.map((sec) => (
-                      <button
+                      <Button
                         key={sec}
+                        variant="ghost"
+                        size="sm"
                         className="px-2 py-1 rounded-full text-xs bg-surface/70 border border-muted/20 hover:bg-surface/90"
                         onClick={() => {
                           const windowMin = getSettings().ghostWindowMin || 5;
@@ -308,7 +338,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                         }}
                       >
                         {Math.floor(sec / 60)}:{String(sec % 60).padStart(2, '0')}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>

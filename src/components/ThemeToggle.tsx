@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getSettings, saveSettings, type Settings } from '../utils/storage';
 import { useMotionPreference } from '../hooks/useMotionPreference';
 import IconButton from './IconButton';
+import { Button } from '@/components/ui/button';
 
 type Theme = 'Void' | 'Forest' | 'Ocean' | 'Cosmic';
 
@@ -197,20 +198,14 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
         <div className="absolute top-full mt-2 right-0 z-50">
           <div className="glass rounded-lg p-2 min-w-[140px]">
             {themes.map((t) => (
-              <button
+              <Button
                 key={t}
+                variant="ghost"
+                className={`w-full justify-start px-4 py-2 text-sm font-sans transition-all duration-200 ${theme === t ? 'bg-iris/20 text-iris hover:bg-iris/25' : 'text-text hover:bg-overlay/50 hover:text-text'}`}
                 onClick={() => handleThemeChange(t)}
-                className={`
-                  w-full text-left px-4 py-2 rounded-md text-sm font-sans
-                  transition-all duration-200
-                  ${theme === t 
-                    ? 'bg-iris/20 text-iris' 
-                    : 'text-text hover:bg-overlay/50'
-                  }
-                `}
               >
                 {t}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

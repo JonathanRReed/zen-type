@@ -10,6 +10,7 @@ import {
 } from '../utils/storage';
 import { loadQuotes, getRandomQuote, getFallbackQuotes, type Quote } from '../utils/quotes';
 import { exportManager } from '../utils/exportManager';
+import { Button } from '@/components/ui/button';
 
 interface QuoteTyperProps {
   quote: string;
@@ -572,15 +573,17 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
             <div className="flex-1">
               <p className="font-medium">{storageWarning}</p>
             </div>
-            <button
+            <Button
               onClick={() => setStorageWarning(null)}
-              className="flex-shrink-0 text-love/70 hover:text-love transition-colors"
+              variant="ghost"
+              size="icon"
+              className="flex-shrink-0 h-6 w-6 text-love/70 hover:text-love transition-colors"
               aria-label="Dismiss warning"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -681,7 +684,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
               </div>
             </div>
             <div className="flex items-center justify-center gap-3">
-              <button
+              <Button
                 onClick={() => {
                   if (!startTime || !endTime) return;
                   exportManager.exportData({
@@ -689,13 +692,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
                     includeStats: true
                   }).catch(err => console.error('Export failed:', err));
                 }}
-                className="px-6 py-2 bg-gold/20 hover:bg-gold/30 \
-                         border border-gold/40 rounded-lg
-                         text-gold font-sans transition-all"
+                variant="outline"
+                className="bg-gold/20 hover:bg-gold/30 border-gold/40 text-gold"
               >
                 Export session card
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   if (!startTime || !endTime) return;
                   exportManager.exportData({
@@ -703,24 +705,25 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
                     includeStats: true
                   }).catch(err => console.error('Export failed:', err));
                 }}
-                className="px-6 py-2 bg-foam/20 hover:bg-foam/30 border border-foam/40 rounded-lg text-foam font-sans transition-all"
+                variant="outline"
+                className="bg-foam/20 hover:bg-foam/30 border-foam/40 text-foam"
               >
                 Export SVG card
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => toggleAutoAdvance(!autoAdvance)}
-                className={`px-6 py-2 border rounded-lg font-sans transition-all ${autoAdvance ? 'bg-surface/60 hover:bg-surface/80 border-muted/30 text-text' : 'bg-foam/20 hover:bg-foam/30 border-foam/40 text-foam'}`}
+                variant="outline"
+                className={autoAdvance ? 'bg-surface/60 hover:bg-surface/80 border-muted/30 text-text' : 'bg-foam/20 hover:bg-foam/30 border-foam/40 text-foam'}
               >
                 {autoAdvance ? 'Disable Auto Next' : 'Enable Auto Next'}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleReset}
-                className="px-6 py-2 bg-iris/20 hover:bg-iris/30 
-                         border border-iris/40 rounded-lg
-                         text-iris font-sans transition-all"
+                variant="outline"
+                className="bg-iris/20 hover:bg-iris/30 border-iris/40 text-iris"
               >
                 Type Again
-              </button>
+              </Button>
             </div>
           </div>
         )}

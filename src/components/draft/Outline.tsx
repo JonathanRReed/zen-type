@@ -1,5 +1,6 @@
 import React from 'react';
 import type { OutlineItem } from '../../lib/textMetrics';
+import { Button } from '@/components/ui/button';
 
 interface OutlineProps {
   items: OutlineItem[];
@@ -18,16 +19,17 @@ export const Outline: React.FC<OutlineProps> = ({ items, onItemClick }) => {
   return (
     <nav className="p-4 space-y-1" aria-label="Document outline">
       {items.map((item, index) => (
-        <button
+        <Button
           key={index}
           onClick={() => onItemClick(item.startIndex)}
-          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors hover:bg-overlay/40 focus:outline-none focus:ring-2 focus:ring-iris/40 ${
+          variant="ghost"
+          className={`w-full justify-start text-left px-3 py-2 rounded-lg text-sm transition-colors hover:bg-overlay/40 focus-visible:ring-iris/40 ${
             item.level > 0 ? 'text-foam font-medium' : 'text-text/70'
           }`}
           style={{ paddingLeft: `${(item.level || 0) * 12 + 12}px` }}
         >
           <span className="line-clamp-2">{item.text}</span>
-        </button>
+        </Button>
       ))}
     </nav>
   );

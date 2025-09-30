@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Fuse from 'fuse.js';
 import type { OutlineItem } from '../../lib/textMetrics';
+import { Button } from '@/components/ui/button';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -134,10 +135,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           ) : (
             <div className="p-2">
               {filteredItems.map((item, index) => (
-                <button
+                <Button
                   key={index}
                   onClick={() => handleItemClick(item)}
-                  className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${
+                  variant="ghost"
+                  className={`w-full justify-start text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${
                     index === selectedIndex
                       ? 'bg-iris/20 text-iris'
                       : 'hover:bg-overlay/40 text-text/80'
@@ -153,12 +155,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     {item.type === 'heading' ? '#' : 'L'}
                   </div>
                   <span className="flex-1 truncate text-sm">{item.text}</span>
-                </button>
+                </Button>
               ))}
             </div>
           )}
         </div>
-
         <div className="px-4 py-3 border-t border-muted/20 flex items-center gap-4 text-xs text-muted/60">
           <span>↑↓ Navigate</span>
           <span>↵ Select</span>

@@ -88,13 +88,16 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
   return (
     <div className="stats-cq">
       <div className="stats-bar fixed bottom-24 md:bottom-20 left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-4" data-stats-bar>
-        <div className="glass rounded-3xl px-6 py-3 flex flex-wrap items-center justify-center gap-6">
+        <div className="rounded-full px-8 py-3.5 flex flex-wrap items-center justify-center gap-8 
+                        bg-surface/40 backdrop-blur-xl border border-iris/20
+                        shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(156,207,216,0.1)]
+                        transition-all duration-300 hover:bg-surface/50 hover:border-iris/30">
           {displayedMetrics.map((key) => {
             if (key === 'time') {
               return (
-                <div key={key} className="flex items-center gap-2">
-                  <span className="text-xs text-muted uppercase tracking-wider">Time</span>
-                  <span className="text-lg font-mono text-foam">
+                <div key={key} className="flex items-center gap-2.5 px-1">
+                  <span className="text-[10px] text-muted/80 uppercase tracking-widest font-medium">Time</span>
+                  <span className="text-xl font-mono text-foam font-semibold tabular-nums">
                     {formatTime((data.time as number) || 0)}
                   </span>
                 </div>
@@ -103,9 +106,9 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
 
             if (key === 'words') {
               return (
-                <div key={key} className="flex items-center gap-2">
-                  <span className="text-xs text-muted uppercase tracking-wider">Words</span>
-                  <span className="text-lg font-mono text-gold">
+                <div key={key} className="flex items-center gap-2.5 px-1">
+                  <span className="text-[10px] text-muted/80 uppercase tracking-widest font-medium">Words</span>
+                  <span className="text-xl font-mono text-gold font-semibold tabular-nums">
                     {data.words ?? 0}
                   </span>
                 </div>
@@ -115,9 +118,9 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
             if (key === 'wpm') {
               const value = data.wpm;
               return (
-                <div key={key} className="flex items-center gap-2">
-                  <span className="text-xs text-muted uppercase tracking-wider">WPM</span>
-                  <span className="text-lg font-mono text-rose">
+                <div key={key} className="flex items-center gap-2.5 px-1">
+                  <span className="text-[10px] text-muted/80 uppercase tracking-widest font-medium">WPM</span>
+                  <span className="text-xl font-mono text-rose font-semibold tabular-nums">
                     {value !== undefined ? value : '—'}
                   </span>
                 </div>
@@ -127,9 +130,9 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
             if (key === 'accuracy' && mode === 'quote') {
               const value = data.accuracy;
               return (
-                <div key={key} className="flex items-center gap-2">
-                  <span className="text-xs text-muted uppercase tracking-wider">Accuracy</span>
-                  <span className="text-lg font-mono text-iris">
+                <div key={key} className="flex items-center gap-2.5 px-1">
+                  <span className="text-[10px] text-muted/80 uppercase tracking-widest font-medium">Accuracy</span>
+                  <span className="text-xl font-mono text-iris font-semibold tabular-nums">
                     {value !== undefined ? `${value}%` : '—'}
                   </span>
                 </div>

@@ -70,6 +70,27 @@
   --theme-hue-shift: 0deg;
   --typing-font: 'Nebula Sans', 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   --ui-font: 'Nebula Sans', 'Inter', 'Manrope', 'Space Grotesk', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  --radius: 0.75rem;
+  --background: 270 20% 10%;
+  --foreground: 267 57% 92%;
+  --card: 270 20% 12%;
+  --card-foreground: 267 57% 92%;
+  --popover: 270 20% 12%;
+  --popover-foreground: 267 57% 92%;
+  --primary: 267 57% 78%;
+  --primary-foreground: 270 20% 10%;
+  --secondary: 249 12% 47%;
+  --secondary-foreground: 267 57% 92%;
+  --muted: 249 12% 47%;
+  --muted-foreground: 249 12% 66%;
+  --accent: 2 66% 83%;
+  --accent-foreground: 270 20% 10%;
+  --destructive: 343 76% 68%;
+  --destructive-foreground: 267 57% 92%;
+  --border: 267 57% 50% / 0.2;
+  --input: 267 57% 50% / 0.2;
+  --ring: 267 57% 78%;
 }
 
 @property --blur {

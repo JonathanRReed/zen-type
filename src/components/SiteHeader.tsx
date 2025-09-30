@@ -3,6 +3,7 @@ import ThemeToggle from './ThemeToggle';
 import IconButton from './IconButton';
 import { getSettings, saveSettings, type Settings, syncTypingFont, applySettingsSideEffects } from '../utils/storage';
 import { debounce } from '../utils/debounce';
+import { Button } from '@/components/ui/button';
 
 interface SiteHeaderProps {
   mode: 'landing' | 'zen' | 'quote';
@@ -211,10 +212,11 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
           </nav>
 
           {mode === 'zen' && (
-            <button
+            <Button
               type="button"
               className={primaryButtonClass}
               aria-label="Open drafts"
+              variant="outline"
               onClick={() => {
                 try { localStorage.setItem('zt.openArchiveNext', '1'); } catch {}
                 const opener = (window as any).openLibraryOverlay as undefined | ((sessionId?: string) => void);
@@ -274,14 +276,15 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                 </svg>
                 <span className="font-medium">Drafts</span>
               </span>
-            </button>
+            </Button>
           )}
 
           {mode === 'quote' && (
-            <button
+            <Button
               id="header-new-quote"
               type="button"
               className={primaryButtonClass}
+              variant="outline"
               onClick={() => window.dispatchEvent(new CustomEvent('newQuote'))}
             >
               <span className="relative z-10 flex items-center gap-2 text-sm tracking-wide">
@@ -310,7 +313,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                 </svg>
                 <span className="font-medium">New Quote</span>
               </span>
-            </button>
+            </Button>
           )}
         </div>
 

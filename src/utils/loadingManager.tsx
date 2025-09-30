@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
 
 export interface LoadingState {
   isLoading: boolean;
@@ -107,12 +108,13 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
         )}
 
         {onCancel && (
-          <button
+          <Button
             onClick={onCancel}
-            className="px-4 py-2 text-sm bg-surface/60 hover:bg-surface/80 border border-muted/20 rounded-lg text-text transition-colors"
+            variant="outline"
+            className="bg-surface/60 hover:bg-surface/80 border-muted/20 text-text"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -340,12 +342,13 @@ export const QuoteLoader: React.FC<QuoteLoaderProps> = ({
         <h3 className="text-lg font-medium text-text mb-2">Failed to load quote</h3>
         <p className="text-muted mb-4">{error}</p>
         {onRetry && (
-          <button
+          <Button
             onClick={onRetry}
-            className="px-4 py-2 bg-iris/20 hover:bg-iris/30 border border-iris/40 rounded-lg text-iris transition-colors"
+            variant="outline"
+            className="bg-iris/20 hover:bg-iris/30 border-iris/40 text-iris"
           >
             Try Again
-          </button>
+          </Button>
         )}
       </div>
     );
