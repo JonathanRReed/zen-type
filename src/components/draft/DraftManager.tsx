@@ -10,6 +10,8 @@ import {
   getDraftPrefs,
   saveDraftPrefs,
   syncFromArchive,
+  setActiveDraftId,
+  getActiveDraftId,
   type Draft,
   type DraftPrefs,
 } from '../../lib/draftStore';
@@ -51,6 +53,17 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
     
     const allDrafts = await getAllDrafts();
     setDrafts(allDrafts);
+    
+    // If there's an active draft, load it
+    const activeDraftId = getActiveDraftId();
+    if (activeDraftId) {
+      const activeDraft = await getDraft(activeDraftId);
+      if (activeDraft) {
+        setCurrentDraft(activeDraft);
+        return;
+      }
+    }
+    
     if (allDrafts.length > 0 && !currentDraft) {
       setCurrentDraft(allDrafts[0] || null);
     }
@@ -63,26 +76,40 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
     }
   }, [isOpen, loadDrafts]);
 
-  // Auto-sync from archive every 5 seconds while open
+  // Auto-sync from archive and refresh active draft every 2 seconds while open
   useEffect(() => {
     if (!isOpen) return;
 
     const syncInterval = setInterval(() => {
       syncFromArchive().then(() => {
-        // Refresh draft list if new entries were synced
         getAllDrafts().then(allDrafts => {
           setDrafts(allDrafts);
+          
+          // Refresh current draft if it's the active one
+          if (currentDraft) {
+            const activeDraftId = getActiveDraftId();
+            if (activeDraftId === currentDraft.id) {
+              getDraft(activeDraftId).then(updated => {
+                if (updated && updated.body !== currentDraft.body) {
+                  setCurrentDraft(updated);
+                  lastBodyRef.current = updated.body;
+                }
+              });
+            }
+          }
         });
       });
-    }, 5000);
+    }, 2000);
 
     return () => clearInterval(syncInterval);
-  }, [isOpen]);
+  }, [isOpen, currentDraft]);
 
   const handleCreateDraft = async () => {
-    const draft = await createDraft();
+    const draft = await createDraft('New Draft');
     setDrafts(prev => [draft, ...prev]);
     setCurrentDraft(draft);
+    // Set this as the active draft for zen mode
+    setActiveDraftId(draft.id);
   };
 
   const handleExportAll = () => {
@@ -115,6 +142,8 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
     if (draft) {
       setCurrentDraft(draft);
       lastBodyRef.current = draft.body;
+      // Set this as the active draft for zen mode
+      setActiveDraftId(id);
     }
   };
 
@@ -164,7 +193,8 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
     if (!isOpen) return undefined;
     
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isMac = navigator.platform.toLowerCase().includes('mac');
+      const userAgent = navigator.userAgent?.toLowerCase() ?? '';
+      const isMac = userAgent.includes('mac');
       const mod = isMac ? e.metaKey : e.ctrlKey;
 
       if (e.key === 't' && !mod && !e.shiftKey && !e.altKey) {
@@ -302,9 +332,9 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-base flex" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[1000] glass-theme flex" role="dialog" aria-modal="true">
       {/* Sidebar */}
-      <div className="w-72 bg-surface/50 border-r border-muted/20 flex flex-col">
+      <div className="w-72 bg-surface/40 backdrop-blur-sm border-r border-muted/20 flex flex-col">
         <div className="p-4 border-b border-muted/20 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-sans text-foam">Drafts</h2>
@@ -331,22 +361,34 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
           {drafts.length === 0 ? (
             <p className="text-muted text-center py-8 text-sm">No drafts yet. Create your first draft!</p>
           ) : (
-            drafts.map(draft => (
-              <button
-                key={draft.id}
-                onClick={() => handleSelectDraft(draft.id)}
-                className={`w-full text-left p-3 rounded-lg transition-colors ${
-                  currentDraft?.id === draft.id
-                    ? 'bg-iris/20 border border-iris/40'
-                    : 'bg-overlay/30 hover:bg-overlay/50 border border-transparent'
-                }`}
-              >
-                <p className="text-sm font-medium text-text truncate">{draft.title}</p>
-                <p className="text-xs text-muted mt-1">
-                  {new Date(draft.updatedAt).toLocaleDateString()}
-                </p>
-              </button>
-            ))
+            drafts.map(draft => {
+              const isActive = getActiveDraftId() === draft.id;
+              return (
+                <button
+                  key={draft.id}
+                  onClick={() => handleSelectDraft(draft.id)}
+                  className={`w-full text-left p-3 rounded-lg transition-colors relative ${
+                    currentDraft?.id === draft.id
+                      ? 'bg-iris/20 border border-iris/40'
+                      : 'bg-overlay/30 hover:bg-overlay/50 border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-text truncate">{draft.title}</p>
+                      <p className="text-xs text-muted mt-1">
+                        {new Date(draft.updatedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {isActive && (
+                      <span className="ml-2 px-2 py-0.5 bg-foam/20 border border-foam/40 rounded text-xs text-foam flex-shrink-0">
+                        Zen
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
 
@@ -435,9 +477,9 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                   aria-label="Open tools panel"
                   title="Tools (T)"
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M12 1v6m0 6v6m5.2-14.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.8 5.2l-4.2-4.2m0-6l-4.2-4.2"/>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+                    <path d="M9.67 5h4.67l.82 2.32a1.33 1.33 0 0 0 .8.8l2.32.82v4.67l-2.32.82a1.33 1.33 0 0 0-.8.8l-.82 2.32H9.67l-.82-2.32a1.33 1.33 0 0 0-.8-.8l-2.32-.82V9.66l2.32-.82a1.33 1.33 0 0 0 .8-.8Z" />
+                    <circle cx="12" cy="12" r="2.5" />
                   </svg>
                 </button>
               </div>

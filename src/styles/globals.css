@@ -1412,3 +1412,10 @@ body::-webkit-scrollbar-thumb,
   background: rgba(144,140,170,0.4);
   border-radius: 999px;
 }
+
+/* Glass theme background - shows current theme gradient */
+.glass-theme {
+  background: var(--theme-gradient, linear-gradient(180deg, var(--rp-base) 0%, var(--rp-overlay) 100%));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}

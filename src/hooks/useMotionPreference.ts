@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSettings, type Settings } from '../utils/storage';
 
+type LegacyMediaQueryList = MediaQueryList & {
+  addListener?: (listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void) => void;
+  removeListener?: (listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void) => void;
+};
+
 type MotionPreferenceOptions = {
   forced?: boolean;
   respectMedia?: boolean;
@@ -82,17 +87,17 @@ export function useMotionPreference(options: MotionPreferenceOptions = {}): Moti
 
     if (typeof media.addEventListener === 'function') {
       media.addEventListener('change', handleMediaChange);
-    } else if (typeof media.addListener === 'function') {
-      // @ts-ignore - Legacy fallback for older browsers
-      media.addListener(handleMediaChange);
+    } else {
+      const legacyMedia = media as LegacyMediaQueryList;
+      legacyMedia.addListener?.call(media, handleMediaChange);
     }
 
     return () => {
       if (typeof media.removeEventListener === 'function') {
         media.removeEventListener('change', handleMediaChange);
-      } else if (typeof media.removeListener === 'function') {
-        // @ts-ignore - Legacy fallback for older browsers
-        media.removeListener(handleMediaChange);
+      } else {
+        const legacyMedia = media as LegacyMediaQueryList;
+        legacyMedia.removeListener?.call(media, handleMediaChange);
       }
     };
   }, [respectMedia]);

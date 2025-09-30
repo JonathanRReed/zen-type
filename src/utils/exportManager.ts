@@ -98,7 +98,7 @@ export class ExportManager {
   /**
    * Export telemetry data as CSV
    */
-  private async exportCSV(options: ExportOptions, timestamp: string): Promise<void> {
+  private async exportCSV(_options: ExportOptions, timestamp: string): Promise<void> {
     const telemetry = getTelemetry();
 
     if (telemetry.length === 0) {
@@ -201,7 +201,6 @@ Keep practicing! 🚀`;
     // Enhanced styling with gradients and better typography
     const css = getComputedStyle(document.documentElement);
     const base = (css.getPropertyValue('--rp-base') || '#191724').trim();
-    const _surface = (css.getPropertyValue('--rp-surface') || '#1f1d2e').trim();
     const overlay = (css.getPropertyValue('--rp-overlay') || '#26233a').trim();
     const text = (css.getPropertyValue('--rp-text') || '#e0def4').trim();
     const foam = (css.getPropertyValue('--rp-foam') || '#9ccfd8').trim();

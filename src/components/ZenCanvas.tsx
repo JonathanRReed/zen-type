@@ -4,12 +4,17 @@ import {
   getSettings,
   saveSettings,
   type Settings,
-  createArchiveEntry,
-  updateArchiveEntry,
   getStoragePersistenceErrorEvent,
   type StorageFailureDetail,
 } from '../utils/storage';
 import { useMotionPreference } from '../hooks/useMotionPreference';
+import {
+  getActiveDraftId,
+  setActiveDraftId,
+  createDraft,
+  updateDraftBody,
+  getDraft,
+} from '../lib/draftStore';
 
 interface Token {
   id: number;
@@ -93,7 +98,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const tokensRef = useRef<Token[]>([]);
-  const [currentWord, setCurrentWord] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const [stats, setStats] = useState({ words: 0, chars: 0, startTime: Date.now() });
   const animationFrameRef = useRef<number | null>(null);
   const tokenIdRef = useRef(0);
@@ -119,19 +124,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   // Ghost buffer (event log of appended chars within rolling window)
   const ghostLogRef = useRef<{ t: number; ch: string }[]>([]);
   const transcriptRef = useRef<string>('');
-  const archiveIdRef = useRef<string | null>(null);
-  const archiveDirtyRef = useRef<boolean>(false);
-  const archiveTimerRef = useRef<number | null>(null);
-  const archiveIdleRef = useRef<number | null>(null);
-  const archiveSuspendedRef = useRef<boolean>(false);
+  const activeDraftIdRef = useRef<string | null>(null);
+  const draftDirtyRef = useRef<boolean>(false);
+  const draftSaveTimerRef = useRef<number | null>(null);
   const styleCacheRef = useRef<StyleCache | null>(null);
   // Markers
   const markersRef = useRef<number[]>([]);
-  const lastCharRef = useRef<string>('');
-  const lastTypeTsRef = useRef<number>(0);
-  const lastProcessedValueRef = useRef<string>('');
-  const lastCommittedWordRef = useRef<{ word: string; timestamp: number } | null>(null);
-  const isResettingInputRef = useRef<boolean>(false);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
 
   const getSettingsSnapshot = (): Settings => {
@@ -145,39 +143,22 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     return settingsRef.current;
   };
 
-  const flushArchive = useCallback(() => {
-    if (archiveSuspendedRef.current) return;
-    const id = archiveIdRef.current;
-    if (!id || !archiveDirtyRef.current) return;
+  const saveDraft = useCallback(async () => {
+    const id = activeDraftIdRef.current;
+    if (!id || !draftDirtyRef.current) return;
     const text = transcriptRef.current;
-    const trimmed = text.trim();
-    const words = trimmed.length ? trimmed.split(/\s+/).length : 0;
-    const chars = text.length;
+    console.log('[DEBUG] Saving draft - text:', text);
     try {
-      updateArchiveEntry(id, { text, wordCount: words, charCount: chars });
-      archiveDirtyRef.current = false;
+      await updateDraftBody(id, text);
+      draftDirtyRef.current = false;
     } catch (err) {
-      console.error('[ZenCanvas] Failed to update archive entry', err);
-      archiveSuspendedRef.current = true;
+      console.error('[ZenCanvas] Failed to update draft', err);
     }
   }, []);
 
-  const finalizeArchive = useCallback(() => {
-    if (archiveSuspendedRef.current) return;
-    const id = archiveIdRef.current;
-    if (!id) return;
-    const text = transcriptRef.current;
-    const trimmed = text.trim();
-    const words = trimmed.length ? trimmed.split(/\s+/).length : 0;
-    const chars = text.length;
-    try {
-      updateArchiveEntry(id, { text, wordCount: words, charCount: chars, endedAt: new Date().toISOString() });
-      archiveDirtyRef.current = false;
-    } catch (err) {
-      console.error('[ZenCanvas] Failed to finalize archive entry', err);
-      archiveSuspendedRef.current = true;
-    }
-  }, []);
+  const finalizeDraft = useCallback(async () => {
+    await saveDraft();
+  }, [saveDraft]);
 
   const trimAmbientParticles = useCallback(() => {
     if (leavesRef.current.length > 4) {
@@ -191,34 +172,21 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     }
   }, []);
 
-  const scheduleArchivePersist = useCallback(() => {
-    if (archiveSuspendedRef.current) return;
+  const scheduleDraftSave = useCallback(() => {
     if (typeof window === 'undefined') return;
-    if (archiveTimerRef.current !== null) {
-      window.clearTimeout(archiveTimerRef.current);
+    if (draftSaveTimerRef.current !== null) {
+      window.clearTimeout(draftSaveTimerRef.current);
     }
-    if (archiveIdleRef.current !== null && 'cancelIdleCallback' in window) {
-      (window as any).cancelIdleCallback(archiveIdleRef.current);
-      archiveIdleRef.current = null;
-    }
-    archiveTimerRef.current = window.setTimeout(() => {
-      archiveTimerRef.current = null;
-      if ('requestIdleCallback' in window) {
-        archiveIdleRef.current = (window as any).requestIdleCallback(() => {
-          archiveIdleRef.current = null;
-          flushArchive();
-        }, { timeout: 2000 });
-      } else {
-        flushArchive();
-      }
-    }, 1500);
-  }, [flushArchive]);
+    draftSaveTimerRef.current = window.setTimeout(() => {
+      draftSaveTimerRef.current = null;
+      saveDraft();
+    }, 1000);
+  }, [saveDraft]);
 
-  const markArchiveDirty = useCallback(() => {
-    if (archiveSuspendedRef.current) return;
-    archiveDirtyRef.current = true;
-    scheduleArchivePersist();
-  }, [scheduleArchivePersist]);
+  const markDraftDirty = useCallback(() => {
+    draftDirtyRef.current = true;
+    scheduleDraftSave();
+  }, [scheduleDraftSave]);
 
   const computeStyleCache = useCallback(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -265,27 +233,53 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     };
   }, []);
 
-  // Archive persistence: schedule saves after idle and finalize on teardown
+  // Initialize or switch active draft
   useEffect(() => {
-    const handleFinalize = () => {
-      if (archiveTimerRef.current !== null) {
-        window.clearTimeout(archiveTimerRef.current);
-        archiveTimerRef.current = null;
+    const initDraft = async () => {
+      let draftId = getActiveDraftId();
+      
+      if (!draftId) {
+        // Create a new draft for this zen session
+        const draft = await createDraft('Zen Session');
+        draftId = draft.id;
+        setActiveDraftId(draftId);
+      } else {
+        // Load existing draft content
+        const draft = await getDraft(draftId);
+        if (draft) {
+          transcriptRef.current = draft.body;
+        }
       }
-      if (archiveIdleRef.current !== null && 'cancelIdleCallback' in window) {
-        (window as any).cancelIdleCallback(archiveIdleRef.current);
-        archiveIdleRef.current = null;
-      }
-      finalizeArchive();
+      
+      activeDraftIdRef.current = draftId;
     };
-
-    window.addEventListener('finalizeArchive', handleFinalize as EventListener);
-
+    
+    initDraft();
+    
+    const handleDraftChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { id: string | null };
+      activeDraftIdRef.current = detail.id;
+      if (detail.id) {
+        getDraft(detail.id).then(draft => {
+          if (draft) {
+            transcriptRef.current = draft.body;
+          }
+        });
+      } else {
+        transcriptRef.current = '';
+      }
+    };
+    
+    window.addEventListener('activeDraftChanged', handleDraftChange as EventListener);
+    
     return () => {
-      window.removeEventListener('finalizeArchive', handleFinalize as EventListener);
-      handleFinalize();
+      window.removeEventListener('activeDraftChanged', handleDraftChange as EventListener);
+      if (draftSaveTimerRef.current !== null) {
+        window.clearTimeout(draftSaveTimerRef.current);
+      }
+      finalizeDraft();
     };
-  }, [finalizeArchive]);
+  }, [finalizeDraft]);
 
   // Respond to settings changes and hotkey toggles
   useEffect(() => {
@@ -315,9 +309,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     };
     const onRestoreGhost = (e: Event) => {
       const { text } = (e as CustomEvent).detail as { text: string };
-      if (!inputRef.current) return;
-      inputRef.current.value = text;
-      setCurrentWord(text);
+      setInputValue(text);
     };
 
     const onFocusTyping = () => {
@@ -338,137 +330,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     };
   }, [computeStyleCache]);
 
-  // Commit a word using spawn density controls and update transcript/ghost
-  const commitWord = (word: string, delimiter: string) => {
-    // Prevent duplicate commits of the same word within a short time window
-    const now = performance.now();
-    const lastCommit = lastCommittedWordRef.current;
-    if (lastCommit && lastCommit.word === word && (now - lastCommit.timestamp) < 100) {
-      return; // Skip duplicate commit
-    }
-    lastCommittedWordRef.current = { word, timestamp: now };
-    
-    const s = getSettingsSnapshot();
-    const density = Math.max(0.5, Math.min(1.5, s.spawnDensity ?? 1.0));
-    if (density < 1) {
-      if (Math.random() < density) spawnToken(word);
-    } else {
-      // Always spawn one
-      spawnToken(word);
-      const extraBase = Math.floor(density - 1);
-      for (let i = 0; i < extraBase; i++) spawnToken(word);
-      const frac = density - 1 - extraBase;
-      if (Math.random() < frac) spawnToken(word);
-    }
-    // Record delimiter
-    transcriptRef.current += delimiter;
-    ghostLogRef.current.push({ t: (Date.now() - sessionStartRef.current) / 1000, ch: delimiter });
-    markArchiveDirty();
-  };
-
-  // Handle input changes
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Skip if we're programmatically resetting the input
-    if (isResettingInputRef.current) {
-      isResettingInputRef.current = false;
-      return;
-    }
-    
-    const value = e.target.value;
-    
-    // Prevent duplicate processing of the same input value
-    if (value === lastProcessedValueRef.current) {
-      return;
-    }
-    
-    const lastChar = value[value.length - 1];
-    
-    // Ensure archive entry exists once typing starts
-    if (!archiveIdRef.current) {
-      try {
-        const entry = createArchiveEntry({ text: '', wordCount: 0, charCount: 0, startedAt: new Date().toISOString() });
-        archiveIdRef.current = entry.id;
-      } catch (err) {
-        console.error('[ZenCanvas] Failed to create archive entry', err);
-        archiveSuspendedRef.current = true;
-      }
-    }
-
-    // Append to transcript and ghost log for typed characters
-    if (value.length > currentWord.length) {
-      const ch = value[value.length - 1] ?? '';
-      // Debounce duplicate keystrokes
-      const s = getSettingsSnapshot();
-      const thr = Math.max(0, s.debounceMs || 0);
-      const now = performance.now();
-      if (thr > 0 && ch && ch === lastCharRef.current && (now - lastTypeTsRef.current) < thr) {
-        lastProcessedValueRef.current = value;
-        return; // ignore this duplicate
-      }
-      lastCharRef.current = ch;
-      lastTypeTsRef.current = now;
-      if (ch) {
-        // Only append non-delimiter chars here; delimiters recorded in commitWord
-        if (!/[\s.,!?;:]/.test(ch)) {
-          transcriptRef.current += ch;
-        }
-        ghostLogRef.current.push({ t: (Date.now() - sessionStartRef.current) / 1000, ch });
-        // Keep within largest window (max 5 min)
-        const maxWin = (settingsRef.current?.ghostWindowMin ?? 5) * 60;
-        const cutoff = (Date.now() - sessionStartRef.current) / 1000 - maxWin;
-        ghostLogRef.current = ghostLogRef.current.filter(ev => ev.t >= cutoff);
-      }
-    }
-
-    // Check if we should commit the word (space or punctuation)
-    if (lastChar === ' ' || /[.,!?;:]/.test(lastChar ?? '')) {
-      if (currentWord.length > 0) {
-        const delimiter: string = lastChar ?? ' ';
-        commitWord(currentWord, delimiter);
-        setStats(prev => ({
-          words: prev.words + 1,
-          chars: prev.chars + currentWord.length,
-          startTime: prev.startTime
-        }));
-      }
-      lastProcessedValueRef.current = '';
-      setCurrentWord('');
-      isResettingInputRef.current = true;
-      e.target.value = '';
-      markArchiveDirty();
-    } else {
-      lastProcessedValueRef.current = value;
-      setCurrentWord(value);
-      markArchiveDirty();
-    }
-  };
-
-  // Handle key down for special keys
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && currentWord.length > 0) {
-      commitWord(currentWord, '\n');
-      setStats(prev => ({
-        words: prev.words + 1,
-        chars: prev.chars + currentWord.length,
-        startTime: prev.startTime
-      }));
-      setCurrentWord('');
-      if (inputRef.current) {
-        isResettingInputRef.current = true;
-        inputRef.current.value = '';
-      }
-      lastProcessedValueRef.current = '';
-      markArchiveDirty();
-    }
-    if (e.key === 'Backspace') {
-      // Record deletion in transcript by removing last char, but do not push deletion char into ghost log
-      transcriptRef.current = transcriptRef.current.slice(0, -1);
-      markArchiveDirty();
-    }
-  };
-
   // Spawn a new token
-  const spawnToken = (text: string) => {
+  const spawnToken = useCallback((text: string) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -513,15 +376,14 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       text,
       x,
       y: Math.max(0, height - 80),
-      vy: Math.min(80, Math.max(30, 45 + Math.random() * 35)), // Faster upward movement
+      vy: Math.min(80, Math.max(30, 45 + Math.random() * 35)),
       swayAmp: amp,
-      swayFreq: 0.6 + Math.random() * 0.6, // 0.6-1.2Hz frequency
+      swayFreq: 0.6 + Math.random() * 0.6,
       lifetime,
       maxLifetime: lifetime,
       birth: birthTime
     };
 
-    // Directly modify the ref to avoid race conditions with array copying
     tokensRef.current.push(newToken);
     
     // Apply cap if needed
@@ -529,7 +391,101 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     if (tokensRef.current.length > cap) {
       tokensRef.current = tokensRef.current.slice(-cap);
     }
-  };
+  }, [rm]);
+
+  // Commit a word using spawn density controls and update transcript/ghost
+  const commitWord = useCallback((word: string, delimiter: string) => {
+    if (!word) return;
+
+    const s = getSettingsSnapshot();
+    const density = Math.max(0.5, Math.min(1.5, s.spawnDensity ?? 1.0));
+    
+    // Spawn tokens based on density
+    if (density < 1) {
+      if (Math.random() < density) spawnToken(word);
+    } else {
+      spawnToken(word);
+      const extraBase = Math.floor(density - 1);
+      for (let i = 0; i < extraBase; i++) spawnToken(word);
+      const frac = density - 1 - extraBase;
+      if (Math.random() < frac) spawnToken(word);
+    }
+    
+    // Update transcript
+    transcriptRef.current += word + delimiter;
+    console.log('[DEBUG] Committed word:', word, 'with delimiter:', delimiter, 'transcript now:', transcriptRef.current);
+    
+    // Record in ghost log
+    const now = (Date.now() - sessionStartRef.current) / 1000;
+    for (const ch of word) {
+      ghostLogRef.current.push({ t: now, ch });
+    }
+    ghostLogRef.current.push({ t: now, ch: delimiter });
+    
+    // Keep ghost log within window
+    const maxWin = (settingsRef.current?.ghostWindowMin ?? 5) * 60;
+    const cutoff = now - maxWin;
+    ghostLogRef.current = ghostLogRef.current.filter(ev => ev.t >= cutoff);
+    
+    markDraftDirty();
+  }, [spawnToken, markDraftDirty]);
+
+  // Handle input changes with proper controlled input pattern
+  const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    
+    // Check if word is complete (ends with space or punctuation)
+    const lastChar = newValue[newValue.length - 1];
+    const isDelimiter = lastChar === ' ' || /[.,!?;:]/.test(lastChar ?? '');
+    
+    if (isDelimiter && newValue.length > 1) {
+      // Extract the word (everything except the delimiter)
+      const word = newValue.slice(0, -1);
+      const delimiter = lastChar ?? ' ';
+      
+      console.log('[DEBUG] Committing word:', word, 'delimiter:', delimiter);
+      
+      // Commit the word
+      commitWord(word, delimiter);
+      
+      // Update stats
+      setStats(prev => ({
+        words: prev.words + 1,
+        chars: prev.chars + word.length,
+        startTime: prev.startTime
+      }));
+      
+      // Clear input for next word
+      setInputValue('');
+      markDraftDirty();
+    } else {
+      // Just update the input value
+      setInputValue(newValue);
+    }
+  }, [commitWord, markDraftDirty]);
+
+  // Handle key down for special keys
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.length > 0) {
+      e.preventDefault();
+      commitWord(inputValue, '\n');
+      setStats(prev => ({
+        words: prev.words + 1,
+        chars: prev.chars + inputValue.length,
+        startTime: prev.startTime
+      }));
+      setInputValue('');
+      markDraftDirty();
+    }
+    
+    if (e.key === 'Backspace' && inputValue.length === 0 && transcriptRef.current.length > 0) {
+      // If input is empty and backspace is pressed, remove from transcript
+      const oldTranscript = transcriptRef.current;
+      transcriptRef.current = transcriptRef.current.slice(0, -1);
+      console.log('[DEBUG] Backspace on empty input - removed char from transcript, was:', oldTranscript, 'now:', transcriptRef.current);
+      markDraftDirty();
+    }
+  }, [inputValue, commitWord, markDraftDirty]);
 
   // Animation loop
   const animate = useCallback(() => {
@@ -1040,6 +996,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       <input
         ref={inputRef}
         type="text"
+        value={inputValue}
         className="absolute bottom-[18vh] left-1/2 -translate-x-1/2 
                    w-[90vw] max-w-xl px-6 py-4 text-lg font-mono caret-accent
                    bg-surface/70 backdrop-blur-soft shadow-soft
