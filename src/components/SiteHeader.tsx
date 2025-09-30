@@ -9,8 +9,8 @@ interface SiteHeaderProps {
 }
 
 const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
-  const [settings, setSettings] = useState<Settings>(() => getSettings());
-  const [autoNext, setAutoNext] = useState<boolean>(() => !!getSettings().autoAdvanceQuotes);
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [autoNext, setAutoNext] = useState<boolean>(false);
   const [showQuick, setShowQuick] = useState(false);
   const quickWrapperRef = useRef<HTMLDivElement | null>(null);
   const persistSettings = useMemo(() => debounce((next: Settings) => {
@@ -20,6 +20,12 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
       console.error('[SiteHeader] Failed to persist settings', error);
     }
   }, 250), []);
+
+  useEffect(() => {
+    const initialSettings = getSettings();
+    setSettings(initialSettings);
+    setAutoNext(!!initialSettings.autoAdvanceQuotes);
+  }, []);
 
   useEffect(() => {
     const onSettings = (e: Event) => {
@@ -68,6 +74,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
 
   const _updateSetting = (key: keyof Settings, value: any) => {
     setSettings(prev => {
+      if (!prev) return prev;
       const next = { ...prev, [key]: value } as Settings;
       persistSettings(next);
       applySettingsSideEffects({ [key]: value } as Partial<Settings>, next);
@@ -80,6 +87,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
     setAutoNext(checked);
     // Ensure immediate advance by default when toggled on
     setSettings(prev => {
+      if (!prev) return prev;
       const patch: Partial<Settings> = {
         autoAdvanceQuotes: checked,
         autoAdvanceDelayMs: checked ? 0 : (prev.autoAdvanceDelayMs ?? 0),
@@ -398,7 +406,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                     </span>
                     <input
                       type="checkbox"
-                      checked={!!settings.reducedMotion}
+                      checked={!!settings?.reducedMotion}
                       onChange={(e) => _updateSetting('reducedMotion', e.target.checked)}
                       className="w-5 h-5 accent-iris"
                     />
@@ -410,7 +418,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                     </span>
                     <input
                       type="checkbox"
-                      checked={!!settings.highContrast}
+                      checked={!!settings?.highContrast}
                       onChange={(e) => _updateSetting('highContrast', e.target.checked)}
                       className="w-5 h-5 accent-iris"
                     />
@@ -425,7 +433,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                     </span>
                     <input
                       type="checkbox"
-                      checked={!!settings.showStats}
+                      checked={!!settings?.showStats}
                       onChange={(e) => _updateSetting('showStats', e.target.checked)}
                       className="w-5 h-5 accent-iris"
                     />
@@ -437,7 +445,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                     </span>
                     <input
                       type="checkbox"
-                      checked={!!settings.performanceMode}
+                      checked={!!settings?.performanceMode}
                       onChange={(e) => _updateSetting('performanceMode', e.target.checked)}
                       className="w-5 h-5 accent-iris"
                     />
