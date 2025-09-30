@@ -38,7 +38,7 @@ export const ResizableOutline: React.FC<ResizableOutlineProps> = ({ items, onIte
   return (
     <div
       ref={containerRef}
-      className="h-full border-r border-muted/20 bg-surface/30 flex flex-col relative"
+      className="h-full bg-surface/30 backdrop-blur-sm border-r border-muted/20 flex flex-col relative"
       style={{ width: `${width}px` }}
     >
       <div className="p-3 border-b border-muted/20 flex items-center justify-between">

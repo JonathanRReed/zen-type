@@ -25,8 +25,12 @@ export const Editor: React.FC<EditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (textareaRef.current && textareaRef.current.value !== draft.body) {
-      textareaRef.current.value = draft.body;
+    if (textareaRef.current) {
+      // Only update if draft changed AND the textarea doesn't have focus
+      const isActive = document.activeElement === textareaRef.current;
+      if (!isActive && textareaRef.current.value !== draft.body) {
+        textareaRef.current.value = draft.body;
+      }
     }
   }, [draft.id, draft.body]);
 
@@ -85,12 +89,12 @@ export const Editor: React.FC<EditorProps> = ({
   }, []);
 
   return (
-    <div className="relative h-full bg-base">
+    <div className="relative h-full bg-transparent">
       <textarea
         ref={textareaRef}
-        value={draft.body}
+        defaultValue={draft.body}
         onChange={handleChange}
-        className="w-full h-full resize-none bg-base px-6 py-4 font-mono text-base text-text focus:outline-none leading-relaxed"
+        className="w-full h-full resize-none bg-transparent px-6 py-4 font-mono text-base text-text focus:outline-none leading-relaxed"
         placeholder="Start writing..."
         spellCheck={false}
         aria-label="Draft editor"

@@ -15,13 +15,11 @@ export const Scratchpad: React.FC<ScratchpadProps> = ({ value, onChange, onClose
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const container = containerRef.current.parentElement;
-        if (container) {
-          const containerWidth = container.offsetWidth;
-          const newWidth = containerWidth - e.clientX;
-          setWidth(Math.max(300, Math.min(800, newWidth)));
-        }
+      const container = containerRef.current?.parentElement;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const newWidth = rect.right - e.clientX;
+        setWidth(Math.max(300, Math.min(800, newWidth)));
       }
     };
 
@@ -41,14 +39,17 @@ export const Scratchpad: React.FC<ScratchpadProps> = ({ value, onChange, onClose
   return (
     <div
       ref={containerRef}
-      className="h-full bg-surface/50 border-l border-muted/20 flex flex-col relative"
+      className="h-full bg-surface/30 backdrop-blur-sm border-l border-muted/20 flex flex-col relative"
       style={{ width: `${width}px` }}
     >
       <button
-        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-iris/40 transition-colors border-0 bg-transparent p-0 z-10"
-        onMouseDown={() => setIsDragging(true)}
-        aria-label="Resize scratchpad"
         type="button"
+        className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-iris/40 transition-colors z-10 border-0 bg-transparent p-0"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        aria-label="Resize scratchpad"
       />
 
       <div className="p-3 border-b border-muted/20 flex items-center justify-between">

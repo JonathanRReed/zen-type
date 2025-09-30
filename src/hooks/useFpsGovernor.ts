@@ -1,10 +1,12 @@
 // Hook for FPS monitoring and performance throttling
 import { useRef, useCallback } from 'react';
 
+type MutableRef<T> = { current: T };
+
 interface FpsGovernorState {
-  frameTimesRef: React.MutableRefObject<number[]>;
-  perfGuardRef: React.MutableRefObject<boolean>;
-  dynCapRef: React.MutableRefObject<number>;
+  frameTimesRef: MutableRef<number[]>;
+  perfGuardRef: MutableRef<boolean>;
+  dynCapRef: MutableRef<number>;
 }
 
 interface FpsGovernorReturn extends FpsGovernorState {

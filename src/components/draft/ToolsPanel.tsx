@@ -68,19 +68,17 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
         grammar: true,
       },
     };
-
     onPrefsChange(presets[preset]);
   };
 
   return (
     <div
-      className="fixed top-0 right-0 h-full w-80 bg-surface/95 backdrop-blur-sm border-l border-muted/20 shadow-xl z-50 overflow-y-auto"
+      className="fixed inset-y-0 right-0 w-96 bg-surface/90 backdrop-blur-md border-l border-muted/20 flex flex-col z-[1001] shadow-xl"
       role="dialog"
       aria-modal="true"
       aria-label="Tools panel"
     >
       <div className="p-4 border-b border-muted/20 flex items-center justify-between sticky top-0 bg-surface/95 backdrop-blur-sm z-10">
-        <h2 className="text-lg font-semibold text-foam">Tools</h2>
         <button
           onClick={onClose}
           className="text-muted hover:text-text transition-colors"

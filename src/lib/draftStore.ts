@@ -88,6 +88,13 @@ export async function updateDraft(id: string, updates: Partial<Draft>): Promise<
   });
 }
 
+export async function updateDraftBody(id: string, body: string): Promise<void> {
+  await db.drafts.update(id, {
+    body,
+    updatedAt: Date.now(),
+  });
+}
+
 export async function deleteDraft(id: string): Promise<void> {
   await db.drafts.delete(id);
 }
@@ -155,6 +162,25 @@ export function saveDraftPrefs(prefs: Partial<DraftPrefs>): void {
   }
 }
 
+// Active draft tracking for zen mode
+const ACTIVE_DRAFT_KEY = 'zt.activeDraft';
+
+export function getActiveDraftId(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(ACTIVE_DRAFT_KEY);
+}
+
+export function setActiveDraftId(id: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (id) {
+    localStorage.setItem(ACTIVE_DRAFT_KEY, id);
+    window.dispatchEvent(new CustomEvent('activeDraftChanged', { detail: { id } }));
+  } else {
+    localStorage.removeItem(ACTIVE_DRAFT_KEY);
+    window.dispatchEvent(new CustomEvent('activeDraftChanged', { detail: { id: null } }));
+  }
+}
+
 export function applyPreset(preset: DraftPrefs['preset']): Partial<DraftPrefs> {
   switch (preset) {
     case 'minimal':
@@ -204,13 +230,15 @@ export async function syncFromArchive(): Promise<void> {
   try {
     const archiveKey = 'zt.archive';
     const lastSyncKey = 'zt.archive.lastSync';
-    
+
     if (typeof window === 'undefined') return;
 
     const archiveData = localStorage.getItem(archiveKey);
+    console.log('[DEBUG] Archive data from localStorage:', archiveData);
     if (!archiveData) return;
 
     const entries = JSON.parse(archiveData);
+    console.log('[DEBUG] Parsed entries:', entries);
     if (!Array.isArray(entries)) return;
 
     // Get last sync timestamp
@@ -218,14 +246,15 @@ export async function syncFromArchive(): Promise<void> {
     let newEntriesCount = 0;
 
     for (const entry of entries) {
+      console.log('[DEBUG] Processing entry:', entry);
       if (!entry.text || !entry.text.trim()) continue;
-      
+
       const entryTime = new Date(entry.startedAt).getTime();
-      
+
       // Only sync entries newer than last sync or if draft doesn't exist
       if (entryTime > lastSync) {
         const existingDraft = await db.drafts.get(entry.id);
-        
+
         if (!existingDraft) {
           const draft: Draft = {
             id: entry.id || `zen_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
@@ -254,7 +283,7 @@ export async function syncFromArchive(): Promise<void> {
 
     // Update last sync timestamp
     localStorage.setItem(lastSyncKey, Date.now().toString());
-    
+
     if (newEntriesCount > 0) {
       console.log(`Synced ${newEntriesCount} new Zen sessions to drafts`);
     }
