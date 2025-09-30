@@ -342,31 +342,33 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
             </IconButton>
           )}
 
-          <IconButton
-            shape="pill"
-            subtle
-            className="uppercase tracking-[0.28em] text-[0.7rem] font-semibold px-5"
+          <Button
+            type="button"
+            variant="outline"
+            className={`${primaryButtonClass} uppercase tracking-[0.26em] text-[0.72rem] font-semibold px-6 min-w-[9rem] justify-center`}
             aria-label="Open settings menu"
             onClick={() => window.dispatchEvent(new CustomEvent('togglePause', { detail: true }))}
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 18 18"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M7.25 3.75h3.5l0.62 1.74a1 1 0 0 0 .6.6l1.74.62v3.5l-1.74.62a1 1 0 0 0-.6.6l-.62 1.74h-3.5l-.62-1.74a1 1 0 0 0-.6-.6l-1.74-.62v-3.5l1.74-.62a1 1 0 0 0 .6-.6Z"
-                stroke="currentColor"
-                strokeWidth="1.2"
-                strokeLinejoin="round"
-              />
-              <circle cx="9" cy="9" r="1.9" stroke="currentColor" strokeWidth="1.2" />
-            </svg>
-            <span>Settings</span>
-          </IconButton>
+            <span className="relative z-10 flex items-center gap-2">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7.25 3.75h3.5l0.62 1.74a1 1 0 0 0 .6.6l1.74.62v3.5l-1.74.62a1 1 0 0 0-.6.6l-.62 1.74h-3.5l-.62-1.74a1 1 0 0 0-.6-.6l-1.74-.62v-3.5l1.74-.62a1 1 0 0 0 .6-.6Z"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinejoin="round"
+                />
+                <circle cx="9" cy="9" r="1.9" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+              <span>Settings</span>
+            </span>
+          </Button>
 
           <div ref={quickWrapperRef} className="relative">
             <IconButton

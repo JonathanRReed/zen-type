@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   getAllDrafts,
   getDraft,
@@ -367,32 +368,106 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
           ) : (
             drafts.map(draft => {
               const isActive = currentDraft?.id === draft.id;
-              const updatedDate = new Date(draft.updatedAt).toLocaleDateString();
+              const updatedAt = new Date(draft.updatedAt);
+              const dateLabel = updatedAt.toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              });
+              const timeLabel = updatedAt.toLocaleTimeString(undefined, {
+                hour: 'numeric',
+                minute: '2-digit',
+              });
               const displayTitle = (draft.title && draft.title.trim().length > 0)
                 ? draft.title.trim()
-                : `Zen Session: ${new Date(draft.updatedAt).toLocaleString()}`;
+                : `Zen Session: ${updatedAt.toLocaleString()}`;
+              const previewLine = draft.body
+                .split('\n')
+                .map(line => line.trim())
+                .find(line => line.length > 0);
+              const previewText = previewLine
+                ? previewLine.length > 140
+                  ? `${previewLine.slice(0, 140).trim()}…`
+                  : previewLine
+                : '';
+              const tagsToShow = draft.tags.slice(0, 2);
 
               return (
-                <Button
+                <button
                   key={draft.id}
+                  type="button"
                   onClick={() => handleSelectDraft(draft.id)}
-                  variant="ghost"
-                  className={`w-full flex flex-col items-start gap-2 px-5 py-4 rounded-none border text-left min-h-[76px] transition-all ${
+                  className={cn(
+                    'group relative w-full text-left px-5 py-4 rounded-xl border transition-all bg-surface/45 flex flex-col items-stretch justify-start whitespace-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface/60',
                     isActive
-                      ? 'bg-iris/15 border-iris/45 shadow-[0_8px_22px_rgba(26,12,48,0.35)]'
-                      : 'bg-surface/40 border-muted/30 hover:bg-surface/55 hover:border-iris/35 hover:shadow-[0_6px_18px_rgba(26,12,48,0.28)]'
-                  }`}
+                      ? 'border-iris/55 bg-iris/20 shadow-[0_12px_28px_rgba(26,12,48,0.38)]'
+                      : 'border-muted/25 hover:border-iris/45 hover:bg-surface/60 hover:shadow-[0_10px_24px_rgba(26,12,48,0.32)]'
+                  )}
                 >
-                  <span
-                    title={displayTitle}
-                    className="block w-full text-[15px] font-semibold text-text leading-[1.5] overflow-hidden line-clamp-2 mb-0.5 break-words"
-                  >
-                    {displayTitle}
-                  </span>
-                  <span className="text-xs tracking-wide text-muted/80 leading-[1.4]">
-                    {updatedDate}
-                  </span>
-                </Button>
+                  <div className="flex w-full flex-col gap-2">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p
+                          title={displayTitle}
+                          className="text-[15px] font-semibold text-text leading-[1.45] overflow-hidden line-clamp-2 break-words"
+                        >
+                          {displayTitle}
+                        </p>
+                      </div>
+                      <div className="shrink-0">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-[0.18em] uppercase ${
+                            isActive
+                              ? 'border-iris/40 bg-iris/10 text-iris'
+                              : 'border-muted/30 bg-transparent text-muted/70'
+                          }`}
+                        >
+                          {isActive ? 'Active' : 'Draft'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {previewText && (
+                      <p className="text-sm text-muted/90 leading-relaxed line-clamp-2">
+                        {previewText}
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted/80">
+                      <span className="flex items-center gap-1">
+                        <svg
+                          className="h-3.5 w-3.5 text-muted/70"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <span>{dateLabel}</span>
+                      </span>
+                      <span className="text-muted/60">•</span>
+                      <span>{timeLabel}</span>
+                      {tagsToShow.length > 0 && (
+                        <span className="text-muted/60">•</span>
+                      )}
+                      {tagsToShow.map(tag => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-iris/40 bg-iris/10 px-2 py-0.5 text-[11px] font-medium text-iris"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </button>
               );
             })
           )}
