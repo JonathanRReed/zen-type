@@ -9,7 +9,6 @@ import {
   type StorageFailureDetail,
 } from '../utils/storage';
 import { loadQuotes, getRandomQuote, getFallbackQuotes, type Quote } from '../utils/quotes';
-import { exportManager } from '../utils/exportManager';
 import { Button } from '@/components/ui/button';
 
 interface QuoteTyperProps {
@@ -63,10 +62,13 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   const [streakTotal, setStreakTotal] = useState(0);
   const quotesRef = useRef<Quote[]>([]);
   const fallbackQuotesRef = useRef<Quote[]>(getFallbackQuotes());
+  const activeQuoteRef = useRef(activeQuote);
   const [isPending, startTransition] = useTransition();
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [visibleChars, setVisibleChars] = useState(0);
   const [isAnimatingQuote, setIsAnimatingQuote] = useState(true);
+  const [progressAnnouncement, setProgressAnnouncement] = useState<string | null>(null);
+  const progressTimeoutRef = useRef<number | null>(null);
 
   // Chunking
   type Chunk = { start: number; end: number; wordStart: number; wordEnd: number; };
@@ -106,6 +108,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     } catch {}
   }, []);
 
+  const triggerNewQuote = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('newQuote'));
+  }, []);
+
   const computeChunks = useCallback(() => {
     // Split into ~10 word chunks (8–12 adaptive bounds)
     const words = activeQuote.split(/\s+/).filter(Boolean);
@@ -121,6 +127,11 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       idx = found + w!.length;
       wi++;
     }
+    chunkStartTimesRef.current.clear();
+    chunkCorrectRef.current.clear();
+    chunkTypedRef.current.clear();
+    setCurrentChunkIndex(0);
+
     const ch: Chunk[] = [];
     let w = 0;
     // Adaptive chunk sizing to keep ~10 words per chunk within 8..12
@@ -145,9 +156,14 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     setChunks(ch);
   }, [activeQuote]);
 
-  useEffect(() => { computeChunks(); }, [computeChunks]);
+  useEffect(() => {
+    computeChunks();
+  }, [computeChunks]);
 
-  // Load quotes on client and listen for setting changes and manual newQuote requests
+  useEffect(() => {
+    activeQuoteRef.current = activeQuote;
+  }, [activeQuote]);
+
   useEffect(() => {
     let mounted = true;
     loadQuotes()
@@ -184,7 +200,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         if (pool.length) {
           let next = getRandomQuote(pool);
           let guard = 0;
-          while (next.text === activeQuote && guard++ < 5) {
+          const currentQuote = activeQuoteRef.current;
+          while (next.text === currentQuote && guard++ < 5) {
             next = getRandomQuote(pool);
           }
           nextQuote = next.text;
@@ -193,6 +210,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       }
 
       if (typeof nextQuote === 'string') {
+        activeQuoteRef.current = nextQuote!;
         startTransition(() => {
           setActiveQuote(nextQuote!);
           setActiveAuthor(nextAuthor);
@@ -209,7 +227,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       window.removeEventListener('settingsChanged', onSettings as EventListener);
       window.removeEventListener('newQuote', onNew as EventListener);
     };
-  }, [activeQuote]);
+  }, []);
 
   // Listen for storage persistence errors and warn users
   useEffect(() => {
@@ -302,7 +320,11 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
             const t = m.get(target)!;
             m.delete(target);
             setErrorTypeAt(m);
-            setErrorCounts(prev => ({ ...prev, [t]: Math.max(0, (prev as any)[t] - 1) }));
+            setErrorCounts(prev => {
+              const next = { ...prev };
+              next[t] = Math.max(0, prev[t] - 1);
+              return next;
+            });
           }
         }
       }
@@ -331,7 +353,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       const buf = [...typedChars];
       buf[cursor] = e.key;
       setTypedChars(buf);
-      setTotalTyped(totalTyped + 1);
+      setTotalTyped(prev => prev + 1);
 
       const expected = activeQuote?.[cursor];
       const isCorrect = e.key === expected;
@@ -347,7 +369,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       }
 
       if (isCorrect) {
-        setCorrectChars(correctChars + 1);
+        setCorrectChars(prev => prev + 1);
         // chunk counters
         chunkCorrectRef.current.set(chIndex, (chunkCorrectRef.current.get(chIndex) || 0) + 1);
         chunkTypedRef.current.set(chIndex, (chunkTypedRef.current.get(chIndex) || 0) + 1);
@@ -355,7 +377,11 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         const m = new Map(errorTypeAt);
         if (m.has(cursor)) {
           const t = m.get(cursor)!; m.delete(cursor); setErrorTypeAt(m);
-          setErrorCounts(prev => ({ ...prev, [t]: Math.max(0, (prev as any)[t] - 1) }));
+          setErrorCounts(prev => {
+            const next = { ...prev };
+            next[t] = Math.max(0, prev[t] - 1);
+            return next;
+          });
         }
       } else {
         // Mark error and update chunk typed
@@ -366,7 +392,11 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           if (!m.has(cursor)) {
             m.set(cursor, errType);
             setErrorTypeAt(m);
-            setErrorCounts(prev => ({ ...prev, [errType!]: (prev as any)[errType!] + 1 }));
+            setErrorCounts(prev => {
+              const next = { ...prev };
+              next[errType] = next[errType] + 1;
+              return next;
+            });
           }
         }
       }
@@ -439,7 +469,9 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           if (pool.length) {
             let next = getRandomQuote(pool);
             let guard = 0;
-            while (next.text === activeQuote && guard++ < 5) next = getRandomQuote(pool);
+            const currentQuote = activeQuoteRef.current;
+            while (next.text === currentQuote && guard++ < 5) next = getRandomQuote(pool);
+            activeQuoteRef.current = next.text;
             setActiveQuote(next.text);
             setActiveAuthor(next.author);
           }
@@ -458,26 +490,37 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   };
 
   // Announce progress for accessibility
-  const announceProgress = (percent: number) => {
-    const announcement = document.createElement('div');
-    announcement.setAttribute('role', 'status');
-    announcement.setAttribute('aria-live', 'polite');
-    announcement.className = 'sr-only';
-    announcement.textContent = `${percent}% complete`;
-    document.body.appendChild(announcement);
-    setTimeout(() => document.body.removeChild(announcement), 1000);
-  };
+  const announceProgress = useCallback((percent: number) => {
+    setProgressAnnouncement(`${percent}% complete`);
+    if (progressTimeoutRef.current !== null) {
+      window.clearTimeout(progressTimeoutRef.current);
+    }
+    progressTimeoutRef.current = window.setTimeout(() => {
+      setProgressAnnouncement(null);
+      progressTimeoutRef.current = null;
+    }, 1000);
+  }, []);
 
   // Reset function
   const handleReset = () => {
     setCursor(0);
     setTypedChars([]);
     setErrors(new Set());
+    setErrorTypeAt(new Map());
+    setErrorCounts({ slip: 0, skip: 0, extra: 0 });
     setStartTime(null);
     setEndTime(null);
     setIsComplete(false);
     setTotalTyped(0);
     setCorrectChars(0);
+    chunkStartTimesRef.current.clear();
+    chunkCorrectRef.current.clear();
+    chunkTypedRef.current.clear();
+    if (progressTimeoutRef.current !== null) {
+      window.clearTimeout(progressTimeoutRef.current);
+      progressTimeoutRef.current = null;
+    }
+    setProgressAnnouncement(null);
     lastAnnouncedProgress.current = 0;
     inputRef.current?.focus();
   };
@@ -557,8 +600,19 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     ? 'flex flex-col items-center min-h-screen w-full px-6 pt-16 pb-56 gap-10'
     : 'flex flex-col items-center justify-center min-h-screen w-full px-6 py-12 pb-40';
 
+  useEffect(() => {
+    return () => {
+      if (progressTimeoutRef.current !== null) {
+        window.clearTimeout(progressTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className={containerClass}>
+      <div role="status" aria-live="polite" className="sr-only">
+        {progressAnnouncement ?? ''}
+      </div>
       {storageWarning && (
         <div
           className="absolute top-4 left-1/2 -translate-x-1/2 max-w-md px-4 py-3 z-50
@@ -685,30 +739,11 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
             </div>
             <div className="flex items-center justify-center gap-3">
               <Button
-                onClick={() => {
-                  if (!startTime || !endTime) return;
-                  exportManager.exportData({
-                    format: 'png',
-                    includeStats: true
-                  }).catch(err => console.error('Export failed:', err));
-                }}
+                onClick={() => triggerNewQuote()}
                 variant="outline"
                 className="bg-gold/20 hover:bg-gold/30 border-gold/40 text-gold"
               >
-                Export session card
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!startTime || !endTime) return;
-                  exportManager.exportData({
-                    format: 'svg',
-                    includeStats: true
-                  }).catch(err => console.error('Export failed:', err));
-                }}
-                variant="outline"
-                className="bg-foam/20 hover:bg-foam/30 border-foam/40 text-foam"
-              >
-                Export SVG card
+                New Quote
               </Button>
               <Button
                 onClick={() => toggleAutoAdvance(!autoAdvance)}
