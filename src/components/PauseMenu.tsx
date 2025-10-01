@@ -139,7 +139,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
               <Button
                 onClick={closeMenu}
                 variant="outline"
-                className="w-full px-6 py-3 bg-iris/20 hover:bg-iris/30 border-iris/40 text-iris font-sans transition-all"
+                className="w-full px-6 py-3 bg-iris/20 hover:bg-iris/30 border-iris/40 text-iris font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-iris/50 focus-visible:ring-2 focus-visible:ring-iris/50 active:scale-[0.98]"
               >
                 Resume
               </Button>
@@ -168,7 +168,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                     closeMenu();
                   }}
                   variant="outline"
-                  className="w-full px-6 py-3 bg-love/20 hover:bg-love/30 border-love/40 text-love font-sans transition-all"
+                  className="w-full px-6 py-3 bg-love/20 hover:bg-love/30 border-love/40 text-love font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-love/50 focus-visible:ring-2 focus-visible:ring-love/50 active:scale-[0.98]"
                 >
                   Reset Session
                 </Button>
@@ -178,7 +178,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                 <Button
                   onClick={() => setShowSettings(true)}
                   variant="outline"
-                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-all"
+                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-muted/40 focus-visible:ring-2 focus-visible:ring-muted/40 active:scale-[0.98]"
                 >
                   Settings
                 </Button>
@@ -186,7 +186,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                 <Button
                   onClick={() => setShowAbout(true)}
                   variant="outline"
-                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-all"
+                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-muted/40 focus-visible:ring-2 focus-visible:ring-muted/40 active:scale-[0.98]"
                 >
                   About
                 </Button>

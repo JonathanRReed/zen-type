@@ -10,7 +10,6 @@ import {
 } from '../utils/storage';
 import { useMotionPreference } from '../hooks/useMotionPreference';
 import {
-  getActiveDraftId,
   setActiveDraftId,
   createDraft,
   updateDraftBody,
@@ -126,6 +125,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const ghostLogRef = useRef<{ t: number; ch: string }[]>([]);
   const transcriptRef = useRef<string>('');
   const activeDraftIdRef = useRef<string | null>(null);
+  const draftInitPromiseRef = useRef<Promise<void> | null>(null);
   const draftDirtyRef = useRef<boolean>(false);
   const draftSaveTimerRef = useRef<number | null>(null);
   const styleCacheRef = useRef<StyleCache | null>(null);
@@ -159,6 +159,30 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
   const finalizeDraft = useCallback(async () => {
     await saveDraft();
+  }, [saveDraft]);
+
+  const ensureDraftInitialized = useCallback(() => {
+    if (activeDraftIdRef.current || draftInitPromiseRef.current) {
+      return;
+    }
+
+    draftInitPromiseRef.current = (async () => {
+      try {
+        const now = new Date();
+        const title = `Zen Session: ${now.toLocaleString()}`;
+        const draft = await createDraft(title);
+        activeDraftIdRef.current = draft.id;
+        setActiveDraftId(draft.id);
+      } catch (err) {
+        console.error('[ZenCanvas] Failed to initialize draft', err);
+        activeDraftIdRef.current = null;
+      } finally {
+        draftInitPromiseRef.current = null;
+        if (activeDraftIdRef.current && draftDirtyRef.current) {
+          await saveDraft();
+        }
+      }
+    })();
   }, [saveDraft]);
 
   const trimAmbientParticles = useCallback(() => {
@@ -236,27 +260,6 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
   // Initialize or switch active draft
   useEffect(() => {
-    const initDraft = async () => {
-      let draftId = getActiveDraftId();
-      
-      if (!draftId) {
-        // Create a new draft for this zen session
-        const draft = await createDraft('Zen Session');
-        draftId = draft.id;
-        setActiveDraftId(draftId);
-      } else {
-        // Load existing draft content
-        const draft = await getDraft(draftId);
-        if (draft) {
-          transcriptRef.current = draft.body;
-        }
-      }
-      
-      activeDraftIdRef.current = draftId;
-    };
-    
-    initDraft();
-    
     const handleDraftChange = (e: Event) => {
       const detail = (e as CustomEvent).detail as { id: string | null };
       activeDraftIdRef.current = detail.id;
@@ -270,7 +273,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         transcriptRef.current = '';
       }
     };
-    
+
     window.addEventListener('activeDraftChanged', handleDraftChange as EventListener);
     
     return () => {
@@ -398,6 +401,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const commitWord = useCallback((word: string, delimiter: string) => {
     if (!word) return;
 
+    ensureDraftInitialized();
+
     const s = getSettingsSnapshot();
     const density = Math.max(0.5, Math.min(1.5, s.spawnDensity ?? 1.0));
     
@@ -429,7 +434,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     ghostLogRef.current = ghostLogRef.current.filter(ev => ev.t >= cutoff);
     
     markDraftDirty();
-  }, [spawnToken, markDraftDirty]);
+  }, [spawnToken, markDraftDirty, ensureDraftInitialized]);
 
   // Handle input changes with proper controlled input pattern
   const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

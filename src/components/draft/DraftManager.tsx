@@ -334,9 +334,14 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] glass-theme flex" role="dialog" aria-modal="true">
-      {/* Sidebar */}
-      <div className="w-72 bg-surface/40 backdrop-blur-sm border-r border-muted/20 flex flex-col">
+    <div className="fixed inset-0 z-[1000] glass-theme" role="dialog" aria-modal="true">
+      <div className="pointer-events-none fixed inset-0 z-0 theme-layer">
+        <div className="forest-rays" aria-hidden="true" />
+        <div className="ocean-lights" aria-hidden="true" />
+      </div>
+      <div className="relative z-10 flex h-full">
+        {/* Sidebar */}
+        <div className="w-72 bg-surface/40 backdrop-blur-sm border-r border-muted/20 flex flex-col">
         <div className="p-4 border-b border-muted/20 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-sans text-foam">Drafts</h2>
@@ -495,10 +500,10 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
             {drafts.length} draft{drafts.length !== 1 ? 's' : ''}
           </p>
         </div>
-      </div>
+        </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
+        {/* Main content */}
+        <div className="flex-1 flex flex-col">
         {currentDraft ? (
           <>
             {/* Header */}
@@ -650,6 +655,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Modals */}
