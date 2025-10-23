@@ -2,8 +2,10 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
+import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
+  site: 'https://zentype.jonathanrreed.com',
   integrations: [
     react({
       babel: {
@@ -12,7 +14,8 @@ export default defineConfig({
     }),
     tailwind({
       applyBaseStyles: false,
-    })
+    }),
+    sitemap()
   ],
   vite: {
     build: {

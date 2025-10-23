@@ -1,0 +1,50 @@
+# Zen Typer
+
+> Zen Typer is a mindful typing application built with Astro 5 and React 19, featuring two distinct modes: Quote Mode for practicing with curated Zen quotes, and Zen Mode for free-flow creative typing. The app uses the Rosé Pine color palette and emphasizes accessibility, performance, and a distraction-free user experience.
+
+Zen Typer helps users improve typing speed and accuracy through mindfulness. The application features:
+
+- **Quote Mode**: Type curated Zen quotes with real-time accuracy tracking, WPM metrics, and performance analytics
+- **Zen Mode**: Free-flow typing experience with floating word tokens that drift upward, session persistence, and draft management
+- **Design System**: Built on Rosé Pine palette with theme presets (Void, Forest, Ocean, Cosmic)
+- **Accessibility First**: Full keyboard navigation, screen reader support, reduced motion options, and high contrast mode
+- **Local Persistence**: All sessions, streaks, and preferences stored locally using IndexedDB via Dexie
+
+## Technical Stack
+
+- [Astro Documentation](https://docs.astro.build/): Framework for building the application with islands architecture
+- [React Documentation](https://react.dev/): Component library used for interactive islands
+- [Tailwind CSS](https://tailwindcss.com/docs): Utility-first CSS framework for styling
+- [Rosé Pine](https://rosepinetheme.com/): Color palette and design system
+- [Bun](https://bun.sh/docs): JavaScript runtime and package manager
+
+## Key Features
+
+- **Typing Modes**: Quote mode for guided practice and Zen mode for creative expression
+- **Performance Tracking**: Real-time WPM, accuracy percentage, and session history
+- **Theme System**: Multiple theme presets maintaining Rosé Pine core colors
+- **Accessibility**: WCAG compliant with keyboard navigation and screen reader support
+- **Data Persistence**: Local storage using IndexedDB for offline-first experience
+
+## Architecture
+
+The application uses Astro's islands architecture with React components for interactivity. Key components include:
+
+- `QuoteTyper.tsx`: Handles quote mode typing with accuracy tracking
+- `ZenCanvas.tsx`: Manages zen mode with floating tokens and session overlays
+- `StatsBar.tsx`: Displays real-time performance metrics
+- `SettingsPanel.tsx`: Manages user preferences and customization
+
+Storage is handled through `src/utils/storage.ts` using localStorage and IndexedDB (Dexie) for session persistence and analytics.
+
+## API & Integration
+
+Zen Typer is a standalone web application with no external APIs. All data is stored locally. The application can be integrated into other projects or deployed as a static site.
+
+For deployment, the build process generates optimized static files with code splitting and image optimization.
+
+## Optional
+
+- [Vitest Documentation](https://vitest.dev/): Testing framework used for component and utility tests
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/): Type system used throughout the codebase
+- [Dexie.js Documentation](https://dexie.org/): IndexedDB wrapper for session storage
