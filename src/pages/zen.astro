@@ -10,22 +10,17 @@ import SiteFooter from '../components/SiteFooter';
 import ClientTransitions from '../components/ClientTransitions';
 import SiteHeader from '../components/SiteHeader';
 import ErrorBoundary from '../components/ErrorBoundary';
+import SEO from '../components/SEO.astro';
 ---
 
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/webp" href="/Favicon.webp" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Zen Mode - Zen Typer</title>
-		<meta name="description" content="Free-flow typing in Zen Mode - Watch your words drift upward like thoughts" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			rel="stylesheet"
-			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Lato:wght@400;700&display=swap"
+		<SEO 
+			title="Zen Typer - Zen Mode | Free-Flow Mindful Typing"
+			description="Experience free-flow typing in Zen Mode. Watch your words drift upward like thoughts in a peaceful, distraction-free environment designed for creativity and mindfulness."
+			canonical="https://zentype.jonathanrreed.com/zen"
+			ogImage="/Favicon.webp"
 		/>
 	</head>
 	<body>
@@ -39,6 +34,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 				Skip to main content
 			</a>
 			<div id="zen-app" class="relative w-full min-h-screen overflow-hidden stats-cq-host">
+				<h1 class="sr-only">Zen Typer Zen Mode - Free-Flow Mindful Typing</h1>
 				<SiteHeader client:load mode="zen" />
 
 				<!-- Main canvas -->

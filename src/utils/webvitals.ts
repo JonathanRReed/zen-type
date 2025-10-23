@@ -124,12 +124,13 @@ class WebVitalsTracker {
       if (navigation) {
         const domContentLoaded = navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart;
         const loadComplete = navigation.loadEventEnd - navigation.loadEventStart;
+        const totalLoad = navigation.loadEventEnd - navigation.fetchStart;
 
         if (this.config.reportToConsole) {
           console.log(`🏠 Navigation Timing:`);
           console.log(`   - DOM Content Loaded: ${domContentLoaded}ms`);
           console.log(`   - Load Complete: ${loadComplete}ms`);
-          console.log(`   - Total Load Time: ${navigation.loadEventEnd - (navigation as any).navigationStart}ms`);
+          console.log(`   - Total Load Time: ${totalLoad}ms`);
         }
       }
     }

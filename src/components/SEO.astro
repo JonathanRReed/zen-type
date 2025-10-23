@@ -1,0 +1,91 @@
+---
+export interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  ogType?: 'website' | 'article';
+  ogImage?: string;
+  ogImageAlt?: string;
+  twitterCard?: 'summary' | 'summary_large_image';
+  noindex?: boolean;
+  nofollow?: boolean;
+  jsonLd?: Record<string, any>;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  ogType = 'website',
+  ogImage = '/Favicon.webp',
+  ogImageAlt = 'Zen Typer - Mindful Typing Experience',
+  twitterCard = 'summary_large_image',
+  noindex = false,
+  nofollow = false,
+  jsonLd,
+} = Astro.props;
+
+// Fallback to current URL origin if Astro.site is not configured
+const siteUrl = Astro.site?.href || Astro.url.origin;
+const currentUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
+const fullOgImage = new URL(ogImage, siteUrl).href;
+
+const robotsContent = [
+  noindex ? 'noindex' : 'index',
+  nofollow ? 'nofollow' : 'follow'
+].join(', ');
+
+const defaultJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Zen Typer',
+  description: 'A mindful typing experience with Zen quotes and free-flow modes',
+  url: Astro.site?.href || currentUrl,
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Web Browser',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD'
+  }
+};
+
+const structuredData = jsonLd || defaultJsonLd;
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="generator" content={Astro.generator} />
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="robots" content={robotsContent} />
+<link rel="canonical" href={currentUrl} />
+
+<meta property="og:type" content={ogType} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={currentUrl} />
+<meta property="og:image" content={fullOgImage} />
+<meta property="og:image:alt" content={ogImageAlt} />
+<meta property="og:site_name" content="Zen Typer" />
+<meta property="og:locale" content="en_US" />
+
+<meta name="twitter:card" content={twitterCard} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={fullOgImage} />
+<meta name="twitter:image:alt" content={ogImageAlt} />
+
+<meta name="theme-color" content="#191724" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#faf4ed" media="(prefers-color-scheme: light)" />
+
+<script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
+<link rel="icon" type="image/webp" href="/Favicon.webp" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Lato:wght@400;700&display=swap"
+/>

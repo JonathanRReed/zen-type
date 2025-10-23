@@ -33,28 +33,42 @@ const ClientTransitions: React.FC = () => {
   }, []);
 
   const runTransition = useCallback((navigate: () => void) => {
-    // @ts-ignore experimental API
-    const vt = typeof document !== 'undefined' ? (document as any).startViewTransition : undefined;
-    if (!shouldUseViewTransition() || typeof vt !== 'function') {
+    if (typeof document === 'undefined' || !shouldUseViewTransition()) {
       navigate();
       return;
     }
 
-    // @ts-ignore startViewTransition signature
-    const transition = vt(navigate);
-    const root = document.documentElement;
-    const timeout = window.setTimeout(() => {
-      root.removeAttribute('data-transition-theme');
-    }, 600);
+    // @ts-ignore experimental API
+    const vt = (document as any).startViewTransition;
+    if (typeof vt !== 'function') {
+      navigate();
+      return;
+    }
 
-    transition.finished
-      .catch(() => {})
-      .finally(() => {
+    try {
+      // @ts-ignore startViewTransition signature
+      const transition = vt.call(document, navigate);
+      if (!transition) {
+        navigate();
+        return;
+      }
+      const root = document.documentElement;
+      const timeout = window.setTimeout(() => {
         root.removeAttribute('data-transition-theme');
-        window.clearTimeout(timeout);
-        pendingNavigateRef.current?.();
-        pendingNavigateRef.current = null;
-      });
+      }, 600);
+
+      transition.finished
+        .catch(() => {})
+        .finally(() => {
+          root.removeAttribute('data-transition-theme');
+          window.clearTimeout(timeout);
+          pendingNavigateRef.current?.();
+          pendingNavigateRef.current = null;
+        });
+    } catch (err) {
+      console.warn('View transition failed:', err);
+      navigate();
+    }
   }, []);
 
   useEffect(() => {
