@@ -1,12 +1,6 @@
 import { defineMiddleware } from 'astro/middleware';
 
-export const onRequest = defineMiddleware(async (context, next) => {
-  const p = context.url.pathname;
-
-  // Serve Quote Mode content at root without redirect (no visible navigation)
-  if (p === '/' || p === '/index' || p === '/index.html') {
-    return context.rewrite('/quote');
-  }
-
+export const onRequest = defineMiddleware(async (_context, next) => {
+  // Pass through all requests - each page handles its own routing
   return next();
 });

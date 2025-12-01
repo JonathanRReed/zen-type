@@ -1,43 +1,3 @@
-@font-face {
-  font-family: 'Nebula Sans';
-  src: url('https://fonts.helloworldfirm.com/NebulaSans-Light.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Nebula Sans';
-  src: url('https://fonts.helloworldfirm.com/NebulaSans-LightItalic.woff2') format('woff2');
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Nebula Sans';
-  src: url('https://fonts.helloworldfirm.com/NebulaSans-Book.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Nebula Sans';
-  src: url('https://fonts.helloworldfirm.com/NebulaSans-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Nebula Sans';
-  src: url('https://fonts.helloworldfirm.com/NebulaSans-BoldItalic.woff2') format('woff2');
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -68,8 +28,8 @@
   --theme-gradient-center-x: 50%;
   --theme-gradient-center-y: 50%;
   --theme-hue-shift: 0deg;
-  --typing-font: 'Nebula Sans', 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  --ui-font: 'Nebula Sans', 'Inter', 'Manrope', 'Space Grotesk', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --typing-font: 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --ui-font: 'Inter', 'Manrope', 'Space Grotesk', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   
   --radius: 0.75rem;
   --background: 270 20% 10%;
