@@ -1,14 +1,14 @@
 ---
-import { ViewTransitions } from 'astro:transitions';
+import { ViewTransitions } from "astro:transitions";
 
 export interface Props {
   title: string;
   description: string;
   canonical?: string;
-  ogType?: 'website' | 'article';
+  ogType?: "website" | "article";
   ogImage?: string;
   ogImageAlt?: string;
-  twitterCard?: 'summary' | 'summary_large_image';
+  twitterCard?: "summary" | "summary_large_image";
   noindex?: boolean;
   nofollow?: boolean;
   jsonLd?: Record<string, any>;
@@ -18,10 +18,10 @@ const {
   title,
   description,
   canonical,
-  ogType = 'website',
-  ogImage = '/Favicon.webp',
-  ogImageAlt = 'Zen Typer - Mindful Typing Experience',
-  twitterCard = 'summary_large_image',
+  ogType = "website",
+  ogImage = "/Favicon.webp",
+  ogImageAlt = "Zen Typer - Mindful Typing Experience",
+  twitterCard = "summary_large_image",
   noindex = false,
   nofollow = false,
   jsonLd,
@@ -33,23 +33,39 @@ const currentUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
 const fullOgImage = new URL(ogImage, siteUrl).href;
 
 const robotsContent = [
-  noindex ? 'noindex' : 'index',
-  nofollow ? 'nofollow' : 'follow'
-].join(', ');
+  noindex ? "noindex" : "index",
+  nofollow ? "nofollow" : "follow",
+].join(", ");
 
 const defaultJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'Zen Typer',
-  description: 'A mindful typing experience with Zen quotes and free-flow modes',
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Zen Typer",
+  headline: "Free Typing Trainer & Mindful Typing Test",
+  description:
+    "A mindful typing experience with Zen quotes and free-flow modes. Improve your typing speed and accuracy through guided quote-based practice or free-flow creative typing.",
   url: Astro.site?.href || currentUrl,
-  applicationCategory: 'UtilitiesApplication',
-  operatingSystem: 'Web Browser',
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "Web Browser",
+  browserRequirements:
+    "Requires JavaScript. Best experienced in modern browsers.",
+  keywords:
+    "typing trainer, typing test, typing practice, mindful typing, zen quotes, improve typing speed, typing accuracy",
+  author: {
+    "@type": "Person",
+    name: "Jonathan Reed",
+    url: "https://jonathanrreed.com",
+  },
+  creator: {
+    "@type": "Person",
+    name: "Jonathan Reed",
+    url: "https://jonathanrreed.com",
+  },
   offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD'
-  }
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
 };
 
 const structuredData = jsonLd || defaultJsonLd;
@@ -79,8 +95,16 @@ const structuredData = jsonLd || defaultJsonLd;
 <meta name="twitter:image" content={fullOgImage} />
 <meta name="twitter:image:alt" content={ogImageAlt} />
 
-<meta name="theme-color" content="#191724" media="(prefers-color-scheme: dark)" />
-<meta name="theme-color" content="#faf4ed" media="(prefers-color-scheme: light)" />
+<meta
+  name="theme-color"
+  content="#191724"
+  media="(prefers-color-scheme: dark)"
+/>
+<meta
+  name="theme-color"
+  content="#faf4ed"
+  media="(prefers-color-scheme: light)"
+/>
 
 <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
 

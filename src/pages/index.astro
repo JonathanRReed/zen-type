@@ -1,27 +1,27 @@
 ---
-import '../styles/globals.css';
-import QuoteTyper from '../components/QuoteTyper';
-import StatsBar from '../components/StatsBar';
-import PauseMenu from '../components/PauseMenu';
-import HelpSheet from '../components/HelpSheet';
-import AboutOverlay from '../components/AboutOverlay';
-import ArchiveOverlay from '../components/ArchiveOverlay';
-import SiteFooter from '../components/SiteFooter';
-import ClientTransitions from '../components/ClientTransitions';
-import SiteHeader from '../components/SiteHeader';
-import ErrorBoundary from '../components/ErrorBoundary';
-import SEO from '../components/SEO.astro';
-import { loadQuotes, getRandomQuote } from '../utils/quotes';
+import "../styles/globals.css";
+import QuoteTyper from "../components/QuoteTyper";
+import StatsBar from "../components/StatsBar";
+import PauseMenu from "../components/PauseMenu";
+import HelpSheet from "../components/HelpSheet";
+import AboutOverlay from "../components/AboutOverlay";
+import ArchiveOverlay from "../components/ArchiveOverlay";
+import SiteFooter from "../components/SiteFooter";
+import ClientTransitions from "../components/ClientTransitions";
+import SiteHeader from "../components/SiteHeader";
+import ErrorBoundary from "../components/ErrorBoundary";
+import SEO from "../components/SEO.astro";
+import { loadQuotes, getRandomQuote } from "../utils/quotes";
 
 const quotes = await loadQuotes();
 const randomQuote = getRandomQuote(quotes);
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 	<head>
-		<SEO 
-			title="Zen Typer | Mindful Typing Practice with Zen Quotes"
+		<SEO
+			title="Zen Typer | Free Typing Trainer & Mindful Typing Test – Jonathan Reed"
 			description="Improve your typing speed and accuracy through mindfulness. Choose between Quote Mode for guided practice or Zen Mode for free-flow creative typing. Start your mindful typing journey today."
 			canonical="https://zentype.jonathanrreed.com/"
 			ogImage="/Favicon.webp"
@@ -36,22 +36,38 @@ const randomQuote = getRandomQuote(quotes);
 			>
 				Skip to main content
 			</a>
-			<div id="quote-app" class="relative w-full min-h-screen overflow-hidden stats-cq-host">
+			<div
+				id="quote-app"
+				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
+			>
 				<h1 class="sr-only">Zen Typer - Mindful Typing Practice</h1>
+				<p class="sr-only">
+					Zen Typer is a free online typing trainer and typing test
+					application designed to improve your typing speed and
+					accuracy through mindfulness. Practice with curated Zen
+					quotes in Quote Mode or enjoy free-flow creative typing in
+					Zen Mode. Track your progress with real-time WPM and
+					accuracy statistics.
+				</p>
 				<SiteHeader client:load mode="quote" />
 				<div class="pointer-events-none fixed inset-0 z-0 theme-layer">
 					<div class="forest-rays" aria-hidden="true"></div>
 					<div class="ocean-lights" aria-hidden="true"></div>
 				</div>
 
-				<div class="relative z-10 flex w-full items-center justify-center px-6 py-12 pb-40">
+				<div
+					class="relative z-10 flex w-full items-center justify-center px-6 py-12 pb-40"
+				>
 					<div class="w-full max-w-4xl">
 						<QuoteTyper
 							client:load
 							quote={randomQuote.text}
 							author={randomQuote.author}
 							onComplete={(summary) => {
-								const completeEvent = new CustomEvent('quoteComplete', { detail: summary });
+								const completeEvent = new CustomEvent(
+									"quoteComplete",
+									{ detail: summary },
+								);
 								window.dispatchEvent(completeEvent);
 							}}
 						/>
@@ -69,16 +85,12 @@ const randomQuote = getRandomQuote(quotes);
 					client:idle
 					mode="quote"
 					onReset={() => {
-						window.dispatchEvent(new CustomEvent('newQuote'));
+						window.dispatchEvent(new CustomEvent("newQuote"));
 					}}
 					data-pause-menu
 				/>
 
-				<HelpSheet
-					client:idle
-					isOpen={false}
-					onClose={() => {}}
-				/>
+				<HelpSheet client:idle isOpen={false} onClose={() => {}} />
 				<ArchiveOverlay client:idle />
 				<AboutOverlay client:idle />
 				<SiteFooter client:idle />
@@ -87,20 +99,30 @@ const randomQuote = getRandomQuote(quotes);
 
 		<script>
 			let isPaused = false;
-			document.addEventListener('keydown', (e) => {
+			document.addEventListener("keydown", (e) => {
 				const ae = document.activeElement;
-				const tag = ae && ae.tagName ? ae.tagName.toLowerCase() : '';
-				const isTyping = tag === 'input' || tag === 'textarea';
+				const tag = ae && ae.tagName ? ae.tagName.toLowerCase() : "";
+				const isTyping = tag === "input" || tag === "textarea";
 
-				if (!isTyping && e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+				if (
+					!isTyping &&
+					e.key === "Tab" &&
+					!e.ctrlKey &&
+					!e.metaKey &&
+					!e.shiftKey
+				) {
 					e.preventDefault();
-					window.dispatchEvent(new CustomEvent('app:navigate', { detail: '/zen' }));
+					window.dispatchEvent(
+						new CustomEvent("app:navigate", { detail: "/zen" }),
+					);
 				}
 
-				if (e.key === 'Escape') {
+				if (e.key === "Escape") {
 					e.preventDefault();
 					isPaused = !isPaused;
-					const pauseEvent = new CustomEvent('togglePause', { detail: isPaused });
+					const pauseEvent = new CustomEvent("togglePause", {
+						detail: isPaused,
+					});
 					window.dispatchEvent(pauseEvent);
 				}
 			});
