@@ -1,23 +1,23 @@
 ---
-import '../styles/globals.css';
-import ZenCanvas from '../components/ZenCanvas';
-import StatsBar from '../components/StatsBar';
-import PauseMenu from '../components/PauseMenu';
-import HelpSheet from '../components/HelpSheet';
-import ArchiveOverlay from '../components/ArchiveOverlay';
-import AboutOverlay from '../components/AboutOverlay';
-import SiteFooter from '../components/SiteFooter';
-import ClientTransitions from '../components/ClientTransitions';
-import SiteHeader from '../components/SiteHeader';
-import ErrorBoundary from '../components/ErrorBoundary';
-import SEO from '../components/SEO.astro';
+import "../styles/globals.css";
+import ZenCanvas from "../components/ZenCanvas";
+import StatsBar from "../components/StatsBar";
+import PauseMenu from "../components/PauseMenu";
+import HelpSheet from "../components/HelpSheet";
+import ArchiveOverlay from "../components/ArchiveOverlay";
+import AboutOverlay from "../components/AboutOverlay";
+import SiteFooter from "../components/SiteFooter";
+import ClientTransitions from "../components/ClientTransitions";
+import SiteHeader from "../components/SiteHeader";
+import ErrorBoundary from "../components/ErrorBoundary";
+import SEO from "../components/SEO.astro";
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 	<head>
-		<SEO 
-			title="Zen Typer - Zen Mode | Free-Flow Mindful Typing"
+		<SEO
+			title="Zen Mode | Free-Flow Typing Trainer – Zen Typer by Jonathan Reed"
 			description="Experience free-flow typing in Zen Mode. Watch your words drift upward like thoughts in a peaceful, distraction-free environment designed for creativity and mindfulness."
 			canonical="https://zentype.jonathanrreed.com/zen"
 			ogImage="/Favicon.webp"
@@ -33,8 +33,13 @@ import SEO from '../components/SEO.astro';
 			>
 				Skip to main content
 			</a>
-			<div id="zen-app" class="relative w-full min-h-screen overflow-hidden stats-cq-host">
-				<h1 class="sr-only">Zen Typer Zen Mode - Free-Flow Mindful Typing</h1>
+			<div
+				id="zen-app"
+				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
+			>
+				<h1 class="sr-only">
+					Zen Typer Zen Mode - Free-Flow Mindful Typing
+				</h1>
 				<SiteHeader client:load mode="zen" />
 
 				<!-- Main canvas -->
@@ -51,27 +56,20 @@ import SEO from '../components/SEO.astro';
 				/>
 
 				<!-- Stats bar -->
-				<StatsBar
-					client:idle
-					mode="zen"
-					visible={true}
-					metrics={{}}
-				/>
+				<StatsBar client:idle mode="zen" visible={true} metrics={{}} />
 
 				<!-- Pause menu -->
 				<PauseMenu
 					client:idle
 					mode="zen"
-					onReset={() => { window.location.reload(); }}
+					onReset={() => {
+						window.location.reload();
+					}}
 					data-pause-menu
 				/>
 
 				<!-- Help sheet -->
-				<HelpSheet
-					client:idle
-					isOpen={false}
-					onClose={() => {}}
-				/>
+				<HelpSheet client:idle isOpen={false} onClose={() => {}} />
 
 				<!-- Archive & About overlays (hidden by default) -->
 				<ArchiveOverlay client:idle />
@@ -83,37 +81,50 @@ import SEO from '../components/SEO.astro';
 		<script>
 			let isPaused = false;
 
-			document.addEventListener('keydown', (e) => {
+			document.addEventListener("keydown", (e) => {
 				const el = document.activeElement;
-				const tag = el && el.tagName ? el.tagName.toLowerCase() : '';
-				const isTyping = tag === 'input' || tag === 'textarea';
-				if (!isTyping && e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+				const tag = el && el.tagName ? el.tagName.toLowerCase() : "";
+				const isTyping = tag === "input" || tag === "textarea";
+				if (
+					!isTyping &&
+					e.key === "Tab" &&
+					!e.ctrlKey &&
+					!e.metaKey &&
+					!e.shiftKey
+				) {
 					e.preventDefault();
-					window.dispatchEvent(new CustomEvent('app:navigate', { detail: '/quote' }));
+					window.dispatchEvent(
+						new CustomEvent("app:navigate", { detail: "/quote" }),
+					);
 				}
-				if (e.key === 'Escape') {
+				if (e.key === "Escape") {
 					e.preventDefault();
 					isPaused = !isPaused;
-					window.dispatchEvent(new CustomEvent('togglePause', { detail: isPaused }));
+					window.dispatchEvent(
+						new CustomEvent("togglePause", { detail: isPaused }),
+					);
 				}
 			});
 
 			// Handle pause menu state changes
-			window.addEventListener(
-				'togglePause',
-				function (event) {
-					let detail;
-					if (typeof event === 'object' && event !== null && 'detail' in event) {
-						detail = /** @type {CustomEvent<boolean | undefined>} */ (event).detail;
-					}
-					isPaused = typeof detail === 'boolean' ? detail : !isPaused;
-					// Update the pause menu component
-					const pauseMenu = document.querySelector('[data-pause-menu]');
-					if (pauseMenu) {
-						pauseMenu.setAttribute('data-is-open', isPaused.toString());
-					}
+			window.addEventListener("togglePause", function (event) {
+				let detail;
+				if (
+					typeof event === "object" &&
+					event !== null &&
+					"detail" in event
+				) {
+					detail = /** @type {CustomEvent<boolean | undefined>} */ (
+						event
+					).detail;
 				}
-			);
+				isPaused = typeof detail === "boolean" ? detail : !isPaused;
+				// Update the pause menu component
+				const pauseMenu = document.querySelector("[data-pause-menu]");
+				if (pauseMenu) {
+					pauseMenu.setAttribute("data-is-open", isPaused.toString());
+				}
+			});
 		</script>
 	</body>
 </html>

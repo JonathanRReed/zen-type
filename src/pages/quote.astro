@@ -1,28 +1,28 @@
 ---
-import '../styles/globals.css';
-import QuoteTyper from '../components/QuoteTyper';
-import StatsBar from '../components/StatsBar';
-import PauseMenu from '../components/PauseMenu';
-import HelpSheet from '../components/HelpSheet';
-import AboutOverlay from '../components/AboutOverlay';
-import ArchiveOverlay from '../components/ArchiveOverlay';
-import SiteFooter from '../components/SiteFooter';
-import ClientTransitions from '../components/ClientTransitions';
-import SiteHeader from '../components/SiteHeader';
-import ErrorBoundary from '../components/ErrorBoundary';
-import SEO from '../components/SEO.astro';
-import { loadQuotes, getRandomQuote } from '../utils/quotes';
+import "../styles/globals.css";
+import QuoteTyper from "../components/QuoteTyper";
+import StatsBar from "../components/StatsBar";
+import PauseMenu from "../components/PauseMenu";
+import HelpSheet from "../components/HelpSheet";
+import AboutOverlay from "../components/AboutOverlay";
+import ArchiveOverlay from "../components/ArchiveOverlay";
+import SiteFooter from "../components/SiteFooter";
+import ClientTransitions from "../components/ClientTransitions";
+import SiteHeader from "../components/SiteHeader";
+import ErrorBoundary from "../components/ErrorBoundary";
+import SEO from "../components/SEO.astro";
+import { loadQuotes, getRandomQuote } from "../utils/quotes";
 
 // Load a random quote at build time
 const quotes = await loadQuotes();
 const randomQuote = getRandomQuote(quotes);
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 	<head>
-		<SEO 
-			title="Zen Typer - Quote Mode | Mindful Typing Practice"
+		<SEO
+			title="Quote Mode | Mindful Typing Test & Practice – Zen Typer by Jonathan Reed"
 			description="Type curated Zen quotes with precision tracking. Improve your typing accuracy and speed while experiencing mindfulness through inspirational quotes."
 			canonical="https://zentype.jonathanrreed.com/quote"
 			ogImage="/Favicon.webp"
@@ -37,15 +37,22 @@ const randomQuote = getRandomQuote(quotes);
 			>
 				Skip to main content
 			</a>
-			<div id="quote-app" class="relative w-full min-h-screen overflow-hidden stats-cq-host">
-				<h1 class="sr-only">Zen Typer Quote Mode - Type Mindful Quotes</h1>
+			<div
+				id="quote-app"
+				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
+			>
+				<h1 class="sr-only">
+					Zen Typer Quote Mode - Type Mindful Quotes
+				</h1>
 				<SiteHeader client:load mode="quote" />
 				<div class="pointer-events-none fixed inset-0 z-0 theme-layer">
 					<div class="forest-rays" aria-hidden="true"></div>
 					<div class="ocean-lights" aria-hidden="true"></div>
 				</div>
 
-				<div class="relative z-10 flex w-full items-center justify-center px-6 py-12 pb-40">
+				<div
+					class="relative z-10 flex w-full items-center justify-center px-6 py-12 pb-40"
+				>
 					<div class="w-full max-w-4xl">
 						<QuoteTyper
 							client:load
@@ -53,7 +60,10 @@ const randomQuote = getRandomQuote(quotes);
 							author={randomQuote.author}
 							onComplete={(summary) => {
 								// Handle completion
-								const completeEvent = new CustomEvent('quoteComplete', { detail: summary });
+								const completeEvent = new CustomEvent(
+									"quoteComplete",
+									{ detail: summary },
+								);
 								window.dispatchEvent(completeEvent);
 							}}
 						/>
@@ -72,16 +82,12 @@ const randomQuote = getRandomQuote(quotes);
 					mode="quote"
 					onReset={() => {
 						// Smoothly load a new quote without reload
-						window.dispatchEvent(new CustomEvent('newQuote'));
+						window.dispatchEvent(new CustomEvent("newQuote"));
 					}}
 					data-pause-menu
 				/>
 
-				<HelpSheet
-					client:idle
-					isOpen={false}
-					onClose={() => {}}
-				/>
+				<HelpSheet client:idle isOpen={false} onClose={() => {}} />
 				<ArchiveOverlay client:idle />
 				<AboutOverlay client:idle />
 				<SiteFooter client:idle />
@@ -90,21 +96,31 @@ const randomQuote = getRandomQuote(quotes);
 
 		<script>
 			let isPaused = false;
-			document.addEventListener('keydown', (e) => {
+			document.addEventListener("keydown", (e) => {
 				const ae = document.activeElement;
-				const tag = ae && ae.tagName ? ae.tagName.toLowerCase() : '';
-				const isTyping = tag === 'input' || tag === 'textarea';
+				const tag = ae && ae.tagName ? ae.tagName.toLowerCase() : "";
+				const isTyping = tag === "input" || tag === "textarea";
 				// Tab to switch to Zen mode
-				if (!isTyping && e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+				if (
+					!isTyping &&
+					e.key === "Tab" &&
+					!e.ctrlKey &&
+					!e.metaKey &&
+					!e.shiftKey
+				) {
 					e.preventDefault();
-					window.dispatchEvent(new CustomEvent('app:navigate', { detail: '/zen' }));
+					window.dispatchEvent(
+						new CustomEvent("app:navigate", { detail: "/zen" }),
+					);
 				}
-				
+
 				// Esc for pause menu
-				if (e.key === 'Escape') {
+				if (e.key === "Escape") {
 					e.preventDefault();
 					isPaused = !isPaused;
-					const pauseEvent = new CustomEvent('togglePause', { detail: isPaused });
+					const pauseEvent = new CustomEvent("togglePause", {
+						detail: isPaused,
+					});
 					window.dispatchEvent(pauseEvent);
 				}
 			});

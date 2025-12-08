@@ -14,7 +14,16 @@ const SiteFooter: React.FC = () => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Website
+            Portfolio
+          </a>
+          <span className="text-muted/50">•</span>
+          <a
+            className="text-iris hover:text-foam transition-colors"
+            href="https://art.jonathanrreed.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Art Gallery
           </a>
           <span className="text-muted/50">•</span>
           <a
