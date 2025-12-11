@@ -21,11 +21,34 @@ const randomQuote = getRandomQuote(quotes);
 <html lang="en">
 	<head>
 		<SEO
-			title="Zen Typer | Free Typing Trainer & Mindful Typing Test – Jonathan Reed"
-			description="Improve your typing speed and accuracy through mindfulness. Choose between Quote Mode for guided practice or Zen Mode for free-flow creative typing. Start your mindful typing journey today."
+			title="Zen Typer | Mindful typing trainer by Jonathan R Reed"
+			description="Zen Typer is a mindful typing trainer by Jonathan R Reed that helps you practice focus and flow with clean, distraction free sessions."
 			canonical="https://zentype.jonathanrreed.com/"
 			ogImage="/Favicon.webp"
 		/>
+		<!-- Developer Console Easter Egg -->
+		<script>
+			(function () {
+				if (typeof window === "undefined") return;
+
+				const ascii = `
+    ___  ________  ________     
+   |\\  \\|\\   __  \\|\\   __  \\    
+   \\ \\  \\ \\  \\|\\  \\ \\  \\|\\  \\   
+ __ \\ \\  \\ \\   _  _\\ \\   _  _\\  
+|\\  \\\\_\\  \\ \\  \\\\  \\\\ \\  \\\\  \\|
+\\ \\________\\ \\__\\\\ _\\\\ \\__\\\\ _\\
+ \\|________|\\|__|\\|__|\\|__|\\|__|
+				`;
+
+				console.log(ascii);
+				console.log("Hey there. Interested in code?");
+				console.log(
+					"Check out my GitHub: https://github.com/JonathanRReed",
+				);
+				console.log("Most of my sites repos are open source.");
+			})();
+		</script>
 	</head>
 	<body>
 		<ClientTransitions client:load />
@@ -42,11 +65,11 @@ const randomQuote = getRandomQuote(quotes);
 			>
 				<h1 class="sr-only">Zen Typer - Mindful Typing Practice</h1>
 				<p class="sr-only">
-					Zen Typer is a free online typing trainer and typing test
-					application designed to improve your typing speed and
-					accuracy through mindfulness. Practice with curated Zen
-					quotes in Quote Mode or enjoy free-flow creative typing in
-					Zen Mode. Track your progress with real-time WPM and
+					Zen Typer is built by me, Jonathan Reed! It is a way to
+					practice typing in a calm, low friction environment.
+					Jonathan R Reed created this mindful typing trainer to help
+					you practice focus and flow with clean, distraction-free
+					sessions. Track your progress with real-time WPM and
 					accuracy statistics.
 				</p>
 				<SiteHeader client:load mode="quote" />
