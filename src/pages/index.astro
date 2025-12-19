@@ -11,6 +11,7 @@ import ClientTransitions from "../components/ClientTransitions";
 import SiteHeader from "../components/SiteHeader";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
+import SpotlightLayer from "../components/SpotlightLayer";
 import { loadQuotes, getRandomQuote } from "../utils/quotes";
 
 const quotes = await loadQuotes();
@@ -77,6 +78,7 @@ const randomQuote = getRandomQuote(quotes);
 					<div class="forest-rays" aria-hidden="true"></div>
 					<div class="ocean-lights" aria-hidden="true"></div>
 				</div>
+				<SpotlightLayer client:load />
 
 				<div
 					class="relative z-10 flex w-full items-center justify-center px-6 py-12 pb-40"

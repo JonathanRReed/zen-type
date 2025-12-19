@@ -10,6 +10,7 @@ import {
 } from '../utils/storage';
 import { loadQuotes, getRandomQuote, getFallbackQuotes, type Quote } from '../utils/quotes';
 import { Button } from '@/components/ui/button';
+import AnimatedNumber from './AnimatedNumber';
 
 interface QuoteTyperProps {
   quote: string;
@@ -105,7 +106,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       saveSettings(next);
       setAdvanceDelay(Math.max(0, next.autoAdvanceDelayMs ?? 0));
       window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
-    } catch {}
+    } catch { }
   }, []);
 
   const triggerNewQuote = useCallback(() => {
@@ -176,7 +177,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         const s = (e as CustomEvent).detail as Settings;
         setAutoAdvance(!!s.autoAdvanceQuotes);
         setAdvanceDelay(Math.max(0, Number(s.autoAdvanceDelayMs ?? 0)));
-      } catch {}
+      } catch { }
     };
     const onNew = async (e: Event) => {
       const d = (e as CustomEvent).detail as { quote?: string; author?: string } | undefined;
@@ -251,11 +252,11 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   useEffect(() => {
     setIsAnimatingQuote(true);
     setVisibleChars(0);
-    
+
     const quoteLength = activeQuote.length;
     const charsPerStep = Math.max(1, Math.ceil(quoteLength / 50)); // Animate in ~50 steps
     const interval = 20; // 20ms per step for smooth animation
-    
+
     let currentChar = 0;
     const timer = setInterval(() => {
       currentChar += charsPerStep;
@@ -267,7 +268,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         setVisibleChars(currentChar);
       }
     }, interval);
-    
+
     return () => clearInterval(timer);
   }, [activeQuote]);
 
@@ -294,7 +295,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   // Handle key press
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (isComplete || isAnimatingQuote) return;
-    
+
     // Start timer on first keypress
     if (!startTime && e.key.length === 1) {
       setStartTime(new Date());
@@ -333,7 +334,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
     if (e.key.length === 1) {
       e.preventDefault();
-      
+
       if (cursor >= activeQuote.length) return;
       // Optional debounce for ultra-fast duplicate keystrokes
       const thr = Math.max(0, getSettings().debounceMs || 0);
@@ -402,12 +403,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       }
 
       setCursor(cursor + 1);
-      
+
       // Check for completion
       if (cursor + 1 === activeQuote.length && isCorrect) {
         handleComplete();
       }
-      
+
       // Announce progress at milestones
       const progress = Math.floor(((cursor + 1) / activeQuote.length) * 100);
       if (progress >= 25 && lastAnnouncedProgress.current < 25) {
@@ -428,7 +429,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     const end = new Date();
     setEndTime(end);
     setIsComplete(true);
-    
+
     if (startTime) {
       const words = activeQuote.split(' ').length;
       const wpm = calculateWPM();
@@ -485,7 +486,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         }
       }
     }
-    
+
     announceProgress(100);
   };
 
@@ -566,14 +567,14 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     if (isAnimatingQuote && index >= visibleChars) {
       return null;
     }
-    
+
     const isTyped = index < cursor;
     const isCurrent = index === cursor;
     const hasError = errors.has(index);
     const typedChar = typedChars[index];
-    
+
     let className = 'quote-char inline-block px-[2px] py-1 font-mono text-lg transition-all ';
-    
+
     if (isCurrent) {
       className += 'bg-iris/20 border-b-2 border-iris zen-caret ';
     } else if (isTyped) {
@@ -585,10 +586,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     } else {
       className += 'pending border-b-2 border-dotted border-muted/40 ';
     }
-    
+
     // Handle spaces
     const displayChar = char === ' ' ? '\u00A0' : char;
-    
+
     return (
       <span key={index} className={className} style={{ animationDelay: `${index * 0.01}s` }}>
         {isTyped && typedChar ? (hasError ? typedChar : displayChar) : displayChar}
@@ -667,10 +668,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
                       if (cs) {
                         const elapsed = Math.max(0.1, (Date.now() - cs) / 1000 / 60);
                         const typed = (chunkCorrectRef.current.get(ci) || 0);
-                        const wpm = (typed/5)/elapsed;
+                        const wpm = (typed / 5) / elapsed;
                         w = Math.max(0, Math.min(1, (wpm - 20) / 80));
                       }
-                      return <div className="h-full bg-foam/60" style={{ width: `${w*100}%` }} />;
+                      return <div className="h-full bg-foam/60" style={{ width: `${w * 100}%` }} />;
                     })()}
                   </div>
                 )}
@@ -685,30 +686,46 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         </div>
 
         {/* Stats display */}
-        <div className="glass rounded-xl p-6 mb-8">
+        <div className="glass rounded-xl p-6 mb-8 stagger-fade-in">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
               <div className="text-sm text-muted mb-1">Progress</div>
               <div className="text-2xl font-mono text-foam">
-                {Math.floor((cursor / activeQuote.length) * 100)}%
+                <AnimatedNumber
+                  value={Math.floor((cursor / activeQuote.length) * 100)}
+                  format={(v) => `${Math.round(v)}%`}
+                  showImprovement={true}
+                />
               </div>
             </div>
             <div>
               <div className="text-sm text-muted mb-1">WPM</div>
               <div className="text-2xl font-mono text-gold">
-                {startTime && !isComplete ? '—' : calculateWPM()}
+                {startTime && !isComplete ? '—' : (
+                  <AnimatedNumber
+                    value={calculateWPM()}
+                    showImprovement={true}
+                  />
+                )}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted mb-1">Accuracy</div>
               <div className="text-2xl font-mono text-rose">
-                {totalTyped === 0 ? '100' : calculateAccuracy()}%
+                <AnimatedNumber
+                  value={totalTyped === 0 ? 100 : calculateAccuracy()}
+                  format={(v) => `${Math.round(v)}%`}
+                  showImprovement={false}
+                />
               </div>
             </div>
             <div>
               <div className="text-sm text-muted mb-1">Errors</div>
               <div className="text-2xl font-mono text-love">
-                {errors.size}
+                <AnimatedNumber
+                  value={errors.size}
+                  showImprovement={false}
+                />
               </div>
             </div>
           </div>
@@ -716,7 +733,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
         {/* Completion message */}
         {isComplete && (
-          <div className="glass rounded-xl p-6 text-center animate-fade-in">
+          <div className="glass rounded-xl p-6 text-center animate-fade-in completion-pulse">
             <h2 className="text-2xl font-sans text-foam mb-2">
               Breathe. Begin again.
             </h2>

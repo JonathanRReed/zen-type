@@ -1,9 +1,18 @@
 import React from 'react';
+import KeyboardHint from './KeyboardHint';
 
 const SiteFooter: React.FC = () => {
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none">
       <div className="mx-auto max-w-6xl px-6 pb-5">
+        {/* Keyboard shortcuts hint row */}
+        <div className="pointer-events-auto flex items-center justify-center gap-4 mb-3 opacity-60 hover:opacity-100 transition-opacity">
+          <KeyboardHint keyLabel="Tab" description="Switch mode" />
+          <KeyboardHint keyLabel="Esc" description="Settings" />
+          <KeyboardHint keyLabel="⌘ /" description="Help" />
+        </div>
+
+        {/* Attribution row */}
         <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 text-xs text-muted">
           <span className="font-semibold text-text">Made by Jonathan R Reed</span>
           <span className="text-muted/50">—</span>
@@ -42,3 +51,4 @@ const SiteFooter: React.FC = () => {
 };
 
 export default SiteFooter;
+
