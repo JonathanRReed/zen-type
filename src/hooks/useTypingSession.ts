@@ -14,23 +14,27 @@ interface TypingSessionOptions {
 
 export function useTypingSession({ onStats, statsEmitInterval = 1000 }: TypingSessionOptions = {}) {
   const [currentWord, setCurrentWord] = useState('');
-  const [stats, setStats] = useState<TypingStats>({ words: 0, chars: 0, startTime: Date.now() });
-  const lastStatsEmitRef = useRef(Date.now());
-  const sessionStartRef = useRef(Date.now());
+  const [stats, setStats] = useState<TypingStats>({ words: 0, chars: 0, startTime: 0 });
+  const lastStatsEmitRef = useRef(0);
+  const sessionStartRef = useRef(0);
   const ghostLogRef = useRef<{ t: number; ch: string }[]>([]);
   const transcriptRef = useRef<string>('');
 
   const updateStats = useCallback((newChars: number = 0, newWords: number = 0) => {
     const now = Date.now();
+    const startTime = stats.startTime || now;
     const updatedStats = {
       words: stats.words + newWords,
       chars: stats.chars + newChars,
-      startTime: stats.startTime
+      startTime
     };
     
     setStats(updatedStats);
 
     // Emit stats if interval has passed
+    if (lastStatsEmitRef.current === 0) {
+      lastStatsEmitRef.current = now;
+    }
     if (onStats && now - lastStatsEmitRef.current > statsEmitInterval) {
       const elapsed = (now - updatedStats.startTime) / 60000; // minutes
       const wpm = elapsed > 0 ? Math.round(updatedStats.words / elapsed) : 0;

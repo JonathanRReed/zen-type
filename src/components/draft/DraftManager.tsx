@@ -74,7 +74,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
   // Load drafts on mount and sync from archive
   useEffect(() => {
     if (isOpen) {
-      loadDrafts();
+      void Promise.resolve().then(loadDrafts);
     }
   }, [isOpen, loadDrafts]);
 

@@ -7,21 +7,35 @@ import HelpSheet from "../components/HelpSheet";
 import ArchiveOverlay from "../components/ArchiveOverlay";
 import AboutOverlay from "../components/AboutOverlay";
 import SiteFooter from "../components/SiteFooter";
-import ClientTransitions from "../components/ClientTransitions";
 import SiteHeader from "../components/SiteHeader";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
 import SpotlightLayer from "../components/SpotlightLayer";
+
+const siteUrl = "https://zentype.jonathanrreed.com";
+const homeUrl = `${siteUrl}/`;
+const zenUrl = `${siteUrl}/zen`;
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<SEO
-			title="Zen Mode | Free-Flow Typing Trainer – Zen Typer by Jonathan Reed"
-			description="Experience free-flow typing in Zen Mode. Watch your words drift upward like thoughts in a peaceful, distraction-free environment designed for creativity and mindfulness."
-			canonical="https://zentype.jonathanrreed.com/zen"
-			ogImage="/Favicon.webp"
+			title="Free-Flow Typing Practice for Focused Writing"
+			description="Use Zen Mode for free-flow typing practice that keeps words moving, tracks local session stats, and gives focused writers a calm space to build rhythm."
+			canonical={zenUrl}
+			keywords={[
+				"typing practice",
+				"free-flow typing",
+				"mindful typing",
+				"typing trainer",
+				"focused writing",
+				"writing practice",
+			]}
+			breadcrumbItems={[
+				{ name: "Mindful typing test", url: homeUrl },
+				{ name: "Free-flow typing practice", url: zenUrl },
+			]}
 		/>
 		<!-- Developer Console Easter Egg -->
 		<script>
@@ -48,7 +62,6 @@ import SpotlightLayer from "../components/SpotlightLayer";
 		</script>
 	</head>
 	<body>
-		<ClientTransitions client:load />
 		<ErrorBoundary>
 			<!-- Skip to main content link for accessibility -->
 			<a
@@ -62,17 +75,22 @@ import SpotlightLayer from "../components/SpotlightLayer";
 				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
 			>
 				<h1 class="sr-only">
-					Zen Typer Zen Mode - Free-Flow Mindful Typing
+					Free-Flow Typing Practice for Focused Writing
 				</h1>
 				<SiteHeader client:load mode="zen" />
 
 				<!-- Main canvas -->
 				<!-- Theme background layers (behind tokens) -->
-				<div class="pointer-events-none fixed inset-0 z-0 theme-layer">
+				<div
+					class="pointer-events-none fixed inset-0 z-0 theme-layer"
+				>
 					<div class="forest-rays" aria-hidden="true"></div>
-					<div class="ocean-lights" aria-hidden="true"></div>
+					<div class="ocean-lights" aria-hidden="true">
+						<div class="stars-near" aria-hidden="true"></div>
+						<div class="stars-far" aria-hidden="true"></div>
+					</div>
 				</div>
-				<SpotlightLayer client:load />
+				<SpotlightLayer client:load transition:persist="spotlight" />
 
 				<ZenCanvas
 					client:load
@@ -103,6 +121,48 @@ import SpotlightLayer from "../components/SpotlightLayer";
 			</div>
 		</ErrorBoundary>
 
+		<section
+			class="mx-auto max-w-5xl px-6 pb-28 pt-16 text-muted"
+			aria-labelledby="zen-seo-heading"
+		>
+			<div
+				class="grid gap-10 border-t border-iris/15 pt-10 md:grid-cols-[1.15fr_0.85fr]"
+			>
+				<div class="space-y-4">
+					<p class="text-sm font-medium text-foam">Free-flow mode</p>
+					<h2
+						id="zen-seo-heading"
+						class="max-w-2xl text-3xl font-semibold text-text md:text-4xl"
+					>
+						Typing practice for focused writing sessions.
+					</h2>
+					<p class="max-w-2xl text-base leading-7 text-muted md:text-lg">
+						Zen Mode turns typing practice into an open writing flow.
+						Words move through the canvas while local stats track
+						rhythm, pace, and session progress without breaking focus.
+					</p>
+				</div>
+				<div class="space-y-5 text-sm leading-6">
+					<div>
+						<h3 class="font-semibold text-text">Best for</h3>
+						<p>
+							Use this mode for warmups, mindful typing practice,
+							drafting, and longer sessions where steady rhythm matters
+							more than racing a timer.
+						</p>
+					</div>
+					<div class="flex flex-wrap gap-4">
+						<a class="text-foam transition-colors hover:text-text" href="/">
+							Mindful typing test
+						</a>
+						<a class="text-foam transition-colors hover:text-text" href="/quote">
+							Quote typing test
+						</a>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<script>
 			let isPaused = false;
 
@@ -118,9 +178,7 @@ import SpotlightLayer from "../components/SpotlightLayer";
 					!e.shiftKey
 				) {
 					e.preventDefault();
-					window.dispatchEvent(
-						new CustomEvent("app:navigate", { detail: "/quote" }),
-					);
+					window.location.assign("/quote");
 				}
 				if (e.key === "Escape") {
 					e.preventDefault();

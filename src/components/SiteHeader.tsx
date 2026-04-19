@@ -10,8 +10,20 @@ interface SiteHeaderProps {
 }
 
 const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [autoNext, setAutoNext] = useState<boolean>(false);
+  const [settings, setSettings] = useState<Settings | null>(() => {
+    try {
+      return getSettings();
+    } catch {
+      return null;
+    }
+  });
+  const [autoNext, setAutoNext] = useState<boolean>(() => {
+    try {
+      return !!getSettings().autoAdvanceQuotes;
+    } catch {
+      return false;
+    }
+  });
   const [showQuick, setShowQuick] = useState(false);
   const quickWrapperRef = useRef<HTMLDivElement | null>(null);
   const persistSettings = useMemo(() => debounce((next: Settings) => {
@@ -21,12 +33,6 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
       console.error('[SiteHeader] Failed to persist settings', error);
     }
   }, 250), []);
-
-  useEffect(() => {
-    const initialSettings = getSettings();
-    setSettings(initialSettings);
-    setAutoNext(!!initialSettings.autoAdvanceQuotes);
-  }, []);
 
   useEffect(() => {
     const onSettings = (e: Event) => {

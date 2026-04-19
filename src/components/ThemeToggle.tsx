@@ -10,14 +10,73 @@ interface ThemeToggleProps {
   className?: string;
 }
 
+type ViewTransitionStart = (cb: () => void) => { finished: Promise<void>; ready: Promise<void>; updateCallbackDone: Promise<void>; skipTransition: () => void };
+
+const applyThemeClass = (newTheme: Theme) => {
+  const root = document.documentElement;
+  root.classList.remove('theme-void', 'theme-forest', 'theme-ocean', 'theme-cosmic');
+  root.classList.add(`theme-${newTheme.toLowerCase()}`);
+};
+
+const applyTheme = (newTheme: Theme) => {
+  const root = document.documentElement;
+  const currentThemeClass = `theme-${newTheme.toLowerCase()}`;
+
+  // If the theme class is already applied (e.g. by the SEO pre-paint bootstrap
+  // on initial load), there's nothing to animate and we should NOT start a
+  // view transition — the snapshot/restore cycle can capture pseudo-elements
+  // before they finish painting, leaving the user with a partially rendered
+  // starfield until the next refresh.
+  if (root.classList.contains(currentThemeClass)) {
+    // Just clean up any legacy inline overrides and exit.
+    root.style.removeProperty('--theme-gradient');
+    root.style.removeProperty('--theme-gradient-angle');
+    root.style.removeProperty('--theme-gradient-center-x');
+    root.style.removeProperty('--theme-gradient-center-y');
+    return;
+  }
+
+  const doc = document as Document & { startViewTransition?: ViewTransitionStart };
+  const prefersReducedMotion = typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Cross-fade the theme swap using the View Transitions API so there's no
+  // hard pop between gradients. Falls back to an instant swap when either
+  // the API is unavailable or the user prefers reduced motion.
+  if (doc.startViewTransition && !prefersReducedMotion) {
+    root.setAttribute('data-transition-theme', currentThemeClass);
+    const transition = doc.startViewTransition(() => {
+      applyThemeClass(newTheme);
+    });
+    transition.finished
+      .catch(() => { /* AbortError: transition skipped by a newer transition — expected */ })
+      .finally(() => {
+        root.removeAttribute('data-transition-theme');
+      });
+  } else {
+    applyThemeClass(newTheme);
+  }
+
+  // Theme gradients are defined in CSS per theme class (see globals.css), so
+  // no inline style overrides are needed here. Just clear any legacy overrides.
+  root.style.removeProperty('--theme-gradient');
+  root.style.removeProperty('--theme-gradient-angle');
+  root.style.removeProperty('--theme-gradient-center-x');
+  root.style.removeProperty('--theme-gradient-center-y');
+};
+
 const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
-  const [theme, setTheme] = useState<Theme>('Void');
+  // ThemeToggle is client:load — never SSR'd — so reading localStorage in the
+  // useState initializer is safe and avoids a hydration mismatch.
+  const [theme, setTheme] = useState<Theme>(() => {
+    try { return getSettings().theme; } catch { return 'Void'; }
+  });
   const [isOpen, setIsOpen] = useState(false);
   const { reducedMotion } = useMotionPreference({ syncAttribute: true });
 
   useEffect(() => {
     const settings = getSettings();
-    setTheme(settings.theme);
     applyTheme(settings.theme);
 
     const themeChangedTimer: number | null = window.setTimeout(() => {
@@ -43,49 +102,6 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
       window.removeEventListener('settingsChanged', onSettings as EventListener);
     };
   }, []);
-
-  const applyTheme = (newTheme: Theme) => {
-    const root = document.documentElement;
-
-    // Remove all theme classes
-    root.classList.remove('theme-void', 'theme-forest', 'theme-ocean', 'theme-cosmic');
-
-    // Add new theme class
-    root.classList.add(`theme-${newTheme.toLowerCase()}`);
-
-    // Reset gradient helpers so each theme starts from its baseline
-    root.style.setProperty('--theme-gradient-angle', '180deg');
-    root.style.setProperty('--theme-gradient-center-x', '50%');
-    root.style.setProperty('--theme-gradient-center-y', '50%');
-
-    // Apply theme-specific styles
-    switch (newTheme) {
-      case 'Forest':
-        root.style.setProperty(
-          '--theme-gradient',
-          'linear-gradient(var(--theme-gradient-angle, 180deg), color-mix(in oklab, #0d1f15 65%, var(--rp-pine) 35%) 0%, color-mix(in oklab, #1a2e22 45%, var(--rp-foam) 55%) 100%)'
-        );
-        break;
-      case 'Ocean':
-        root.style.setProperty(
-          '--theme-gradient',
-          'radial-gradient(ellipse at var(--theme-gradient-center-x, 50%) var(--theme-gradient-center-y, 50%), color-mix(in oklab, #0c1e2e 70%, #1a3d5a 30%) 0%, color-mix(in oklab, #081422 60%, #0f2844 40%) 100%)'
-        );
-        break;
-      case 'Cosmic':
-        root.style.setProperty(
-          '--theme-gradient',
-          'radial-gradient(ellipse at 50% 50%, color-mix(in oklab, #0a0014 80%, var(--rp-iris) 20%) 0%, color-mix(in oklab, #120825 70%, var(--rp-iris) 30%) 40%, #050008 100%)'
-        );
-        break;
-      default:
-        // Void (Rosé Pine OLED-dark gradient)
-        root.style.setProperty(
-          '--theme-gradient',
-          'linear-gradient(var(--theme-gradient-angle, 180deg), color-mix(in oklab, var(--rp-base) 92%, #000000 8%) 0%, color-mix(in oklab, var(--rp-overlay) 96%, #000000 4%) 100%)'
-        );
-    }
-  };
 
   // Ambient shift every ~90s unless locked (respects reduced motion)
   useEffect(() => {
@@ -191,7 +207,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
           <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
-        <span>{theme}</span>
+        <span suppressHydrationWarning>{theme}</span>
       </IconButton>
 
       {isOpen && (

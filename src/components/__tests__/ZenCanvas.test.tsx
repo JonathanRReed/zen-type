@@ -1,9 +1,10 @@
 /// <reference types="vitest" />
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ZenCanvas from '../ZenCanvas';
 import * as storage from '../../utils/storage';
+import * as draftStore from '../../lib/draftStore';
 
 vi.mock('../../hooks/useMotionPreference', () => ({
   useMotionPreference: () => ({ reducedMotion: false }),
@@ -44,7 +45,7 @@ describe('ZenCanvas', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Component Rendering', () => {
@@ -137,40 +138,43 @@ describe('ZenCanvas', () => {
   });
 
   describe('Archive Management', () => {
-    it('creates archive entry on first keystroke', async () => {
-      const createArchiveSpy = vi.spyOn(storage, 'createArchiveEntry').mockReturnValue({
+    it('creates a draft entry on first committed word', async () => {
+      const createDraftSpy = vi.spyOn(draftStore, 'createDraft').mockResolvedValue({
         id: 'test-id',
-        startedAt: new Date().toISOString(),
-        text: '',
-        wordCount: 0,
-        charCount: 0,
+        title: 'Test Draft',
+        body: '',
+        tags: [],
+        createdAt: 1,
+        updatedAt: 1,
+        snapshots: [],
       });
+      vi.spyOn(draftStore, 'updateDraftBody').mockResolvedValue(undefined);
 
       render(<ZenCanvas />);
       const input = screen.getByPlaceholderText('Type freely...');
       
-      await userEvent.type(input, 'a');
+      await userEvent.type(input, 'a ');
       
       await waitFor(() => {
-        expect(createArchiveSpy).toHaveBeenCalled();
+        expect(createDraftSpy).toHaveBeenCalled();
       });
     });
 
-    it('suspends archiving on storage failure', async () => {
+    it('suspends draft persistence on storage failure', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      vi.spyOn(storage, 'createArchiveEntry').mockImplementation(() => {
-        throw new Error('Storage quota exceeded');
-      });
+      vi.spyOn(draftStore, 'createDraft').mockRejectedValue(new Error('Storage quota exceeded'));
 
       render(<ZenCanvas />);
       const input = screen.getByPlaceholderText('Type freely...');
       
       await userEvent.type(input, 'test ');
       
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ZenCanvas] Failed to create archive entry'),
-        expect.any(Error)
-      );
+      await waitFor(() => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('[ZenCanvas] Failed to initialize draft'),
+          expect.any(Error)
+        );
+      });
       
       consoleErrorSpy.mockRestore();
     });
@@ -188,7 +192,9 @@ describe('ZenCanvas', () => {
         },
       });
       
-      window.dispatchEvent(event);
+      act(() => {
+        window.dispatchEvent(event);
+      });
       
       await waitFor(() => {
         expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -208,7 +214,9 @@ describe('ZenCanvas', () => {
         },
       });
       
-      window.dispatchEvent(event);
+      act(() => {
+        window.dispatchEvent(event);
+      });
       
       await waitFor(() => {
         expect(screen.getByRole('alert')).toBeInTheDocument();

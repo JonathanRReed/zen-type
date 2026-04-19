@@ -795,17 +795,16 @@ html[data-motion="off"] .zen-caret {
   }
 }
 
-::view-transition-old(root) {
-  animation: 280ms cubic-bezier(0.4, 0, 0.2, 1) both fade-out;
-}
-
+/* Page-nav transitions: instant swap — no snapshot animation so pseudo-element
+   starfields (Cosmic theme) are never captured before they finish painting.
+   Theme swaps use startViewTransition() explicitly with a data attribute below. */
+::view-transition-old(root),
 ::view-transition-new(root) {
-  animation: 280ms cubic-bezier(0.4, 0, 0.2, 1) both fade-in;
+  animation: none;
 }
 
 /* Reduced motion: instant transitions */
 @media (prefers-reduced-motion: reduce) {
-
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation-duration: 0ms;
@@ -835,7 +834,7 @@ html.page-exit body {
   transform: translateY(-8px) scale(1.01);
 }
 
-/* Lightweight grain overlay */
+/* Lightweight grain overlay (legacy dot noise on .grain class) */
 .grain {
   background-image:
     radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
@@ -844,6 +843,42 @@ html.page-exit body {
   background-position: 0 0, 1px 1px;
   opacity: .25;
   mix-blend-mode: soft-light;
+}
+
+/* Cinematic SVG turbulence film grain — composited on top as a final pass */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 220px 220px;
+  mix-blend-mode: overlay;
+  opacity: 0.09;
+  will-change: transform;
+  contain: layout paint style;
+  animation: film-grain-shift 1.6s steps(4) infinite;
+}
+
+@keyframes film-grain-shift {
+  0%   { transform: translate3d(0, 0, 0); }
+  25%  { transform: translate3d(-2%, 1%, 0); }
+  50%  { transform: translate3d(1%, -2%, 0); }
+  75%  { transform: translate3d(-1%, -1%, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+html.theme-void body::after   { opacity: 0.11; }
+html.theme-cosmic body::after { opacity: 0.12; mix-blend-mode: overlay; }
+html.theme-ocean body::after  { opacity: 0.07; }
+html.theme-forest body::after { opacity: 0.08; }
+html.high-contrast body::after { opacity: 0.14; }
+
+html[data-motion="off"] body::after { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  body::after { animation: none !important; }
 }
 
 /* Theme base layer */
@@ -855,10 +890,10 @@ html.page-exit body {
   bottom: 0;
   background: var(--theme-gradient, linear-gradient(180deg, var(--rp-base), var(--rp-overlay)));
   filter: none;
+  isolation: isolate;
 }
 
-.theme-layer>.forest-rays,
-.theme-layer>.ocean-lights {
+.theme-layer>.forest-rays {
   position: absolute;
   inset: -14% -18% -10% -18%;
   pointer-events: none;
@@ -1125,62 +1160,75 @@ html.page-exit body {
   }
 }
 
-/* Forest: True greens with Rosé Pine harmony and organic overlays */
+/* Forest: Twilight canopy — deep pine base with dawn shaft and moss mist */
 html.theme-forest {
-  --forest-0: #060d09;
-  --forest-1: #0a140e;
-  --forest-2: #0f1f16;
-  --forest-3: #16301f;
-  --forest-4: #1d3f28;
-  --moss: #5ba876;
-  --leaf: #8ec4a0;
-  --emerald: #3cb888;
-  --jade: #66c99a;
+  --forest-0: #02060a;
+  --forest-1: #061410;
+  --forest-2: #0b2119;
+  --forest-3: #123024;
+  --forest-4: #1b4635;
+  --moss: #4f9876;
+  --leaf: #8cc4a4;
+  --emerald: #3fb388;
+  --jade: #66c8a0;
+  --dawn-amber: #d1a478;
   --pine-mix: color-mix(in oklab, var(--rp-pine) 35%, #0f1f16 65%);
-  --fern-glow: color-mix(in oklab, var(--leaf) 22%, transparent);
-  --canopy-light: color-mix(in oklab, var(--moss) 20%, transparent);
+  --fern-glow: color-mix(in oklab, var(--leaf) 34%, transparent);
+  --canopy-light: color-mix(in oklab, var(--moss) 36%, transparent);
   --canopy-wash: rgba(20, 38, 28, 0.42);
-  --forest-foam: color-mix(in oklab, var(--rp-foam) 18%, transparent);
-  --forest-leaf-highlight: color-mix(in oklab, var(--leaf) 32%, rgba(12, 28, 20, 0.45));
-  --forest-ray-core: color-mix(in oklab, var(--emerald) 22%, rgba(255, 255, 255, 0.06));
-  --forest-ray-soft: color-mix(in oklab, var(--moss) 14%, transparent);
-  --forest-ray-falloff: color-mix(in oklab, var(--jade) 18%, transparent);
-  --forest-mist-alpha: 0.24;
+  --forest-foam: color-mix(in oklab, var(--rp-foam) 20%, transparent);
+  --forest-leaf-highlight: color-mix(in oklab, var(--leaf) 38%, rgba(12, 28, 20, 0.45));
+  --forest-ray-core: color-mix(in oklab, var(--dawn-amber) 40%, rgba(255, 255, 255, 0.08));
+  --forest-ray-soft: color-mix(in oklab, var(--moss) 24%, transparent);
+  --forest-ray-falloff: color-mix(in oklab, var(--jade) 22%, transparent);
+  --forest-mist-alpha: 0.42;
   --forest-depth: color-mix(in oklab, var(--forest-0) 92%, var(--moss) 8%);
-  --forest-mid: color-mix(in oklab, var(--forest-2) 88%, var(--emerald) 12%);
-  --forest-highlight: color-mix(in oklab, var(--forest-3) 82%, var(--jade) 18%);
+  --forest-mid: color-mix(in oklab, var(--forest-2) 82%, var(--emerald) 18%);
+  --forest-highlight: color-mix(in oklab, var(--forest-3) 72%, var(--jade) 28%);
 
   /* Forest theme accent glows */
   --theme-accent: var(--emerald);
-  --theme-accent-glow: color-mix(in oklab, var(--emerald) 12%, transparent);
-  --theme-border-glow: color-mix(in oklab, var(--jade) 6%, transparent);
+  --theme-accent-glow: color-mix(in oklab, var(--emerald) 18%, transparent);
+  --theme-border-glow: color-mix(in oklab, var(--jade) 10%, transparent);
 }
 
 html.theme-forest .theme-layer {
   background:
-    radial-gradient(ellipse 120% 80% at 50% 0%, color-mix(in oklab, var(--forest-2) 28%, var(--forest-0) 72%) 0%, var(--forest-0) 70%),
-    radial-gradient(ellipse 110% 60% at 50% 100%, color-mix(in oklab, var(--forest-1) 18%, var(--forest-0) 82%) 0%, var(--forest-0) 55%),
+    /* corner vignette */
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.55) 100%),
+    /* warm dawn shaft top-center */
+    radial-gradient(ellipse 70% 55% at 50% -8%, color-mix(in oklab, var(--dawn-amber) 30%, transparent) 0%, transparent 65%),
+    /* emerald canopy bloom */
+    radial-gradient(ellipse 95% 65% at 50% 18%, color-mix(in oklab, var(--forest-4) 85%, var(--emerald) 15%) 0%, transparent 70%),
+    /* pine mid-depth */
+    radial-gradient(ellipse 120% 80% at 50% 55%, color-mix(in oklab, var(--forest-2) 90%, var(--emerald) 10%) 0%, var(--forest-1) 75%),
+    /* base */
     linear-gradient(180deg,
-      color-mix(in oklab, var(--forest-1) 85%, var(--moss) 15%) 0%,
-      color-mix(in oklab, var(--forest-0) 95%, var(--emerald) 5%) 35%,
+      color-mix(in oklab, var(--forest-2) 70%, var(--moss) 30%) 0%,
+      color-mix(in oklab, var(--forest-1) 90%, var(--emerald) 10%) 45%,
       var(--forest-0) 100%);
 }
 
-/* Organic canopy glow overlay */
+/* Organic canopy glow overlay + moss mist at floor */
 html.theme-forest .theme-layer::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(ellipse 75% 50% at 50% 40%, color-mix(in oklab, var(--fern-glow) 38%, transparent) 0%, transparent 100%),
-    radial-gradient(ellipse 60% 42% at 20% 15%, color-mix(in oklab, var(--canopy-light) 40%, transparent) 0%, transparent 100%),
-    radial-gradient(ellipse 58% 38% at 80% 18%, color-mix(in oklab, var(--emerald) 12%, transparent) 0%, transparent 100%);
+    /* amber-through-leaves top shaft */
+    radial-gradient(ellipse 55% 42% at 50% 8%, color-mix(in oklab, var(--dawn-amber) 22%, transparent) 0%, transparent 78%),
+    /* fern/leaf glow left-mid */
+    radial-gradient(ellipse 62% 44% at 22% 28%, color-mix(in oklab, var(--fern-glow) 55%, transparent) 0%, transparent 80%),
+    /* canopy emerald glow right */
+    radial-gradient(ellipse 58% 40% at 78% 32%, color-mix(in oklab, var(--canopy-light) 50%, transparent) 0%, transparent 82%),
+    /* low moss mist rising from floor */
+    radial-gradient(ellipse 130% 32% at 50% 108%, color-mix(in oklab, var(--moss) 22%, transparent) 0%, transparent 85%);
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
   mix-blend-mode: screen;
-  opacity: .32;
+  opacity: .62;
   animation: forest-midglow-drift calc(105s * 1.05) cubic-bezier(0.32, 0.68, 0.3, 0.96) infinite;
 }
 
@@ -1191,12 +1239,12 @@ html.theme-forest[data-motion="on"] .theme-layer::after {
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(ellipse 115% 85% at 50% 50%, color-mix(in oklab, var(--fern-glow) 35%, transparent) 0%, transparent 100%),
-    radial-gradient(ellipse 90% 65% at 50% 20%, color-mix(in oklab, var(--leaf) 8%, transparent) 0%, transparent 100%);
+    radial-gradient(ellipse 110% 80% at 50% 45%, color-mix(in oklab, var(--fern-glow) 45%, transparent) 0%, transparent 95%),
+    radial-gradient(ellipse 85% 60% at 50% 22%, color-mix(in oklab, var(--leaf) 14%, transparent) 0%, transparent 100%);
   background-size: 100% 100%;
   background-position: center;
   mix-blend-mode: screen;
-  opacity: 0.16;
+  opacity: 0.34;
   animation:
     forest-breathe calc(104s * 1.02) cubic-bezier(0.28, 0.7, 0.3, 0.96) infinite alternate,
     forest-pollen-drift calc(70s * 0.94) cubic-bezier(0.28, 0.64, 0.3, 0.96) infinite;
@@ -1318,34 +1366,34 @@ html.theme-forest .grain {
   opacity: 0 !important;
 }
 
-/* Ocean: Deep blues with seafoam accents and wave shimmer */
+/* Ocean: Abyssal caustic — navy depths with a cyan pool of light overhead */
 html.theme-ocean {
-  --ocean-0: #050f18;
-  --ocean-1: #081a28;
-  --ocean-2: #0c2838;
-  --ocean-3: #103a4f;
-  --ocean-4: #164d66;
-  --seafoam: #9ccfd8;
-  --aqua: #7eb8c8;
-  --cyan: #5da9bd;
-  --teal: #4a95a8;
-  --deep: #061220;
+  --ocean-0: #020812;
+  --ocean-1: #061624;
+  --ocean-2: #0a2a3f;
+  --ocean-3: #0f4058;
+  --ocean-4: #165876;
+  --seafoam: #8fc8d1;
+  --aqua: #6fb0c0;
+  --cyan: #4f9bb0;
+  --teal: #3e8798;
+  --deep: #030c18;
   --ocean-depth: color-mix(in oklab, var(--ocean-0) 92%, var(--seafoam) 8%);
-  --ocean-mid: color-mix(in oklab, var(--ocean-2) 88%, var(--cyan) 12%);
-  --ocean-surface: color-mix(in oklab, var(--ocean-3) 82%, var(--aqua) 18%);
-  --wave-glow: color-mix(in oklab, var(--seafoam) 28%, transparent);
-  --deep-glow: color-mix(in oklab, var(--cyan) 22%, transparent);
-  --surface-shimmer: color-mix(in oklab, var(--aqua) 18%, transparent);
-  --plankton-foam: color-mix(in oklab, var(--seafoam) 35%, transparent);
-  --plankton-iris: color-mix(in oklab, var(--rp-iris) 30%, transparent);
-  --caustic-core: color-mix(in oklab, var(--cyan) 20%, rgba(255, 255, 255, 0.05));
-  --caustic-soft: color-mix(in oklab, var(--seafoam) 15%, transparent);
-  --ocean-mist-alpha: 0.22;
+  --ocean-mid: color-mix(in oklab, var(--ocean-2) 80%, var(--cyan) 20%);
+  --ocean-surface: color-mix(in oklab, var(--ocean-3) 70%, var(--aqua) 30%);
+  --wave-glow: color-mix(in oklab, var(--seafoam) 38%, transparent);
+  --deep-glow: color-mix(in oklab, var(--cyan) 34%, transparent);
+  --surface-shimmer: color-mix(in oklab, var(--aqua) 28%, transparent);
+  --plankton-foam: color-mix(in oklab, var(--seafoam) 42%, transparent);
+  --plankton-iris: color-mix(in oklab, var(--rp-iris) 24%, transparent);
+  --caustic-core: color-mix(in oklab, var(--cyan) 32%, rgba(255, 255, 255, 0.08));
+  --caustic-soft: color-mix(in oklab, var(--seafoam) 24%, transparent);
+  --ocean-mist-alpha: 0.42;
 
   /* Ocean theme accent glows */
   --theme-accent: var(--seafoam);
-  --theme-accent-glow: color-mix(in oklab, var(--cyan) 10%, transparent);
-  --theme-border-glow: color-mix(in oklab, var(--seafoam) 5%, transparent);
+  --theme-accent-glow: color-mix(in oklab, var(--cyan) 18%, transparent);
+  --theme-border-glow: color-mix(in oklab, var(--seafoam) 10%, transparent);
 }
 
 @supports not (color: color-mix(in oklab, white 50%, black 50%)) {
@@ -1379,12 +1427,20 @@ html.theme-ocean {
 
 html.theme-ocean .theme-layer {
   background:
-    radial-gradient(ellipse 125% 85% at 50% 0%, color-mix(in oklab, var(--ocean-2) 30%, var(--ocean-0) 70%) 0%, var(--ocean-0) 70%),
-    radial-gradient(ellipse 115% 65% at 50% 100%, color-mix(in oklab, var(--ocean-1) 20%, var(--ocean-0) 80%) 0%, var(--ocean-0) 60%),
+    /* corner vignette */
+    radial-gradient(ellipse 140% 100% at 50% 55%, transparent 50%, rgba(0, 0, 0, 0.6) 100%),
+    /* cyan caustic pool from above */
+    radial-gradient(ellipse 80% 55% at 50% -6%, color-mix(in oklab, var(--seafoam) 38%, transparent) 0%, transparent 70%),
+    /* surface teal */
+    radial-gradient(ellipse 100% 60% at 50% 15%, color-mix(in oklab, var(--ocean-4) 80%, var(--cyan) 20%) 0%, transparent 75%),
+    /* abyssal rim light at bottom */
+    radial-gradient(ellipse 90% 35% at 50% 112%, color-mix(in oklab, var(--teal) 32%, transparent) 0%, transparent 80%),
+    /* depth gradient */
     linear-gradient(180deg,
-      color-mix(in oklab, var(--ocean-1) 82%, var(--seafoam) 18%) 0%,
-      color-mix(in oklab, var(--ocean-0) 94%, var(--cyan) 6%) 38%,
-      var(--ocean-0) 100%);
+      color-mix(in oklab, var(--ocean-3) 70%, var(--seafoam) 30%) 0%,
+      color-mix(in oklab, var(--ocean-1) 88%, var(--cyan) 12%) 45%,
+      var(--ocean-0) 85%,
+      var(--deep) 100%);
 }
 
 /* Wave shimmer atmospheric layers */
@@ -1394,14 +1450,19 @@ html.theme-ocean .theme-layer::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(ellipse 78% 48% at 50% 35%, color-mix(in oklab, var(--wave-glow) 42%, transparent) 0%, transparent 100%),
-    radial-gradient(ellipse 62% 40% at 22% 18%, color-mix(in oklab, var(--deep-glow) 38%, transparent) 0%, transparent 100%),
-    radial-gradient(ellipse 58% 38% at 78% 20%, color-mix(in oklab, var(--surface-shimmer) 35%, transparent) 0%, transparent 100%);
+    /* central caustic shimmer */
+    radial-gradient(ellipse 72% 46% at 50% 28%, color-mix(in oklab, var(--wave-glow) 58%, transparent) 0%, transparent 85%),
+    /* left-mid deep glow */
+    radial-gradient(ellipse 58% 42% at 22% 42%, color-mix(in oklab, var(--deep-glow) 50%, transparent) 0%, transparent 82%),
+    /* right-mid surface shimmer */
+    radial-gradient(ellipse 56% 38% at 78% 40%, color-mix(in oklab, var(--surface-shimmer) 44%, transparent) 0%, transparent 82%),
+    /* iris bloom for depth hint */
+    radial-gradient(ellipse 48% 28% at 50% 68%, color-mix(in oklab, var(--rp-iris) 14%, transparent) 0%, transparent 90%);
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
   mix-blend-mode: screen;
-  opacity: .36;
+  opacity: .58;
   animation: ocean-surface-drift calc(95s * 1.04) cubic-bezier(0.32, 0.68, 0.3, 0.96) infinite;
 }
 
@@ -1479,37 +1540,63 @@ html.theme-ocean .grain {
   opacity: 0 !important;
 }
 
-/* Cosmic: Dark violet/black base with Rosé Pine accents */
+/* Cosmic: Deep-field nebula — violet-black with diagonal plum sweep and gold star-core */
 html.theme-cosmic {
-  --cosmic-0: #030008;
-  --cosmic-1: #08050f;
-  --cosmic-2: #0f0a1a;
-  --cosmic-3: #1a1228;
-  --cosmic-4: #261b38;
-  --nebula: #c4a7e7;
-  --stardust: #a88bc7;
-  --void: #8a75a8;
+  --cosmic-0: #020106;
+  --cosmic-1: #070414;
+  --cosmic-2: #0f0823;
+  --cosmic-3: #1c1140;
+  --cosmic-4: #2a1a58;
+  --nebula: #b88cd9;
+  --stardust: #9178b8;
+  --void: #6a5a8a;
+  --plasma: #e07ba8;
+  --star-gold: #e6c187;
   --cosmic-depth: color-mix(in oklab, var(--cosmic-0) 94%, var(--rp-iris) 6%);
-  --cosmic-mid: color-mix(in oklab, var(--cosmic-2) 88%, var(--nebula) 12%);
-  --cosmic-glow: color-mix(in oklab, var(--nebula) 25%, transparent);
-  --star-core: color-mix(in oklab, var(--nebula) 32%, rgba(255, 255, 255, 0.08));
-  --star-halo: color-mix(in oklab, var(--stardust) 18%, transparent);
-  --nebula-shimmer: color-mix(in oklab, var(--void) 15%, transparent);
-  --cosmic-mist-alpha: 0.2;
+  --cosmic-mid: color-mix(in oklab, var(--cosmic-2) 78%, var(--nebula) 22%);
+  --cosmic-glow: color-mix(in oklab, var(--nebula) 38%, transparent);
+  --star-core: color-mix(in oklab, var(--nebula) 45%, rgba(255, 255, 255, 0.12));
+  --star-halo: color-mix(in oklab, var(--stardust) 28%, transparent);
+  --nebula-shimmer: color-mix(in oklab, var(--plasma) 22%, transparent);
+  --cosmic-mist-alpha: 0.42;
 
   /* Cosmic theme accent glows */
   --theme-accent: var(--nebula);
-  --theme-accent-glow: color-mix(in oklab, var(--stardust) 12%, transparent);
-  --theme-border-glow: color-mix(in oklab, var(--nebula) 6%, transparent);
+  --theme-accent-glow: color-mix(in oklab, var(--stardust) 20%, transparent);
+  --theme-border-glow: color-mix(in oklab, var(--nebula) 12%, transparent);
+
+  /* Pre-render background gradient so the correct palette shows before React hydrates */
+  --theme-gradient: radial-gradient(ellipse at 50% 50%, color-mix(in oklab, #0a0014 80%, var(--rp-iris) 20%) 0%, color-mix(in oklab, #120825 70%, var(--rp-iris) 30%) 40%, #050008 100%);
+}
+
+html.theme-forest {
+  --theme-gradient: linear-gradient(180deg, color-mix(in oklab, #0d1f15 65%, var(--rp-pine) 35%) 0%, color-mix(in oklab, #1a2e22 45%, var(--rp-foam) 55%) 100%);
+}
+
+html.theme-ocean {
+  --theme-gradient: radial-gradient(ellipse at 50% 50%, color-mix(in oklab, #0c1e2e 70%, #1a3d5a 30%) 0%, color-mix(in oklab, #081422 60%, #0f2844 40%) 100%);
+}
+
+html.theme-void {
+  --theme-gradient: linear-gradient(180deg, color-mix(in oklab, var(--rp-base) 92%, #000000 8%) 0%, color-mix(in oklab, var(--rp-overlay) 96%, #000000 4%) 100%);
 }
 
 html.theme-cosmic .theme-layer {
   background:
-    radial-gradient(ellipse 125% 80% at 50% 0%, color-mix(in oklab, var(--cosmic-2) 32%, var(--cosmic-0) 68%) 0%, var(--cosmic-0) 68%),
-    radial-gradient(ellipse 115% 68% at 50% 100%, color-mix(in oklab, var(--cosmic-1) 22%, var(--cosmic-0) 78%) 0%, var(--cosmic-0) 62%),
-    linear-gradient(180deg,
-      color-mix(in oklab, var(--cosmic-1) 80%, var(--rp-iris) 20%) 0%,
-      color-mix(in oklab, var(--cosmic-0) 96%, var(--nebula) 4%) 36%,
+    /* corner vignette */
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 42%, rgba(0, 0, 0, 0.7) 100%),
+    /* warm gold star-core — bottom-right */
+    radial-gradient(ellipse 55% 38% at 72% 72%, color-mix(in oklab, var(--star-gold) 22%, transparent) 0%, transparent 75%),
+    /* primary nebula bloom — top-left plum */
+    radial-gradient(ellipse 80% 60% at 28% 28%, color-mix(in oklab, var(--nebula) 38%, transparent) 0%, transparent 80%),
+    /* secondary nebula bloom — center plasma */
+    radial-gradient(ellipse 65% 50% at 55% 45%, color-mix(in oklab, var(--plasma) 20%, transparent) 0%, transparent 85%),
+    /* cosmic mid-violet veil */
+    radial-gradient(ellipse 130% 90% at 50% 50%, color-mix(in oklab, var(--cosmic-3) 70%, var(--cosmic-0) 30%) 0%, var(--cosmic-1) 70%),
+    /* base diagonal */
+    linear-gradient(155deg,
+      color-mix(in oklab, var(--cosmic-3) 65%, var(--nebula) 35%) 0%,
+      color-mix(in oklab, var(--cosmic-1) 88%, var(--plasma) 12%) 45%,
       var(--cosmic-0) 100%);
 }
 
@@ -1520,14 +1607,19 @@ html.theme-cosmic .theme-layer::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(ellipse 72% 50% at 50% 38%, color-mix(in oklab, var(--cosmic-glow) 40%, transparent) 0%, transparent 100%),
-    radial-gradient(ellipse 58% 42% at 24% 22%, color-mix(in oklab, var(--star-halo) 36%, transparent) 0%, transparent 100%),
-    radial-gradient(ellipse 60% 40% at 76% 24%, color-mix(in oklab, var(--nebula-shimmer) 32%, transparent) 0%, transparent 100%);
+    /* iris core bloom */
+    radial-gradient(ellipse 70% 48% at 40% 38%, color-mix(in oklab, var(--cosmic-glow) 58%, transparent) 0%, transparent 90%),
+    /* star halo top-left */
+    radial-gradient(ellipse 55% 40% at 20% 22%, color-mix(in oklab, var(--star-halo) 52%, transparent) 0%, transparent 88%),
+    /* plasma shimmer bottom-right */
+    radial-gradient(ellipse 60% 42% at 78% 68%, color-mix(in oklab, var(--nebula-shimmer) 48%, transparent) 0%, transparent 88%),
+    /* gold star-core accent */
+    radial-gradient(circle 140px at 70% 72%, color-mix(in oklab, var(--star-gold) 40%, transparent) 0%, transparent 70%);
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
   mix-blend-mode: screen;
-  opacity: .38;
+  opacity: .72;
   animation: cosmic-nebula-drift calc(110s * 1.04) cubic-bezier(0.32, 0.68, 0.3, 0.96) infinite;
 }
 
@@ -1611,33 +1703,41 @@ html.theme-cosmic .grain {
   mix-blend-mode: soft-light;
 }
 
-/* Void: Deep Rosé Pine void with soft aurora pulses */
+/* Void: OLED indigo with a diagonal aurora ribbon of iris/foam/gold */
 html.theme-void {
-  --void-0: #0a0812;
-  --void-1: #12101a;
-  --void-2: #191724;
-  --void-3: #21202e;
+  --void-0: #05040a;
+  --void-1: #0b0916;
+  --void-2: #131025;
+  --void-3: #1c1838;
   --void-depth: color-mix(in oklab, var(--rp-base) 88%, #000 12%);
-  --void-mid: color-mix(in oklab, var(--rp-overlay) 90%, var(--rp-iris) 10%);
-  --aurora-iris: color-mix(in oklab, var(--rp-iris) 22%, transparent);
-  --aurora-foam: color-mix(in oklab, var(--rp-foam) 18%, transparent);
-  --aurora-gold: color-mix(in oklab, var(--rp-gold) 12%, transparent);
-  --void-shimmer: color-mix(in oklab, var(--rp-iris) 15%, transparent);
-  --void-mist-alpha: 0.18;
+  --void-mid: color-mix(in oklab, var(--rp-overlay) 80%, var(--rp-iris) 20%);
+  --aurora-iris: color-mix(in oklab, var(--rp-iris) 45%, transparent);
+  --aurora-foam: color-mix(in oklab, var(--rp-foam) 36%, transparent);
+  --aurora-gold: color-mix(in oklab, var(--rp-gold) 24%, transparent);
+  --aurora-rose: color-mix(in oklab, var(--rp-rose) 20%, transparent);
+  --void-shimmer: color-mix(in oklab, var(--rp-iris) 28%, transparent);
+  --void-mist-alpha: 0.48;
 
   /* Void theme accent glows */
   --theme-accent: var(--rp-iris);
-  --theme-accent-glow: color-mix(in oklab, var(--rp-iris) 10%, transparent);
-  --theme-border-glow: color-mix(in oklab, var(--rp-foam) 4%, transparent);
+  --theme-accent-glow: color-mix(in oklab, var(--rp-iris) 18%, transparent);
+  --theme-border-glow: color-mix(in oklab, var(--rp-foam) 10%, transparent);
 }
 
 html.theme-void .theme-layer {
   background:
-    radial-gradient(ellipse 120% 78% at 50% 0%, color-mix(in oklab, var(--void-2) 26%, var(--void-0) 74%) 0%, var(--void-0) 72%),
-    radial-gradient(ellipse 110% 62% at 50% 100%, color-mix(in oklab, var(--void-1) 16%, var(--void-0) 84%) 0%, var(--void-0) 58%),
-    linear-gradient(180deg,
-      color-mix(in oklab, var(--rp-overlay) 78%, var(--rp-iris) 22%) 0%,
-      color-mix(in oklab, var(--rp-base) 94%, #000 6%) 40%,
+    /* corner vignette */
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.65) 100%),
+    /* aurora ribbon — diagonal iris sweep */
+    radial-gradient(ellipse 75% 45% at 30% 30%, color-mix(in oklab, var(--rp-iris) 32%, transparent) 0%, transparent 78%),
+    /* foam/cyan echo */
+    radial-gradient(ellipse 60% 40% at 72% 62%, color-mix(in oklab, var(--rp-foam) 20%, transparent) 0%, transparent 82%),
+    /* deep violet mid-veil */
+    radial-gradient(ellipse 130% 85% at 50% 50%, color-mix(in oklab, var(--void-3) 85%, var(--rp-iris) 15%) 0%, var(--void-1) 70%),
+    /* base diagonal */
+    linear-gradient(165deg,
+      color-mix(in oklab, var(--void-3) 60%, var(--rp-iris) 40%) 0%,
+      color-mix(in oklab, var(--void-1) 92%, var(--rp-iris) 8%) 50%,
       var(--void-0) 100%);
 }
 
@@ -1648,14 +1748,19 @@ html.theme-void .theme-layer::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(ellipse 68% 42% at 50% 50%, color-mix(in oklab, var(--aurora-iris) 45%, transparent) 0%, transparent 100%),
-    radial-gradient(ellipse 54% 36% at 30% 32%, color-mix(in oklab, var(--aurora-foam) 38%, transparent) 0%, transparent 100%),
-    radial-gradient(ellipse 50% 32% at 70% 36%, color-mix(in oklab, var(--aurora-gold) 32%, transparent) 0%, transparent 100%);
+    /* primary iris ribbon */
+    radial-gradient(ellipse 68% 44% at 40% 36%, color-mix(in oklab, var(--aurora-iris) 62%, transparent) 0%, transparent 88%),
+    /* foam cross-light */
+    radial-gradient(ellipse 54% 36% at 72% 58%, color-mix(in oklab, var(--aurora-foam) 54%, transparent) 0%, transparent 86%),
+    /* warm gold accent */
+    radial-gradient(ellipse 42% 28% at 62% 26%, color-mix(in oklab, var(--aurora-gold) 42%, transparent) 0%, transparent 85%),
+    /* rose echo bottom-left */
+    radial-gradient(ellipse 46% 32% at 22% 72%, color-mix(in oklab, var(--aurora-rose) 40%, transparent) 0%, transparent 88%);
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
   mix-blend-mode: screen;
-  opacity: .40;
+  opacity: .58;
   animation: void-aurora-drift calc(88s * 1.05) cubic-bezier(0.32, 0.68, 0.3, 0.96) infinite;
 }
 
@@ -1755,6 +1860,323 @@ html.high-contrast.theme-cosmic .theme-layer::after {
 
 html.high-contrast.theme-void .theme-layer::after {
   opacity: .78;
+}
+
+/* ==========================================================================
+   Premium per-theme FX layer
+   Repurposes the existing .ocean-lights slot inside every .theme-layer as a
+   theme-specific effect surface. Each theme lights it up differently.
+   ========================================================================== */
+
+.theme-layer > .ocean-lights {
+  display: block;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+/* On small viewports (mostly mobile GPUs) drop the most expensive layers:
+   blurred conic caustics, aurora ribbons, and high-blur strips.
+   The base theme gradients and the starfield stay for visual identity. */
+@media (max-width: 640px) {
+  html.theme-ocean .theme-layer > .ocean-lights::before,
+  html.theme-ocean .theme-layer > .ocean-lights::after,
+  html.theme-void .theme-layer > .ocean-lights::before,
+  html.theme-void .theme-layer > .ocean-lights::after {
+    display: none;
+  }
+
+  /* Reduce cosmic star drift to save paint budget */
+  html.theme-cosmic .theme-layer > .ocean-lights::after {
+    display: none;
+  }
+}
+
+/* ---- Cosmic: dense CSS starfield with twinkle + mouse parallax ---------- */
+html.theme-cosmic .theme-layer > .ocean-lights {
+  opacity: 1 !important;
+  /* Parallax: SpotlightLayer exposes --cursor-nx/ny on :root (0..1 normalized) */
+  transform: translate3d(
+    calc((var(--cursor-nx, 0.5) - 0.5) * -22px),
+    calc((var(--cursor-ny, 0.5) - 0.5) * -22px),
+    0
+  );
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.theme-cosmic .theme-layer > .ocean-lights > .stars-near,
+html.theme-cosmic .theme-layer > .ocean-lights > .stars-far {
+  position: absolute;
+  inset: -5%;
+  background-repeat: repeat;
+  background-size: 360px 360px;
+}
+
+/* Near starfield: large bright stars, slow drift */
+html.theme-cosmic .theme-layer > .ocean-lights > .stars-near {
+  background-image:
+    radial-gradient(circle 2px at 12% 14%, rgba(255, 255, 255, 1), transparent),
+    radial-gradient(circle 1.5px at 37% 22%, rgba(180, 140, 255, 1), transparent),
+    radial-gradient(circle 2px at 58% 9%, rgba(255, 200, 120, 1), transparent),
+    radial-gradient(circle 1.5px at 74% 31%, rgba(220, 100, 255, 1), transparent),
+    radial-gradient(circle 2.5px at 88% 18%, rgba(255, 255, 255, 1), transparent),
+    radial-gradient(circle 1.5px at 19% 47%, rgba(255, 100, 180, 1), transparent),
+    radial-gradient(circle 2px at 44% 56%, rgba(255, 220, 100, 1), transparent),
+    radial-gradient(circle 1.5px at 67% 61%, rgba(100, 200, 255, 1), transparent),
+    radial-gradient(circle 2px at 83% 52%, rgba(200, 120, 255, 1), transparent),
+    radial-gradient(circle 1.5px at 24% 73%, rgba(255, 180, 80, 1), transparent),
+    radial-gradient(circle 2px at 52% 81%, rgba(180, 100, 255, 1), transparent),
+    radial-gradient(circle 1.5px at 71% 88%, rgba(120, 220, 255, 1), transparent),
+    radial-gradient(circle 2.5px at 91% 77%, rgba(255, 120, 200, 1), transparent),
+    radial-gradient(circle 1.5px at 8% 92%, rgba(255, 200, 100, 1), transparent),
+    radial-gradient(circle 2px at 31% 38%, rgba(255, 255, 255, 1), transparent),
+    radial-gradient(circle 1.5px at 63% 44%, rgba(160, 220, 255, 1), transparent),
+    radial-gradient(circle 2px at 77% 67%, rgba(255, 160, 100, 1), transparent),
+    radial-gradient(circle 1.5px at 5% 58%, rgba(200, 180, 255, 1), transparent);
+  opacity: 1;
+  animation: cosmic-star-drift 240s linear infinite;
+}
+
+/* Far starfield: smaller stars, independent drift */
+html.theme-cosmic .theme-layer > .ocean-lights > .stars-far {
+  background-image:
+    radial-gradient(circle 1px at 6% 9%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(circle 1px at 21% 16%, rgba(180, 140, 255, 0.75), transparent),
+    radial-gradient(circle 1px at 33% 28%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(circle 1px at 46% 14%, rgba(255, 200, 120, 0.75), transparent),
+    radial-gradient(circle 1px at 62% 25%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(circle 1px at 77% 8%, rgba(255, 100, 180, 0.75), transparent),
+    radial-gradient(circle 1px at 92% 38%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(circle 1px at 14% 38%, rgba(200, 120, 255, 0.8), transparent),
+    radial-gradient(circle 1px at 29% 51%, rgba(255, 220, 100, 0.75), transparent),
+    radial-gradient(circle 1px at 42% 68%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(circle 1px at 58% 74%, rgba(180, 100, 255, 0.75), transparent),
+    radial-gradient(circle 1px at 73% 59%, rgba(255, 180, 80, 0.75), transparent),
+    radial-gradient(circle 1px at 88% 66%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(circle 1px at 11% 82%, rgba(255, 120, 200, 0.75), transparent),
+    radial-gradient(circle 1px at 37% 94%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(circle 1px at 64% 91%, rgba(120, 220, 255, 0.8), transparent),
+    radial-gradient(circle 1px at 82% 96%, rgba(255, 200, 100, 0.75), transparent);
+  background-size: 520px 520px;
+  opacity: 0.8;
+  animation: cosmic-star-drift-slow 420s linear infinite reverse;
+}
+
+@keyframes cosmic-star-twinkle {
+  0%,  100% { filter: drop-shadow(0 0 2px rgba(196, 167, 231, 0.4)) brightness(1); }
+  50%       { filter: drop-shadow(0 0 4px rgba(196, 167, 231, 0.7)) brightness(1.25); }
+}
+@keyframes cosmic-star-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-5%, -3%, 0); }
+}
+@keyframes cosmic-star-drift-slow {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(4%, 3%, 0); }
+}
+
+/* Shooting star effect removed — it was animating opacity on the parent
+   .ocean-lights element, which hid the entire starfield for 97% of its cycle.
+   If a shooting star is desired later, it must live on its own dedicated layer. */
+
+/* ---- Ocean: slow rotating caustic light network ------------------------- */
+html.theme-ocean .theme-layer > .ocean-lights {
+  opacity: 1;
+  mix-blend-mode: screen;
+}
+
+html.theme-ocean .theme-layer > .ocean-lights::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    conic-gradient(
+      from 0deg at 50% 50%,
+      transparent 0deg,
+      color-mix(in oklab, var(--seafoam) 22%, transparent) 12deg,
+      transparent 40deg,
+      color-mix(in oklab, var(--cyan) 18%, transparent) 78deg,
+      transparent 110deg,
+      color-mix(in oklab, var(--seafoam) 24%, transparent) 168deg,
+      transparent 200deg,
+      color-mix(in oklab, var(--aqua) 20%, transparent) 242deg,
+      transparent 282deg,
+      color-mix(in oklab, var(--seafoam) 22%, transparent) 320deg,
+      transparent 360deg
+    );
+  filter: blur(42px);
+  mix-blend-mode: screen;
+  animation: ocean-caustic-rotate 140s linear infinite;
+}
+
+html.theme-ocean[data-motion="on"] .theme-layer > .ocean-lights::after {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background:
+    radial-gradient(ellipse 40% 18% at 30% 25%, color-mix(in oklab, var(--seafoam) 30%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 14% at 70% 45%, color-mix(in oklab, var(--cyan) 26%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 16% at 50% 72%, color-mix(in oklab, var(--aqua) 22%, transparent) 0%, transparent 75%);
+  filter: blur(22px);
+  mix-blend-mode: screen;
+  opacity: 0.7;
+  animation: ocean-caustic-shift 28s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+
+@keyframes ocean-caustic-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes ocean-caustic-shift {
+  0%   { transform: translate3d(-2%, -1%, 0) scale(1); }
+  50%  { transform: translate3d(3%, 2%, 0) scale(1.06); }
+  100% { transform: translate3d(-1%, 1%, 0) scale(1.02); }
+}
+
+/* ---- Void: slow aurora ribbon sweep ------------------------------------- */
+html.theme-void .theme-layer > .ocean-lights {
+  opacity: 1;
+  mix-blend-mode: screen;
+}
+
+html.theme-void .theme-layer > .ocean-lights::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  background:
+    linear-gradient(
+      102deg,
+      transparent 0%,
+      transparent 30%,
+      color-mix(in oklab, var(--rp-iris) 36%, transparent) 42%,
+      color-mix(in oklab, var(--rp-foam) 28%, transparent) 50%,
+      color-mix(in oklab, var(--rp-rose) 22%, transparent) 58%,
+      transparent 70%,
+      transparent 100%
+    );
+  filter: blur(56px);
+  mix-blend-mode: screen;
+  transform-origin: 50% 50%;
+  animation: void-aurora-sweep 180s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+html.theme-void[data-motion="on"] .theme-layer > .ocean-lights::after {
+  content: "";
+  position: absolute;
+  inset: 20% -10% 20% -10%;
+  background:
+    linear-gradient(
+      78deg,
+      transparent 0%,
+      transparent 40%,
+      color-mix(in oklab, var(--rp-foam) 24%, transparent) 52%,
+      color-mix(in oklab, var(--rp-iris) 32%, transparent) 58%,
+      transparent 72%,
+      transparent 100%
+    );
+  filter: blur(40px);
+  mix-blend-mode: screen;
+  opacity: 0.7;
+  animation: void-aurora-sweep-2 220s cubic-bezier(0.45, 0, 0.55, 1) infinite reverse;
+}
+
+@keyframes void-aurora-sweep {
+  0%   { transform: translate3d(-12%, -4%, 0) rotate(-3deg); }
+  50%  { transform: translate3d(10%, 6%, 0) rotate(4deg); }
+  100% { transform: translate3d(-10%, -2%, 0) rotate(-2deg); }
+}
+
+@keyframes void-aurora-sweep-2 {
+  0%   { transform: translate3d(8%, 2%, 0) rotate(1deg); }
+  50%  { transform: translate3d(-10%, -4%, 0) rotate(-3deg); }
+  100% { transform: translate3d(6%, 3%, 0) rotate(2deg); }
+}
+
+/* ---- Forest: keep the original forest-rays, enhance with dust motes ----- */
+html.theme-forest .theme-layer > .ocean-lights {
+  opacity: 1;
+  mix-blend-mode: screen;
+}
+
+html.theme-forest .theme-layer > .ocean-lights::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 14% 22%, color-mix(in oklab, var(--dawn-amber) 85%, transparent), transparent 55%),
+    radial-gradient(1px 1px at 32% 38%, color-mix(in oklab, var(--leaf) 75%, transparent), transparent 55%),
+    radial-gradient(1.2px 1.2px at 52% 18%, color-mix(in oklab, var(--dawn-amber) 90%, transparent), transparent 55%),
+    radial-gradient(1px 1px at 68% 46%, color-mix(in oklab, var(--moss) 70%, transparent), transparent 55%),
+    radial-gradient(1px 1px at 82% 28%, color-mix(in oklab, var(--dawn-amber) 80%, transparent), transparent 55%),
+    radial-gradient(1px 1px at 24% 66%, color-mix(in oklab, var(--leaf) 65%, transparent), transparent 55%),
+    radial-gradient(1.2px 1.2px at 58% 72%, color-mix(in oklab, var(--dawn-amber) 82%, transparent), transparent 55%),
+    radial-gradient(1px 1px at 78% 82%, color-mix(in oklab, var(--moss) 68%, transparent), transparent 55%);
+  background-size: 680px 520px;
+  opacity: 0.7;
+  filter: drop-shadow(0 0 2px color-mix(in oklab, var(--dawn-amber) 40%, transparent));
+  animation: forest-dust-float 48s linear infinite,
+             forest-dust-twinkle 5.5s ease-in-out infinite alternate;
+}
+
+@keyframes forest-dust-float {
+  from { background-position: 0 100%; }
+  to   { background-position: -120px -100%; }
+}
+
+@keyframes forest-dust-twinkle {
+  0%,  100% { opacity: 0.55; }
+  50%       { opacity: 0.85; }
+}
+
+/* ---- Reduced motion: freeze all per-theme FX layers --------------------- */
+html[data-motion="off"] .theme-layer > .ocean-lights,
+html[data-motion="off"] .theme-layer > .ocean-lights::before,
+html[data-motion="off"] .theme-layer > .ocean-lights::after,
+html[data-motion="off"] .theme-layer > .ocean-lights > .stars-near,
+html[data-motion="off"] .theme-layer > .ocean-lights > .stars-far {
+  animation: none !important;
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-layer > .ocean-lights,
+  .theme-layer > .ocean-lights::before,
+  .theme-layer > .ocean-lights::after,
+  .theme-layer > .ocean-lights > .stars-near,
+  .theme-layer > .ocean-lights > .stars-far {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* ---- Theme-tinted glass glow -------------------------------------------- */
+.glass {
+  transition: border-color 0.4s var(--ease-smooth), box-shadow 0.4s var(--ease-smooth), background 0.4s var(--ease-smooth);
+}
+
+html.theme-cosmic .glass,
+html.theme-void .glass {
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 1px color-mix(in oklab, var(--theme-accent) 8%, transparent),
+    0 20px 60px -20px color-mix(in oklab, var(--theme-accent) 18%, transparent);
+}
+
+html.theme-forest .glass {
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 1px color-mix(in oklab, var(--emerald) 10%, transparent),
+    0 20px 60px -20px color-mix(in oklab, var(--emerald) 16%, transparent);
+}
+
+html.theme-ocean .glass {
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 1px color-mix(in oklab, var(--seafoam) 12%, transparent),
+    0 20px 60px -20px color-mix(in oklab, var(--cyan) 18%, transparent);
 }
 
 /* Zen typing animations */
@@ -1867,55 +2289,44 @@ html.high-contrast.theme-void .theme-layer::after {
 @keyframes vt-fade-out {
   from {
     opacity: 1;
-    transform: scale(1);
-    filter: blur(0);
   }
 
   to {
     opacity: 0;
-    transform: scale(1.02);
-    filter: blur(3px);
   }
 }
 
 @keyframes vt-fade-in {
   from {
     opacity: 0;
-    transform: scale(0.98);
-    filter: blur(3px);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
-    filter: blur(0);
   }
 }
 
-::root::view-transition-old(root),
-::root::view-transition-new(root) {
-  animation-duration: 380ms;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+/* Theme-swap transitions: only active when data-transition-theme is set by ThemeToggle.
+   Uses the vt-theme-fade-* keyframes defined below for a smooth cross-fade. */
+html[data-transition-theme]::view-transition-old(root) {
+  animation: 400ms cubic-bezier(0.22, 1, 0.36, 1) both vt-theme-fade-out;
 }
 
-::root::view-transition-old(root) {
-  animation-name: vt-fade-out;
+html[data-transition-theme]::view-transition-new(root) {
+  animation: 400ms cubic-bezier(0.22, 1, 0.36, 1) both vt-theme-fade-in;
 }
 
-::root::view-transition-new(root) {
-  animation-name: vt-fade-in;
+/* Pure cross-fade specifically for theme swaps \u2014 no scale or blur,
+   just brightness so the color palette morphs cinematically */
+@keyframes vt-theme-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes vt-theme-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-::root[data-transition-theme="theme-void"]::view-transition-new(root) {
-  animation-name: vt-fade-in;
-  animation-duration: 420ms;
-}
-
-::root[data-transition-theme="theme-forest"]::view-transition-new(root),
-::root[data-transition-theme="theme-ocean"]::view-transition-new(root),
-::root[data-transition-theme="theme-cosmic"]::view-transition-new(root) {
-  animation-duration: 420ms;
-}
 
 @media (prefers-reduced-motion: reduce) {
   body {

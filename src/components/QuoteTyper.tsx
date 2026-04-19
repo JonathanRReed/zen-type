@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useTransition } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useTransition } from 'react';
 import {
   updateStats,
   updateStreak,
@@ -66,18 +66,37 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   const activeQuoteRef = useRef(activeQuote);
   const [isPending, startTransition] = useTransition();
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
-  const [visibleChars, setVisibleChars] = useState(0);
-  const [isAnimatingQuote, setIsAnimatingQuote] = useState(true);
   const [progressAnnouncement, setProgressAnnouncement] = useState<string | null>(null);
   const progressTimeoutRef = useRef<number | null>(null);
 
   // Chunking
   type Chunk = { start: number; end: number; wordStart: number; wordEnd: number; };
-  const [chunks, setChunks] = useState<Chunk[]>([]);
-  const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const chunkStartTimesRef = useRef<Map<number, number>>(new Map()); // ms timestamps
   const chunkCorrectRef = useRef<Map<number, number>>(new Map());
   const chunkTypedRef = useRef<Map<number, number>>(new Map());
+
+  const handleReset = useCallback(() => {
+    setCursor(0);
+    setTypedChars([]);
+    setErrors(new Set());
+    setErrorTypeAt(new Map());
+    setErrorCounts({ slip: 0, skip: 0, extra: 0 });
+    setStartTime(null);
+    setEndTime(null);
+    setIsComplete(false);
+    setTotalTyped(0);
+    setCorrectChars(0);
+    chunkStartTimesRef.current.clear();
+    chunkCorrectRef.current.clear();
+    chunkTypedRef.current.clear();
+    if (progressTimeoutRef.current !== null) {
+      window.clearTimeout(progressTimeoutRef.current);
+      progressTimeoutRef.current = null;
+    }
+    setProgressAnnouncement(null);
+    lastAnnouncedProgress.current = 0;
+    inputRef.current?.focus();
+  }, []);
 
   // Calculate WPM
   const calculateWPM = useCallback(() => {
@@ -113,8 +132,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     window.dispatchEvent(new CustomEvent('newQuote'));
   }, []);
 
-  const computeChunks = useCallback(() => {
-    // Split into ~10 word chunks (8–12 adaptive bounds)
+  const chunks = useMemo<Chunk[]>(() => {
+    // Split into ~10 word chunks, with 8 to 12 adaptive bounds.
     const words = activeQuote.split(/\s+/).filter(Boolean);
     const wordBoundaries: number[] = []; // char index where each word starts
     let idx = 0;
@@ -128,11 +147,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       idx = found + w!.length;
       wi++;
     }
-    chunkStartTimesRef.current.clear();
-    chunkCorrectRef.current.clear();
-    chunkTypedRef.current.clear();
-    setCurrentChunkIndex(0);
-
     const ch: Chunk[] = [];
     let w = 0;
     // Adaptive chunk sizing to keep ~10 words per chunk within 8..12
@@ -154,12 +168,19 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       ch.push({ start, end, wordStart: ws, wordEnd: we });
       w += size;
     }
-    setChunks(ch);
+    return ch;
   }, [activeQuote]);
 
+  const currentChunkIndex = useMemo(
+    () => chunks.findIndex(c => cursor >= c.start && cursor < c.end),
+    [chunks, cursor],
+  );
+
   useEffect(() => {
-    computeChunks();
-  }, [computeChunks]);
+    chunkStartTimesRef.current.clear();
+    chunkCorrectRef.current.clear();
+    chunkTypedRef.current.clear();
+  }, [activeQuote]);
 
   useEffect(() => {
     activeQuoteRef.current = activeQuote;
@@ -228,7 +249,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       window.removeEventListener('settingsChanged', onSettings as EventListener);
       window.removeEventListener('newQuote', onNew as EventListener);
     };
-  }, []);
+  }, [handleReset]);
 
   // Listen for storage persistence errors and warn users
   useEffect(() => {
@@ -248,36 +269,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     };
   }, []);
 
-  // Typewriter effect for new quotes
-  useEffect(() => {
-    setIsAnimatingQuote(true);
-    setVisibleChars(0);
-
-    const quoteLength = activeQuote.length;
-    const charsPerStep = Math.max(1, Math.ceil(quoteLength / 50)); // Animate in ~50 steps
-    const interval = 20; // 20ms per step for smooth animation
-
-    let currentChar = 0;
-    const timer = setInterval(() => {
-      currentChar += charsPerStep;
-      if (currentChar >= quoteLength) {
-        setVisibleChars(quoteLength);
-        setIsAnimatingQuote(false);
-        clearInterval(timer);
-      } else {
-        setVisibleChars(currentChar);
-      }
-    }, interval);
-
-    return () => clearInterval(timer);
-  }, [activeQuote]);
-
-  // Current chunk index by cursor
-  useEffect(() => {
-    const i = chunks.findIndex(c => cursor >= c.start && cursor < c.end);
-    if (i !== -1 && i !== currentChunkIndex) setCurrentChunkIndex(i);
-  }, [cursor, chunks, currentChunkIndex]);
-
   // Emit live quoteStats for StatsBar
   useEffect(() => {
     if (!startTime) return;
@@ -294,7 +285,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
   // Handle key press
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (isComplete || isAnimatingQuote) return;
+    if (isComplete) return;
 
     // Start timer on first keypress
     if (!startTime && e.key.length === 1) {
@@ -338,7 +329,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       if (cursor >= activeQuote.length) return;
       // Optional debounce for ultra-fast duplicate keystrokes
       const thr = Math.max(0, getSettings().debounceMs || 0);
-      const nowTs = performance.now();
+      const nowTs = e.timeStamp;
       if (thr > 0 && e.key === lastTypedCharRef.current && (nowTs - lastPressTsRef.current) < thr) {
         return;
       }
@@ -348,7 +339,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       // Determine current chunk and ensure start time
       const chIndex = chunks.findIndex(c => cursor >= c.start && cursor < c.end);
       if (!chunkStartTimesRef.current.has(chIndex)) {
-        chunkStartTimesRef.current.set(chIndex, Date.now());
+        chunkStartTimesRef.current.set(chIndex, nowTs);
       }
 
       const buf = [...typedChars];
@@ -502,30 +493,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     }, 1000);
   }, []);
 
-  // Reset function
-  const handleReset = () => {
-    setCursor(0);
-    setTypedChars([]);
-    setErrors(new Set());
-    setErrorTypeAt(new Map());
-    setErrorCounts({ slip: 0, skip: 0, extra: 0 });
-    setStartTime(null);
-    setEndTime(null);
-    setIsComplete(false);
-    setTotalTyped(0);
-    setCorrectChars(0);
-    chunkStartTimesRef.current.clear();
-    chunkCorrectRef.current.clear();
-    chunkTypedRef.current.clear();
-    if (progressTimeoutRef.current !== null) {
-      window.clearTimeout(progressTimeoutRef.current);
-      progressTimeoutRef.current = null;
-    }
-    setProgressAnnouncement(null);
-    lastAnnouncedProgress.current = 0;
-    inputRef.current?.focus();
-  };
-
   // Focus input on mount
   useEffect(() => {
     inputRef.current?.focus();
@@ -563,11 +530,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
   // Render character span
   const renderChar = (char: string, index: number) => {
-    // Hide characters not yet revealed by typewriter
-    if (isAnimatingQuote && index >= visibleChars) {
-      return null;
-    }
-
     const isTyped = index < cursor;
     const isCurrent = index === cursor;
     const hasError = errors.has(index);
@@ -662,17 +624,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
                 {/* Pace band under current chunk */}
                 {ci === currentChunkIndex && (
                   <div className="mt-2 h-1 w-full bg-overlay/40 rounded-full overflow-hidden">
-                    {(() => {
-                      const cs = chunkStartTimesRef.current.get(ci);
-                      let w = 0;
-                      if (cs) {
-                        const elapsed = Math.max(0.1, (Date.now() - cs) / 1000 / 60);
-                        const typed = (chunkCorrectRef.current.get(ci) || 0);
-                        const wpm = (typed / 5) / elapsed;
-                        w = Math.max(0, Math.min(1, (wpm - 20) / 80));
-                      }
-                      return <div className="h-full bg-foam/60" style={{ width: `${w * 100}%` }} />;
-                    })()}
+                    <div
+                      className="h-full bg-foam/60"
+                      style={{
+                        width: `${Math.max(0, Math.min(100, ((cursor - c.start) / Math.max(1, c.end - c.start)) * 100))}%`,
+                      }}
+                    />
                   </div>
                 )}
               </div>
@@ -680,7 +637,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           </div>
           {activeAuthor && (
             <div className="text-right text-muted text-lg">
-              — {activeAuthor}
+              <span aria-hidden="true">-</span> {activeAuthor}
             </div>
           )}
         </div>
@@ -701,7 +658,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
             <div>
               <div className="text-sm text-muted mb-1">WPM</div>
               <div className="text-2xl font-mono text-gold">
-                {startTime && !isComplete ? '—' : (
+                {startTime && !isComplete ? '-' : (
                   <AnimatedNumber
                     value={calculateWPM()}
                     showImprovement={true}

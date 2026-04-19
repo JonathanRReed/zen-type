@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getSettings, type Settings } from '../utils/storage';
 
 type LegacyMediaQueryList = MediaQueryList & {
@@ -21,14 +21,11 @@ type MotionPreferenceResult = {
 
 export function useMotionPreference(options: MotionPreferenceOptions = {}): MotionPreferenceResult {
   const { forced, respectMedia = true, syncAttribute = false, attributeTarget } = options;
-  const settingsRef = useRef<Settings | null>(null);
-  const mediaQueryRef = useRef<MediaQueryList | null>(null);
 
   const [settingsReduced, setSettingsReduced] = useState<boolean>(() => {
     if (typeof window === 'undefined') return Boolean(forced);
     try {
       const s = getSettings();
-      settingsRef.current = s;
       return !!s.reducedMotion;
     } catch {
       return false;
@@ -40,29 +37,14 @@ export function useMotionPreference(options: MotionPreferenceOptions = {}): Moti
       return false;
     }
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    mediaQueryRef.current = media;
     return media.matches;
   });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    try {
-      const s = getSettings();
-      settingsRef.current = s;
-      setSettingsReduced(!!s.reducedMotion);
-    } catch {
-      setSettingsReduced(false);
-      settingsRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<Settings>).detail;
-      settingsRef.current = detail;
       setSettingsReduced(!!detail.reducedMotion);
     };
 
@@ -72,14 +54,13 @@ export function useMotionPreference(options: MotionPreferenceOptions = {}): Moti
 
   useEffect(() => {
     if (!respectMedia || typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      mediaQueryRef.current = null;
-      setSystemReduced(false);
       return;
     }
 
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    mediaQueryRef.current = media;
-    setSystemReduced(media.matches);
+    const timer = window.setTimeout(() => {
+      setSystemReduced(media.matches);
+    }, 0);
 
     const handleMediaChange = (event: MediaQueryListEvent) => {
       setSystemReduced(event.matches);
@@ -93,6 +74,7 @@ export function useMotionPreference(options: MotionPreferenceOptions = {}): Moti
     }
 
     return () => {
+      window.clearTimeout(timer);
       if (typeof media.removeEventListener === 'function') {
         media.removeEventListener('change', handleMediaChange);
       } else {
