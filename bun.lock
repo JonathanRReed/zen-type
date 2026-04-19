@@ -63,7 +63,7 @@
     "glob": ">=10.5.0",
     "js-yaml": ">=4.1.1",
     "mdast-util-to-hast": ">=13.2.1",
-    "vite": ">=6.4.1",
+    "vite": "^6.4.1",
   },
   "packages": {
     "@acemir/cssom": ["@acemir/cssom@0.9.29", "", {}, "sha512-G90x0VW+9nW4dFajtjCoT+NM0scAfH9Mb08IcjgFHYbfiL/lU04dTF9JuVOi3/OH+DJCQdcIseSXkdCB9Ky6JA=="],
