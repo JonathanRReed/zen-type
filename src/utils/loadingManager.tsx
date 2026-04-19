@@ -6,6 +6,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 
+const skeletonWidth = (index: number): string => `${100 - (index % 5) * 8}%`;
+
 export interface LoadingState {
   isLoading: boolean;
   progress?: number; // 0-100
@@ -141,7 +143,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
             animate ? 'animate-pulse' : ''
           }`}
           style={{
-            width: `${Math.random() * 40 + 60}%`,
+            width: skeletonWidth(i),
             animationDelay: `${i * 0.1}s`
           }}
         />
@@ -296,16 +298,12 @@ export const SmoothTransition: React.FC<SmoothTransitionProps> = ({
   const [shouldRender, setShouldRender] = useState(isVisible);
 
   useEffect(() => {
-    if (isVisible) {
-      setShouldRender(true);
-      return; // No cleanup needed when becoming visible
-    } else {
-      const timer = setTimeout(() => setShouldRender(false), duration);
-      return () => clearTimeout(timer);
-    }
+    if (isVisible) return;
+    const timer = setTimeout(() => setShouldRender(false), duration);
+    return () => clearTimeout(timer);
   }, [isVisible, duration]);
 
-  if (!shouldRender) return null;
+  if (!isVisible && !shouldRender) return null;
 
   return (
     <div

@@ -1,5 +1,5 @@
 ---
-import { ViewTransitions } from "astro:transitions";
+import { ClientRouter } from "astro:transitions";
 
 export interface Props {
   title: string;
@@ -11,81 +11,241 @@ export interface Props {
   twitterCard?: "summary" | "summary_large_image";
   noindex?: boolean;
   nofollow?: boolean;
-  jsonLd?: Record<string, any>;
+  keywords?: string[];
+  breadcrumbItems?: Array<{
+    name: string;
+    url: string;
+  }>;
+  jsonLd?: JsonLdNode | JsonLdNode[];
 }
+
+type JsonLdNode = Record<string, unknown>;
 
 const {
   title,
   description,
   canonical,
   ogType = "website",
-  ogImage = "/Favicon.webp",
-  ogImageAlt = "Zen Typer - Mindful Typing Experience",
+  ogImage = "/og-image.svg",
+  ogImageAlt = "Zen Typer mindful typing test and practice interface",
   twitterCard = "summary_large_image",
   noindex = false,
   nofollow = false,
+  keywords = [
+    "typing test",
+    "typing trainer",
+    "typing practice",
+    "mindful typing",
+    "typing speed test",
+    "WPM test",
+  ],
+  breadcrumbItems = [],
   jsonLd,
 } = Astro.props;
 
-// Fallback to current URL origin if Astro.site is not configured
-const siteUrl = Astro.site?.href || Astro.url.origin;
-const currentUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
-const fullOgImage = new URL(ogImage, siteUrl).href;
+const siteOrigin = new URL(Astro.site?.href || Astro.url.origin).origin;
+const siteRoot = new URL("/", siteOrigin).href;
+const currentUrl = canonical || new URL(Astro.url.pathname, siteOrigin).href;
+const fullOgImage = new URL(ogImage, siteOrigin).href;
+const keywordsContent = keywords.join(", ");
 
 const robotsContent = [
   noindex ? "noindex" : "index",
   nofollow ? "nofollow" : "follow",
 ].join(", ");
 
-const defaultJsonLd = {
+const creatorJsonLd: JsonLdNode = {
   "@context": "https://schema.org",
-  "@type": "WebApplication",
+  "@type": "Person",
+  "@id": new URL("#creator", siteRoot).href,
+  name: "Jonathan Reed",
+  alternateName: "Jonathan R Reed",
+  url: "https://jonathanrreed.com",
+};
+
+const websiteJsonLd: JsonLdNode = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": new URL("#website", siteRoot).href,
   name: "Zen Typer",
-  headline: "Free Typing Trainer & Mindful Typing Test",
+  url: siteRoot,
+  inLanguage: "en-US",
   description:
-    "A mindful typing experience with Zen quotes and free-flow modes. Improve your typing speed and accuracy through guided quote-based practice or free-flow creative typing.",
-  url: Astro.site?.href || currentUrl,
-  applicationCategory: "UtilitiesApplication",
-  operatingSystem: "Web Browser",
-  browserRequirements:
-    "Requires JavaScript. Best experienced in modern browsers.",
-  keywords:
-    "typing trainer, typing test, typing practice, mindful typing, zen quotes, improve typing speed, typing accuracy",
+    "A free mindful typing test and practice app for focus, WPM, accuracy, Zen quotes, and free-flow writing.",
+  publisher: {
+    "@id": new URL("#creator", siteRoot).href,
+  },
+};
+
+const appJsonLd: JsonLdNode = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": new URL("#app", siteRoot).href,
+  name: "Zen Typer",
+  alternateName: "Zen Type",
+  url: siteRoot,
+  applicationCategory: "EducationalApplication",
+  operatingSystem: "Web browser",
+  browserRequirements: "Requires JavaScript and a modern browser.",
+  isAccessibleForFree: true,
+  inLanguage: "en-US",
+  description:
+    "A free mindful typing trainer with a typing test, Zen quote practice, WPM tracking, accuracy feedback, and free-flow writing mode.",
+  keywords,
+  featureList: [
+    "Mindful typing test",
+    "Typing practice with Zen quotes",
+    "WPM and accuracy tracking",
+    "Free-flow writing mode",
+    "Local session history",
+  ],
   author: {
-    "@type": "Person",
-    name: "Jonathan Reed",
-    alternateName: "Jonathan R Reed",
-    url: "https://jonathanrreed.com",
+    "@id": new URL("#creator", siteRoot).href,
   },
   creator: {
-    "@type": "Person",
-    name: "Jonathan Reed",
-    alternateName: "Jonathan R Reed",
-    url: "https://jonathanrreed.com",
+    "@id": new URL("#creator", siteRoot).href,
   },
   offers: {
     "@type": "Offer",
     price: "0",
     priceCurrency: "USD",
   },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: 5,
-    ratingCount: 1,
-  },
 };
 
-const structuredData = jsonLd || defaultJsonLd;
+const breadcrumbJsonLd: JsonLdNode | null =
+  breadcrumbItems.length > 0
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "@id": `${currentUrl}#breadcrumb`,
+        itemListElement: breadcrumbItems.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: item.name,
+          item: item.url,
+        })),
+      }
+    : null;
+
+const pageJsonLd: JsonLdNode = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${currentUrl}#webpage`,
+  name: title,
+  headline: title,
+  description,
+  url: currentUrl,
+  inLanguage: "en-US",
+  isPartOf: {
+    "@id": new URL("#website", siteRoot).href,
+  },
+  about: {
+    "@id": new URL("#app", siteRoot).href,
+  },
+  primaryImageOfPage: {
+    "@type": "ImageObject",
+    url: fullOgImage,
+    width: 1200,
+    height: 630,
+  },
+  ...(breadcrumbJsonLd
+    ? {
+        breadcrumb: {
+          "@id": `${currentUrl}#breadcrumb`,
+        },
+      }
+    : {}),
+};
+
+const customJsonLd = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
+const structuredData = [
+  creatorJsonLd,
+  websiteJsonLd,
+  appJsonLd,
+  pageJsonLd,
+  ...(breadcrumbJsonLd ? [breadcrumbJsonLd] : []),
+  ...customJsonLd,
+];
 ---
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="generator" content={Astro.generator} />
+<meta name="application-name" content="Zen Typer" />
+<meta name="apple-mobile-web-app-title" content="Zen Typer" />
+<meta name="author" content="Jonathan Reed" />
+
+<!--
+  Pre-paint theme bootstrap.
+  Runs synchronously before the browser renders anything so the correct
+  theme class is present on <html> from the very first frame. Prevents the
+  Void-default → chosen-theme "pop-in" on initial load and after a
+  ClientRouter navigation.
+-->
+<script is:inline>
+  (function () {
+    try {
+      var themeClasses = ["theme-void", "theme-forest", "theme-ocean", "theme-cosmic"];
+      var root = document.documentElement;
+
+      var raw = null;
+      try {
+        raw = localStorage.getItem("zt.settings");
+      } catch (storageErr) {
+        raw = null;
+        void storageErr;
+      }
+
+      var parsed = null;
+      if (raw) {
+        try {
+          parsed = JSON.parse(raw);
+        } catch (parseErr) {
+          parsed = null;
+          void parseErr;
+        }
+      }
+
+      var theme = (parsed && parsed.theme) ? String(parsed.theme).toLowerCase() : "void";
+      if (themeClasses.indexOf("theme-" + theme) === -1) theme = "void";
+
+      for (var i = 0; i < themeClasses.length; i++) root.classList.remove(themeClasses[i]);
+      root.classList.add("theme-" + theme);
+
+      // Motion preference: data-motion="on" | "off"
+      var motion = (parsed && parsed.reducedMotion) ? "off" : "on";
+      var prefersReduced = false;
+      try {
+        prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      } catch (mqErr) {
+        prefersReduced = false;
+        void mqErr;
+      }
+      if (prefersReduced) motion = "off";
+      root.setAttribute("data-motion", motion);
+
+      // High-contrast preference.
+      if (parsed && parsed.highContrast) {
+        root.classList.add("high-contrast");
+      } else {
+        root.classList.remove("high-contrast");
+      }
+    } catch (bootErr) {
+      // Fail silently and let ThemeToggle sort it out after hydration.
+      void bootErr;
+    }
+  })();
+</script>
 
 <title>{title}</title>
 <meta name="description" content={description} />
+<meta name="keywords" content={keywordsContent} />
 <meta name="robots" content={robotsContent} />
 <link rel="canonical" href={currentUrl} />
+<link rel="sitemap" href="/sitemap-index.xml" />
+
+<!-- Astro View Transitions: cross-fades between pages, keeps persistent layers mounted -->
+<ClientRouter fallback="swap" />
 
 <meta property="og:type" content={ogType} />
 <meta property="og:title" content={title} />
@@ -93,6 +253,8 @@ const structuredData = jsonLd || defaultJsonLd;
 <meta property="og:url" content={currentUrl} />
 <meta property="og:image" content={fullOgImage} />
 <meta property="og:image:alt" content={ogImageAlt} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta property="og:site_name" content="Zen Typer" />
 <meta property="og:locale" content="en_US" />
 
@@ -113,14 +275,10 @@ const structuredData = jsonLd || defaultJsonLd;
   media="(prefers-color-scheme: light)"
 />
 
-<script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
-
-<link rel="icon" type="image/webp" href="/Favicon.webp" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link
-  rel="stylesheet"
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Lato:wght@400;700&display=swap"
+<script
+  type="application/ld+json"
+  is:inline
+  set:html={JSON.stringify(structuredData)}
 />
 
-<ViewTransitions />
+<link rel="icon" type="image/webp" href="/Favicon.webp" />

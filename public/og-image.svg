@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Zen Typer social preview</title>
+  <desc id="desc">Mindful typing test and practice app for focus, WPM, accuracy, Zen quotes, and free-flow writing.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#191724"/>
+      <stop offset="0.5" stop-color="#26233a"/>
+      <stop offset="1" stop-color="#1f1d2e"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="72%" cy="22%" r="56%">
+      <stop offset="0" stop-color="#9ccfd8" stop-opacity="0.32"/>
+      <stop offset="0.45" stop-color="#c4a7e7" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#191724" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g fill="none" stroke="#ebbcba" stroke-opacity="0.18" stroke-width="1">
+    <path d="M94 118h1012"/>
+    <path d="M94 512h1012"/>
+    <path d="M168 72v486"/>
+    <path d="M1032 72v486"/>
+  </g>
+  <g transform="translate(94 92)">
+    <text x="0" y="52" fill="#9ccfd8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="0">ZEN TYPER</text>
+    <text x="0" y="180" fill="#e0def4" font-family="Inter, Arial, sans-serif" font-size="78" font-weight="800" letter-spacing="0">Mindful typing</text>
+    <text x="0" y="270" fill="#e0def4" font-family="Inter, Arial, sans-serif" font-size="78" font-weight="800" letter-spacing="0">test and practice</text>
+    <text x="0" y="350" fill="#c4a7e7" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="600" letter-spacing="0">WPM, accuracy, Zen quotes, and free-flow writing</text>
+    <g transform="translate(0 410)">
+      <rect x="0" y="0" width="188" height="52" rx="8" fill="#9ccfd8" fill-opacity="0.12" stroke="#9ccfd8" stroke-opacity="0.42"/>
+      <text x="24" y="34" fill="#e0def4" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="0">typing test</text>
+      <rect x="212" y="0" width="226" height="52" rx="8" fill="#c4a7e7" fill-opacity="0.12" stroke="#c4a7e7" stroke-opacity="0.42"/>
+      <text x="236" y="34" fill="#e0def4" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="0">typing practice</text>
+      <rect x="462" y="0" width="154" height="52" rx="8" fill="#f6c177" fill-opacity="0.12" stroke="#f6c177" stroke-opacity="0.42"/>
+      <text x="486" y="34" fill="#e0def4" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="0">focus</text>
+    </g>
+  </g>
+  <g transform="translate(838 136)" fill="none" stroke-linecap="round">
+    <path d="M42 82c64-74 172-68 228 4" stroke="#9ccfd8" stroke-width="8" stroke-opacity="0.62"/>
+    <path d="M42 168c64-74 172-68 228 4" stroke="#c4a7e7" stroke-width="8" stroke-opacity="0.54"/>
+    <path d="M42 254c64-74 172-68 228 4" stroke="#f6c177" stroke-width="8" stroke-opacity="0.5"/>
+    <circle cx="52" cy="82" r="10" fill="#9ccfd8"/>
+    <circle cx="270" cy="86" r="10" fill="#9ccfd8"/>
+    <circle cx="52" cy="168" r="10" fill="#c4a7e7"/>
+    <circle cx="270" cy="172" r="10" fill="#c4a7e7"/>
+    <circle cx="52" cy="254" r="10" fill="#f6c177"/>
+    <circle cx="270" cy="258" r="10" fill="#f6c177"/>
+  </g>
+</svg>

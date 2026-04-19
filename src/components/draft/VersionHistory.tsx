@@ -25,12 +25,6 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
 
   const formatTimestamp = (ts: number) => {
     const date = new Date(ts);
-    const now = Date.now();
-    const diff = now - ts;
-    
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 

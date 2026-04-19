@@ -68,16 +68,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   }, [query, fuse, searchItems]);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
+    if (!isOpen || !inputRef.current) {
+      return undefined;
+    }
+    inputRef.current.focus();
+    const timer = window.setTimeout(() => {
       setQuery('');
       setSelectedIndex(0);
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [isOpen]);
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -122,7 +122,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             ref={inputRef}
             type="text"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={e => {
+              setSelectedIndex(0);
+              setQuery(e.target.value);
+            }}
             onKeyDown={handleKeyDown}
             placeholder="Jump to heading or line..."
             className="w-full bg-transparent text-lg text-text placeholder-muted/60 focus:outline-none"

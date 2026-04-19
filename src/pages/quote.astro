@@ -7,29 +7,42 @@ import HelpSheet from "../components/HelpSheet";
 import AboutOverlay from "../components/AboutOverlay";
 import ArchiveOverlay from "../components/ArchiveOverlay";
 import SiteFooter from "../components/SiteFooter";
-import ClientTransitions from "../components/ClientTransitions";
 import SiteHeader from "../components/SiteHeader";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
+import SpotlightLayer from "../components/SpotlightLayer";
 import { loadQuotes, getRandomQuote } from "../utils/quotes";
 
 // Load a random quote at build time
 const quotes = await loadQuotes();
 const randomQuote = getRandomQuote(quotes);
+const siteUrl = "https://zentype.jonathanrreed.com";
+const homeUrl = `${siteUrl}/`;
+const quoteUrl = `${siteUrl}/quote`;
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<SEO
-			title="Quote Mode | Mindful Typing Test & Practice – Zen Typer by Jonathan Reed"
-			description="Type curated Zen quotes with precision tracking. Improve your typing accuracy and speed while experiencing mindfulness through inspirational quotes."
-			canonical="https://zentype.jonathanrreed.com/quote"
-			ogImage="/Favicon.webp"
+			title="Zen Quote Typing Test for Speed and Accuracy"
+			description="Take a mindful typing test with curated Zen quotes, real-time WPM, accuracy tracking, and clean practice sessions built for focus and rhythm."
+			canonical={quoteUrl}
+			keywords={[
+				"typing test",
+				"typing speed test",
+				"WPM test",
+				"typing accuracy",
+				"Zen quotes",
+				"typing practice",
+			]}
+			breadcrumbItems={[
+				{ name: "Mindful typing test", url: homeUrl },
+				{ name: "Zen quote typing test", url: quoteUrl },
+			]}
 		/>
 	</head>
 	<body>
-		<ClientTransitions client:load />
 		<ErrorBoundary>
 			<a
 				href="#quote-app"
@@ -42,13 +55,19 @@ const randomQuote = getRandomQuote(quotes);
 				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
 			>
 				<h1 class="sr-only">
-					Zen Typer Quote Mode - Type Mindful Quotes
+					Zen Quote Typing Test for Speed and Accuracy
 				</h1>
 				<SiteHeader client:load mode="quote" />
-				<div class="pointer-events-none fixed inset-0 z-0 theme-layer">
+				<div
+					class="pointer-events-none fixed inset-0 z-0 theme-layer"
+				>
 					<div class="forest-rays" aria-hidden="true"></div>
-					<div class="ocean-lights" aria-hidden="true"></div>
+					<div class="ocean-lights" aria-hidden="true">
+						<div class="stars-near" aria-hidden="true"></div>
+						<div class="stars-far" aria-hidden="true"></div>
+					</div>
 				</div>
+				<SpotlightLayer client:load transition:persist="spotlight" />
 
 				<div
 					class="relative z-10 flex w-full items-center justify-center px-6 py-12 pb-40"
@@ -94,6 +113,48 @@ const randomQuote = getRandomQuote(quotes);
 			</div>
 		</ErrorBoundary>
 
+		<section
+			class="mx-auto max-w-5xl px-6 pb-28 pt-16 text-muted"
+			aria-labelledby="quote-seo-heading"
+		>
+			<div
+				class="grid gap-10 border-t border-iris/15 pt-10 md:grid-cols-[1.15fr_0.85fr]"
+			>
+				<div class="space-y-4">
+					<p class="text-sm font-medium text-foam">Quote mode</p>
+					<h2
+						id="quote-seo-heading"
+						class="max-w-2xl text-3xl font-semibold text-text md:text-4xl"
+					>
+						A Zen quote typing test with WPM and accuracy.
+					</h2>
+					<p class="max-w-2xl text-base leading-7 text-muted md:text-lg">
+						Quote Mode gives each typing test a short passage, live
+						accuracy feedback, and WPM tracking. It is built for clean
+						repetition, focused practice, and steady speed gains.
+					</p>
+				</div>
+				<div class="space-y-5 text-sm leading-6">
+					<div>
+						<h3 class="font-semibold text-text">Best for</h3>
+						<p>
+							Use this mode when you want a fast typing speed test with
+							curated Zen quotes, precise feedback, and a calmer pace
+							than competitive typing games.
+						</p>
+					</div>
+					<div class="flex flex-wrap gap-4">
+						<a class="text-foam transition-colors hover:text-text" href="/">
+							Mindful typing practice
+						</a>
+						<a class="text-foam transition-colors hover:text-text" href="/zen">
+							Free-flow typing practice
+						</a>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<script>
 			let isPaused = false;
 			document.addEventListener("keydown", (e) => {
@@ -109,9 +170,7 @@ const randomQuote = getRandomQuote(quotes);
 					!e.shiftKey
 				) {
 					e.preventDefault();
-					window.dispatchEvent(
-						new CustomEvent("app:navigate", { detail: "/zen" }),
-					);
+					window.location.assign("/zen");
 				}
 
 				// Esc for pause menu

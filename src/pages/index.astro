@@ -7,7 +7,6 @@ import HelpSheet from "../components/HelpSheet";
 import AboutOverlay from "../components/AboutOverlay";
 import ArchiveOverlay from "../components/ArchiveOverlay";
 import SiteFooter from "../components/SiteFooter";
-import ClientTransitions from "../components/ClientTransitions";
 import SiteHeader from "../components/SiteHeader";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
@@ -16,16 +15,28 @@ import { loadQuotes, getRandomQuote } from "../utils/quotes";
 
 const quotes = await loadQuotes();
 const randomQuote = getRandomQuote(quotes);
+const siteUrl = "https://zentype.jonathanrreed.com";
+const homeUrl = `${siteUrl}/`;
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<SEO
-			title="Zen Typer | Mindful typing trainer by Jonathan R Reed"
-			description="Zen Typer is a mindful typing trainer by Jonathan R Reed that helps you practice focus and flow with clean, distraction free sessions."
-			canonical="https://zentype.jonathanrreed.com/"
-			ogImage="/Favicon.webp"
+			title="Mindful Typing Test and Practice for Focus"
+			description="Zen Typer is a free mindful typing test and practice app for focus, WPM, accuracy, Zen quotes, and free-flow writing in a distraction-free workspace."
+			canonical={homeUrl}
+			keywords={[
+				"typing test",
+				"mindful typing test",
+				"typing practice",
+				"typing trainer",
+				"WPM test",
+				"typing accuracy",
+			]}
+			breadcrumbItems={[
+				{ name: "Mindful typing test", url: homeUrl },
+			]}
 		/>
 		<!-- Developer Console Easter Egg -->
 		<script>
@@ -52,7 +63,6 @@ const randomQuote = getRandomQuote(quotes);
 		</script>
 	</head>
 	<body>
-		<ClientTransitions client:load />
 		<ErrorBoundary>
 			<a
 				href="#quote-app"
@@ -64,21 +74,24 @@ const randomQuote = getRandomQuote(quotes);
 				id="quote-app"
 				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
 			>
-				<h1 class="sr-only">Zen Typer - Mindful Typing Practice</h1>
+				<h1 class="sr-only">Mindful Typing Test and Practice</h1>
 				<p class="sr-only">
-					Zen Typer is built by me, Jonathan Reed! It is a way to
-					practice typing in a calm, low friction environment.
-					Jonathan R Reed created this mindful typing trainer to help
-					you practice focus and flow with clean, distraction-free
-					sessions. Track your progress with real-time WPM and
-					accuracy statistics.
+					Zen Typer is a free mindful typing test and typing practice
+					workspace by Jonathan Reed. Practice with Zen quotes, track
+					WPM and accuracy, or move into free-flow typing when you want
+					a calmer writing rhythm.
 				</p>
 				<SiteHeader client:load mode="quote" />
-				<div class="pointer-events-none fixed inset-0 z-0 theme-layer">
+				<div
+					class="pointer-events-none fixed inset-0 z-0 theme-layer"
+				>
 					<div class="forest-rays" aria-hidden="true"></div>
-					<div class="ocean-lights" aria-hidden="true"></div>
+					<div class="ocean-lights" aria-hidden="true">
+						<div class="stars-near" aria-hidden="true"></div>
+						<div class="stars-far" aria-hidden="true"></div>
+					</div>
 				</div>
-				<SpotlightLayer client:load />
+				<SpotlightLayer client:load transition:persist="spotlight" />
 
 				<div
 					class="relative z-10 flex w-full items-center justify-center px-6 py-12 pb-40"
@@ -122,9 +135,56 @@ const randomQuote = getRandomQuote(quotes);
 			</div>
 		</ErrorBoundary>
 
+		<section
+			class="mx-auto max-w-5xl px-6 pb-28 pt-16 text-muted"
+			aria-labelledby="home-seo-heading"
+		>
+			<div
+				class="grid gap-10 border-t border-iris/15 pt-10 md:grid-cols-[1.15fr_0.85fr]"
+			>
+				<div class="space-y-4">
+					<p class="text-sm font-medium text-foam">Typing practice</p>
+					<h2
+						id="home-seo-heading"
+						class="max-w-2xl text-3xl font-semibold text-text md:text-4xl"
+					>
+						A mindful typing test for focus, speed, and accuracy.
+					</h2>
+					<p class="max-w-2xl text-base leading-7 text-muted md:text-lg">
+						Zen Typer combines a free typing test with quiet practice
+						sessions, real-time WPM, accuracy feedback, and a
+						free-flow writing mode for people who want typing practice
+						without a noisy game layer.
+					</p>
+				</div>
+				<div class="space-y-5 text-sm leading-6">
+					<div>
+						<h3 class="font-semibold text-text">Practice options</h3>
+						<p>
+							Start with the quote typing test for measured speed and
+							accuracy, then switch to Zen Mode when you want a longer
+							focused writing session.
+						</p>
+					</div>
+					<div class="flex flex-wrap gap-4">
+						<a class="text-foam transition-colors hover:text-text" href="/quote">
+							Quote typing test
+						</a>
+						<a class="text-foam transition-colors hover:text-text" href="/zen">
+							Free-flow typing practice
+						</a>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<script>
+			import { navigate } from "astro:transitions/client";
+
 			let isPaused = false;
-			document.addEventListener("keydown", (e) => {
+
+			/** @param {KeyboardEvent} e */
+			const handleKeys = (e) => {
 				const ae = document.activeElement;
 				const tag = ae && ae.tagName ? ae.tagName.toLowerCase() : "";
 				const isTyping = tag === "input" || tag === "textarea";
@@ -137,19 +197,25 @@ const randomQuote = getRandomQuote(quotes);
 					!e.shiftKey
 				) {
 					e.preventDefault();
-					window.dispatchEvent(
-						new CustomEvent("app:navigate", { detail: "/zen" }),
-					);
+					navigate("/zen");
 				}
 
 				if (e.key === "Escape") {
 					e.preventDefault();
 					isPaused = !isPaused;
-					const pauseEvent = new CustomEvent("togglePause", {
-						detail: isPaused,
-					});
-					window.dispatchEvent(pauseEvent);
+					window.dispatchEvent(
+						new CustomEvent("togglePause", { detail: isPaused }),
+					);
 				}
+			};
+
+			// Attach once; ClientRouter preserves listeners via persist markers.
+			document.addEventListener("keydown", handleKeys);
+			document.addEventListener("astro:before-swap", () => {
+				document.removeEventListener("keydown", handleKeys);
+			});
+			document.addEventListener("astro:after-swap", () => {
+				document.addEventListener("keydown", handleKeys);
 			});
 		</script>
 	</body>

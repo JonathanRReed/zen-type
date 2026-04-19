@@ -23,14 +23,20 @@ const ArchiveOverlay: React.FC = () => {
 
   // Open if header requested before mount
   useEffect(() => {
+    let timer: number | null = null;
     try {
       const pending = localStorage.getItem('zt.openArchiveNext');
       if (pending === '1') {
-        openOverlay();
+        timer = window.setTimeout(openOverlay, 0);
       }
     } catch {
       // ignore localStorage errors
     }
+    return () => {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+    };
   }, [openOverlay]);
 
   // Imperative global open helper for reliability (used by header/pause buttons)
