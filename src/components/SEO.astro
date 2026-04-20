@@ -77,41 +77,6 @@ const websiteJsonLd: JsonLdNode = {
   },
 };
 
-const appJsonLd: JsonLdNode = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "@id": new URL("#app", siteRoot).href,
-  name: "Zen Typer",
-  alternateName: "Zen Type",
-  url: siteRoot,
-  applicationCategory: "EducationalApplication",
-  operatingSystem: "Web browser",
-  browserRequirements: "Requires JavaScript and a modern browser.",
-  isAccessibleForFree: true,
-  inLanguage: "en-US",
-  description:
-    "A free mindful typing trainer with a typing test, Zen quote practice, WPM tracking, accuracy feedback, and free-flow writing mode.",
-  keywords,
-  featureList: [
-    "Mindful typing test",
-    "Typing practice with Zen quotes",
-    "WPM and accuracy tracking",
-    "Free-flow writing mode",
-    "Local session history",
-  ],
-  author: {
-    "@id": new URL("#creator", siteRoot).href,
-  },
-  creator: {
-    "@id": new URL("#creator", siteRoot).href,
-  },
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD",
-  },
-};
-
 const breadcrumbJsonLd: JsonLdNode | null =
   breadcrumbItems.length > 0
     ? {
@@ -139,9 +104,6 @@ const pageJsonLd: JsonLdNode = {
   isPartOf: {
     "@id": new URL("#website", siteRoot).href,
   },
-  about: {
-    "@id": new URL("#app", siteRoot).href,
-  },
   primaryImageOfPage: {
     "@type": "ImageObject",
     url: fullOgImage,
@@ -161,7 +123,6 @@ const customJsonLd = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
 const structuredData = [
   creatorJsonLd,
   websiteJsonLd,
-  appJsonLd,
   pageJsonLd,
   ...(breadcrumbJsonLd ? [breadcrumbJsonLd] : []),
   ...customJsonLd,
