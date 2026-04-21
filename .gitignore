@@ -25,6 +25,9 @@ bun-debug.log*
 # test coverage
 coverage/
 
+# local audit output
+squirrel-audits/
+
 # caches
 .eslintcache
 *.tsbuildinfo
