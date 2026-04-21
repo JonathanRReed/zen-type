@@ -100,9 +100,17 @@ const pageJsonLd: JsonLdNode = {
   headline: title,
   description,
   url: currentUrl,
+  datePublished: "2026-04-21",
+  dateModified: "2026-04-21",
   inLanguage: "en-US",
   isPartOf: {
     "@id": new URL("#website", siteRoot).href,
+  },
+  author: {
+    "@id": new URL("#creator", siteRoot).href,
+  },
+  publisher: {
+    "@id": new URL("#creator", siteRoot).href,
   },
   primaryImageOfPage: {
     "@type": "ImageObject",

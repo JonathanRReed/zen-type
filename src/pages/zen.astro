@@ -14,7 +14,7 @@ import SpotlightLayer from "../components/SpotlightLayer";
 
 const siteUrl = "https://zentype.jonathanrreed.com";
 const homeUrl = `${siteUrl}/`;
-const zenUrl = `${siteUrl}/zen`;
+const zenUrl = `${siteUrl}/zen/`;
 ---
 
 <!doctype html>
@@ -70,7 +70,7 @@ const zenUrl = `${siteUrl}/zen`;
 			>
 				Skip to main content
 			</a>
-			<div
+			<main
 				id="zen-app"
 				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
 			>
@@ -118,7 +118,7 @@ const zenUrl = `${siteUrl}/zen`;
 				<ArchiveOverlay client:idle />
 				<AboutOverlay client:idle />
 				<SiteFooter client:idle />
-			</div>
+			</main>
 		</ErrorBoundary>
 
 		<section
@@ -155,7 +155,7 @@ const zenUrl = `${siteUrl}/zen`;
 						<a class="text-foam transition-colors hover:text-text" href="/">
 							Mindful typing test
 						</a>
-						<a class="text-foam transition-colors hover:text-text" href="/quote">
+						<a class="text-foam transition-colors hover:text-text" href="/quote/">
 							Quote typing test
 						</a>
 					</div>
@@ -178,7 +178,7 @@ const zenUrl = `${siteUrl}/zen`;
 					!e.shiftKey
 				) {
 					e.preventDefault();
-					window.location.assign("/quote");
+					window.location.assign("/quote/");
 				}
 				if (e.key === "Escape") {
 					e.preventDefault();

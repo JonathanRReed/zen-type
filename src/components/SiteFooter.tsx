@@ -15,8 +15,20 @@ const SiteFooter: React.FC = () => {
         {/* Attribution row */}
         <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 text-xs text-muted">
           <span className="font-semibold text-text">Made by Jonathan R Reed</span>
-          <span className="text-muted/50">—</span>
+          <span className="text-muted/50">/</span>
           <span className="text-muted/70">Cybersecurity & AI developer</span>
+          <span className="text-muted/50">•</span>
+          <a className="text-iris hover:text-foam transition-colors" href="/about/">
+            About
+          </a>
+          <span className="text-muted/50">•</span>
+          <a className="text-iris hover:text-foam transition-colors" href="/contact/">
+            Contact
+          </a>
+          <span className="text-muted/50">•</span>
+          <a className="text-iris hover:text-foam transition-colors" href="/privacy/">
+            Privacy
+          </a>
           <span className="text-muted/50">•</span>
           <a
             className="text-iris hover:text-foam transition-colors"
@@ -35,15 +47,6 @@ const SiteFooter: React.FC = () => {
           >
             Bluesky
           </a>
-          <span className="text-muted/50">•</span>
-          <a
-            className="text-iris hover:text-foam transition-colors"
-            href="https://www.linkedin.com/in/jonathanrreed0/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            LinkedIn
-          </a>
         </div>
       </div>
     </footer>
@@ -51,4 +54,3 @@ const SiteFooter: React.FC = () => {
 };
 
 export default SiteFooter;
-

@@ -1,0 +1,66 @@
+---
+import "../styles/globals.css";
+import SEO from "../components/SEO.astro";
+
+const siteUrl = "https://zentype.jonathanrreed.com";
+const contactUrl = `${siteUrl}/contact/`;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<SEO
+			title="Contact Zen Typer"
+			description="Contact Jonathan Reed about Zen Typer feedback, accessibility issues, typing practice improvements, privacy questions, or project details."
+			canonical={contactUrl}
+			keywords={[
+				"Zen Typer contact",
+				"typing practice feedback",
+				"mindful typing support",
+				"Jonathan Reed contact",
+			]}
+			breadcrumbItems={[
+				{ name: "Mindful typing test", url: `${siteUrl}/` },
+				{ name: "Contact Zen Typer", url: contactUrl },
+			]}
+		/>
+	</head>
+	<body>
+		<main class="min-h-screen bg-base px-6 pb-32 pt-12 text-text">
+			<div class="mx-auto max-w-3xl space-y-10">
+				<nav aria-label="Primary" class="flex flex-wrap gap-4 text-sm text-muted">
+					<a class="text-foam hover:text-text" href="/">Home</a>
+					<a class="text-foam hover:text-text" href="/quote/">Quote mode</a>
+					<a class="text-foam hover:text-text" href="/zen/">Zen mode</a>
+					<a class="text-foam hover:text-text" href="/about/">About</a>
+					<a class="text-foam hover:text-text" href="/privacy/">Privacy</a>
+				</nav>
+
+				<header class="space-y-4 border-b border-iris/15 pb-8">
+					<p class="text-sm font-medium uppercase tracking-[0.28em] text-iris">Contact</p>
+					<h1 class="text-4xl font-semibold tracking-tight text-text md:text-5xl">Contact Zen Typer</h1>
+					<p class="text-lg leading-8 text-muted">
+						Use the links below to reach Jonathan Reed about Zen Typer, report a problem, or share feedback about typing practice, accessibility, or privacy.
+					</p>
+				</header>
+
+				<section class="space-y-5 text-base leading-8 text-muted">
+					<h2 class="text-2xl font-semibold text-text">Feedback and support</h2>
+					<p>
+						The best feedback is specific. If a quote feels broken, a typing state is confusing, a control is hard to reach with a keyboard, or a screen reader label does not match the visible interface, include the page, browser, device, and what happened. Accessibility reports are especially useful because Zen Typer is meant to be calm and usable without relying on pointer-only controls.
+					</p>
+					<p>
+						You can reach Jonathan through the main website at <a class="text-foam hover:text-text" href="https://jonathanrreed.com" target="_blank" rel="noopener noreferrer">jonathanrreed.com</a> or through Bluesky at <a class="text-foam hover:text-text" href="https://bsky.app/profile/thereedy.bsky.social" target="_blank" rel="noopener noreferrer">@thereedy.bsky.social</a>. For project context and related work, visit <a class="text-foam hover:text-text" href="https://jonathanrreed.com/projects/" target="_blank" rel="noopener noreferrer">Jonathan Reed projects</a>.
+					</p>
+				</section>
+
+				<section class="space-y-5 text-base leading-8 text-muted">
+					<h2 class="text-2xl font-semibold text-text">What to include</h2>
+					<p>
+						For bug reports, include whether you were using Quote Mode or Zen Mode, whether reduced motion was enabled, and whether the issue affected typing input, stats, drafts, settings, navigation, or display. For content suggestions, include the quote, author, or topic you think would improve the typing practice library.
+					</p>
+				</section>
+			</div>
+		</main>
+	</body>
+</html>

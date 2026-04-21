@@ -1004,6 +1004,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       <input
         ref={inputRef}
         type="text"
+        aria-label="Free-flow typing input"
         value={inputValue}
         className="absolute bottom-[18vh] left-1/2 -translate-x-1/2 
                    w-[90vw] max-w-xl px-6 py-4 text-lg font-mono caret-accent

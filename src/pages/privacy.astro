@@ -1,0 +1,69 @@
+---
+import "../styles/globals.css";
+import SEO from "../components/SEO.astro";
+
+const siteUrl = "https://zentype.jonathanrreed.com";
+const privacyUrl = `${siteUrl}/privacy/`;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<SEO
+			title="Zen Typer Privacy"
+			description="Read the Zen Typer privacy notice for local storage, drafts, typing stats, account-free use, and contact options."
+			canonical={privacyUrl}
+			keywords={[
+				"Zen Typer privacy",
+				"typing app privacy",
+				"local storage typing app",
+				"mindful typing privacy",
+			]}
+			breadcrumbItems={[
+				{ name: "Mindful typing test", url: `${siteUrl}/` },
+				{ name: "Zen Typer Privacy", url: privacyUrl },
+			]}
+		/>
+	</head>
+	<body>
+		<main class="min-h-screen bg-base px-6 pb-32 pt-12 text-text">
+			<div class="mx-auto max-w-3xl space-y-10">
+				<nav aria-label="Primary" class="flex flex-wrap gap-4 text-sm text-muted">
+					<a class="text-foam hover:text-text" href="/">Home</a>
+					<a class="text-foam hover:text-text" href="/quote/">Quote mode</a>
+					<a class="text-foam hover:text-text" href="/zen/">Zen mode</a>
+					<a class="text-foam hover:text-text" href="/about/">About</a>
+					<a class="text-foam hover:text-text" href="/contact/">Contact</a>
+				</nav>
+
+				<header class="space-y-4 border-b border-iris/15 pb-8">
+					<p class="text-sm font-medium uppercase tracking-[0.28em] text-iris">Privacy</p>
+					<h1 class="text-4xl font-semibold tracking-tight text-text md:text-5xl">Zen Typer Privacy</h1>
+					<p class="text-lg leading-8 text-muted">
+						Zen Typer is designed as an account-free typing practice app. It keeps core writing and practice data in your browser.
+					</p>
+				</header>
+
+				<section class="space-y-5 text-base leading-8 text-muted">
+					<h2 class="text-2xl font-semibold text-text">What the app stores</h2>
+					<p>
+						Zen Typer may use browser storage for settings, local drafts, archived writing sessions, theme preferences, reduced-motion preferences, and typing practice metrics such as WPM, accuracy, streaks, and session progress. This storage lets the app remember your workspace without requiring an account. Clearing browser storage for this site can remove those saved preferences and drafts.
+					</p>
+					<p>
+						The app does not ask for a login, password, payment method, or profile. Typing practice can be used directly in the browser. Avoid entering sensitive personal, financial, medical, or confidential workplace information into any browser-based writing tool unless you are comfortable storing that content locally on your own device.
+					</p>
+				</section>
+
+				<section class="space-y-5 text-base leading-8 text-muted">
+					<h2 class="text-2xl font-semibold text-text">Analytics and third parties</h2>
+					<p>
+						Zen Typer is hosted on Cloudflare Pages. Cloudflare may process standard request metadata needed to serve the site, protect the service, and measure basic delivery health. The app is built to keep the typing experience local and lightweight. External links to Jonathan Reed projects or social profiles leave this site and are governed by those services.
+					</p>
+					<p>
+						Questions about privacy, accessibility, or data handling can be sent through the contact options on the <a class="text-foam hover:text-text" href="/contact/">contact page</a>. This notice was last updated on April 21, 2026.
+					</p>
+				</section>
+			</div>
+		</main>
+	</body>
+</html>

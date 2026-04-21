@@ -192,7 +192,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
         shape="pill"
         subtle
         className="px-4 gap-2 text-sm font-semibold tracking-[0.08em]"
-        aria-label="Toggle theme"
+        aria-label={`${theme} theme, toggle theme`}
         aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
       >
