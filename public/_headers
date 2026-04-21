@@ -13,6 +13,21 @@
   # Content Security Policy
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 
+/about
+  Link: <https://zentype.jonathanrreed.com/about/>; rel="canonical"
+
+/contact
+  Link: <https://zentype.jonathanrreed.com/contact/>; rel="canonical"
+
+/privacy
+  Link: <https://zentype.jonathanrreed.com/privacy/>; rel="canonical"
+
+/quote
+  Link: <https://zentype.jonathanrreed.com/quote/>; rel="canonical"
+
+/zen
+  Link: <https://zentype.jonathanrreed.com/zen/>; rel="canonical"
+
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 
