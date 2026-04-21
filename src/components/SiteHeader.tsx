@@ -202,14 +202,14 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
         <div className="flex flex-wrap items-center gap-3">
           <nav aria-label="Mode toggle" className="flex items-center gap-2">
             <a
-              href="/zen"
+              href="/zen/"
               aria-current={mode === 'zen' ? 'page' : undefined}
               className={navLinkClass(mode === 'zen')}
             >
               Zen
             </a>
             <a
-              href="/quote"
+              href="/quote/"
               aria-current={mode === 'quote' ? 'page' : undefined}
               className={navLinkClass(mode === 'quote')}
             >
@@ -329,7 +329,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
               subtle
               active={autoNext}
               aria-pressed={autoNext}
-              aria-label={autoNext ? 'Disable auto advance' : 'Enable auto advance'}
+              aria-label={autoNext ? 'Auto next, disable auto advance' : 'Auto next, enable auto advance'}
               title={autoNext ? 'Auto Next: On' : 'Auto Next: Off'}
               onClick={() => handleAutoNextToggle(!autoNext)}
             >

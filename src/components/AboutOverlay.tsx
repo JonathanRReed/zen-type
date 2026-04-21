@@ -100,8 +100,8 @@ const AboutOverlay: React.FC<AboutOverlayProps> = ({ isOpen = false, onClose }) 
                 Bluesky
               </a>
               <span className="text-muted/30">•</span>
-              <a className="text-iris transition-colors hover:text-foam" href="https://www.linkedin.com/in/jonathanrreed0/" target="_blank" rel="noopener noreferrer">
-                LinkedIn
+              <a className="text-iris transition-colors hover:text-foam" href="/contact/">
+                Contact
               </a>
             </div>
           </div>

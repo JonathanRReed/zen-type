@@ -77,13 +77,8 @@ export const AboutPanel: React.FC<AboutPanelProps> = ({ onClose }) => {
             Bluesky
           </a>
           <span className="text-muted/40">•</span>
-          <a
-            className="text-iris hover:text-foam transition-colors"
-            href="https://www.linkedin.com/in/jonathanrreed0/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            LinkedIn
+          <a className="text-iris hover:text-foam transition-colors" href="/contact/">
+            Contact
           </a>
         </div>
       </div>

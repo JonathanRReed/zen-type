@@ -70,7 +70,7 @@ const homeUrl = `${siteUrl}/`;
 			>
 				Skip to main content
 			</a>
-			<div
+			<main
 				id="quote-app"
 				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
 			>
@@ -132,7 +132,7 @@ const homeUrl = `${siteUrl}/`;
 				<ArchiveOverlay client:idle />
 				<AboutOverlay client:idle />
 				<SiteFooter client:idle />
-			</div>
+			</main>
 		</ErrorBoundary>
 
 		<section
@@ -167,10 +167,10 @@ const homeUrl = `${siteUrl}/`;
 						</p>
 					</div>
 					<div class="flex flex-wrap gap-4">
-						<a class="text-foam transition-colors hover:text-text" href="/quote">
+						<a class="text-foam transition-colors hover:text-text" href="/quote/">
 							Quote typing test
 						</a>
-						<a class="text-foam transition-colors hover:text-text" href="/zen">
+						<a class="text-foam transition-colors hover:text-text" href="/zen/">
 							Free-flow typing practice
 						</a>
 					</div>
@@ -197,7 +197,7 @@ const homeUrl = `${siteUrl}/`;
 					!e.shiftKey
 				) {
 					e.preventDefault();
-					navigate("/zen");
+					navigate("/zen/");
 				}
 
 				if (e.key === "Escape") {

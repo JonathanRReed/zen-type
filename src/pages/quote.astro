@@ -18,7 +18,7 @@ const quotes = await loadQuotes();
 const randomQuote = getRandomQuote(quotes);
 const siteUrl = "https://zentype.jonathanrreed.com";
 const homeUrl = `${siteUrl}/`;
-const quoteUrl = `${siteUrl}/quote`;
+const quoteUrl = `${siteUrl}/quote/`;
 ---
 
 <!doctype html>
@@ -50,7 +50,7 @@ const quoteUrl = `${siteUrl}/quote`;
 			>
 				Skip to main content
 			</a>
-			<div
+			<main
 				id="quote-app"
 				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
 			>
@@ -110,7 +110,7 @@ const quoteUrl = `${siteUrl}/quote`;
 				<ArchiveOverlay client:idle />
 				<AboutOverlay client:idle />
 				<SiteFooter client:idle />
-			</div>
+			</main>
 		</ErrorBoundary>
 
 		<section
@@ -147,7 +147,7 @@ const quoteUrl = `${siteUrl}/quote`;
 						<a class="text-foam transition-colors hover:text-text" href="/">
 							Mindful typing practice
 						</a>
-						<a class="text-foam transition-colors hover:text-text" href="/zen">
+						<a class="text-foam transition-colors hover:text-text" href="/zen/">
 							Free-flow typing practice
 						</a>
 					</div>
@@ -170,7 +170,7 @@ const quoteUrl = `${siteUrl}/quote`;
 					!e.shiftKey
 				) {
 					e.preventDefault();
-					window.location.assign("/zen");
+					window.location.assign("/zen/");
 				}
 
 				// Esc for pause menu

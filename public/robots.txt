@@ -7,3 +7,4 @@ Disallow: /*?s=
 Disallow: /*?q=
 
 Sitemap: https://zentype.jonathanrreed.com/sitemap-index.xml
+Sitemap: https://zentype.jonathanrreed.com/sitemap.xml
