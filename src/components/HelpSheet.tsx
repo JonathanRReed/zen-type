@@ -6,7 +6,8 @@ interface HelpSheetProps {
   onClose?: () => void;
 }
 
-const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
+const HelpSheet = React.memo((props: HelpSheetProps) => {
+  const { isOpen = false, onClose } = props;
   const [open, setOpen] = useState<boolean>(isOpen);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const quickRefs = [
@@ -168,6 +169,8 @@ const HelpSheet: React.FC<HelpSheetProps> = ({ isOpen = false, onClose }) => {
       </div>
     </div>
   );
-};
+});
+
+HelpSheet.displayName = 'HelpSheet';
 
 export default HelpSheet;

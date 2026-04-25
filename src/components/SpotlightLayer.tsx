@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
  * SpotlightLayer - Creates a subtle radial gradient that follows the cursor.
  * Adds depth and interactivity to the page, inspired by Linear/Raycast.
  */
-const SpotlightLayer: React.FC = () => {
+const SpotlightLayer: React.FC = React.memo(() => {
     const layerRef = useRef<HTMLDivElement>(null);
     const rafRef = useRef<number | null>(null);
     const isActiveRef = useRef(false);
@@ -82,6 +82,8 @@ const SpotlightLayer: React.FC = () => {
             aria-hidden="true"
         />
     );
-};
+});
+
+SpotlightLayer.displayName = 'SpotlightLayer';
 
 export default SpotlightLayer;

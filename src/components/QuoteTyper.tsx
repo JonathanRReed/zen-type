@@ -98,16 +98,16 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     inputRef.current?.focus();
   }, []);
 
-  // Calculate WPM
-  const calculateWPM = useCallback(() => {
+  // Memoized WPM (only meaningful after completion)
+  const wpmValue = useMemo(() => {
     if (!startTime || !endTime) return 0;
     const minutes = (endTime.getTime() - startTime.getTime()) / 1000 / 60;
     if (minutes === 0) return 0;
     return Math.round((correctChars / 5) / minutes);
   }, [startTime, endTime, correctChars]);
 
-  // Calculate accuracy
-  const calculateAccuracy = useCallback(() => {
+  // Memoized accuracy
+  const accuracyValue = useMemo(() => {
     if (totalTyped === 0) return 100;
     return Math.round((correctChars / totalTyped) * 100);
   }, [correctChars, totalTyped]);
@@ -337,9 +337,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       lastPressTsRef.current = nowTs;
 
       // Determine current chunk and ensure start time
-      const chIndex = chunks.findIndex(c => cursor >= c.start && cursor < c.end);
-      if (!chunkStartTimesRef.current.has(chIndex)) {
-        chunkStartTimesRef.current.set(chIndex, nowTs);
+      if (!chunkStartTimesRef.current.has(currentChunkIndex)) {
+        chunkStartTimesRef.current.set(currentChunkIndex, nowTs);
       }
 
       const buf = [...typedChars];
@@ -363,8 +362,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       if (isCorrect) {
         setCorrectChars(prev => prev + 1);
         // chunk counters
-        chunkCorrectRef.current.set(chIndex, (chunkCorrectRef.current.get(chIndex) || 0) + 1);
-        chunkTypedRef.current.set(chIndex, (chunkTypedRef.current.get(chIndex) || 0) + 1);
+        chunkCorrectRef.current.set(currentChunkIndex, (chunkCorrectRef.current.get(currentChunkIndex) || 0) + 1);
+        chunkTypedRef.current.set(currentChunkIndex, (chunkTypedRef.current.get(currentChunkIndex) || 0) + 1);
         const es = new Set(errors); es.delete(cursor); setErrors(es);
         const m = new Map(errorTypeAt);
         if (m.has(cursor)) {
@@ -378,7 +377,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       } else {
         // Mark error and update chunk typed
         const es = new Set(errors); es.add(cursor); setErrors(es);
-        chunkTypedRef.current.set(chIndex, (chunkTypedRef.current.get(chIndex) || 0) + 1);
+        chunkTypedRef.current.set(currentChunkIndex, (chunkTypedRef.current.get(currentChunkIndex) || 0) + 1);
         if (errType) {
           const m = new Map(errorTypeAt);
           if (!m.has(cursor)) {
@@ -423,8 +422,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
     if (startTime) {
       const words = activeQuote.split(' ').length;
-      const wpm = calculateWPM();
-      const accuracy = calculateAccuracy();
+      const wpm = wpmValue;
+      const accuracy = accuracyValue;
       // Insights
       const summary = {
         mode: 'quote' as const,
@@ -560,8 +559,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   };
 
   const containerClass = isComplete
-    ? 'flex flex-col items-center min-h-screen w-full px-6 pt-16 pb-56 gap-10'
-    : 'flex flex-col items-center justify-center min-h-screen w-full px-6 py-12 pb-40';
+    ? 'flex flex-col items-center h-full w-full px-6 pt-16 pb-24 gap-10'
+    : 'flex flex-col items-center justify-center h-full w-full px-6 py-12 pb-24';
 
   useEffect(() => {
     return () => {
@@ -660,7 +659,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
               <div className="text-2xl font-mono text-gold">
                 {startTime && !isComplete ? '-' : (
                   <AnimatedNumber
-                    value={calculateWPM()}
+                    value={wpmValue}
                     showImprovement={true}
                   />
                 )}
@@ -670,7 +669,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
               <div className="text-sm text-muted mb-1">Accuracy</div>
               <div className="text-2xl font-mono text-rose">
                 <AnimatedNumber
-                  value={totalTyped === 0 ? 100 : calculateAccuracy()}
+                  value={totalTyped === 0 ? 100 : accuracyValue}
                   format={(v) => `${Math.round(v)}%`}
                   showImprovement={false}
                 />
@@ -695,7 +694,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
               Breathe. Begin again.
             </h2>
             <p className="text-muted mb-4">
-              {calculateWPM()} WPM • {calculateAccuracy()}% accuracy
+              {wpmValue} WPM • {accuracyValue}% accuracy
             </p>
             <div className="grid grid-cols-2 gap-4 text-left text-sm mb-4">
               <div className="glass rounded p-3">

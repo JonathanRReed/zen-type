@@ -39,6 +39,7 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         if (prefersReducedMotion) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setDisplayValue(value);
             previousValueRef.current = value;
             return;

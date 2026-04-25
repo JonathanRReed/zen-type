@@ -6,7 +6,8 @@ interface AboutOverlayProps {
   onClose?: () => void;
 }
 
-const AboutOverlay: React.FC<AboutOverlayProps> = ({ isOpen = false, onClose }) => {
+const AboutOverlay = React.memo((props: AboutOverlayProps) => {
+  const { isOpen = false, onClose } = props;
   const [open, setOpen] = useState<boolean>(isOpen);
 
   useEffect(() => {
@@ -122,6 +123,8 @@ const AboutOverlay: React.FC<AboutOverlayProps> = ({ isOpen = false, onClose }) 
       </div>
     </div>
   );
-};
+});
+
+AboutOverlay.displayName = 'AboutOverlay';
 
 export default AboutOverlay;
