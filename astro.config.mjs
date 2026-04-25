@@ -6,6 +6,7 @@ import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://zentype.jonathanrreed.com',
+  trailingSlash: 'always',
   integrations: [
     react({
       babel: {
@@ -21,10 +22,16 @@ export default defineConfig({
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom'],
-            'astro-vendor': ['astro'],
-            'utils-vendor': ['../src/utils/storage', '../src/utils/quotes', '../src/utils/webvitals'],
+          manualChunks(id) {
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('node_modules/astro')) {
+              return 'astro-vendor';
+            }
+            if (id.includes('/src/utils/')) {
+              return 'utils-vendor';
+            }
           }
         }
       }

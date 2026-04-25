@@ -97,6 +97,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
 
   useEffect(() => {
     // Hydrate UI-affecting classes without rebroadcasting
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     applySettingsPatch({
       reducedMotion: settings.reducedMotion,
       highContrast: settings.highContrast,

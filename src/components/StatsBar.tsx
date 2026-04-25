@@ -13,6 +13,7 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
   const [metricOrder, setMetricOrder] = useState<StatsBarMetricKey[]>(DEFAULT_STATS_BAR_METRICS[mode]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShow(visible);
   }, [visible]);
 
@@ -20,6 +21,7 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
     // Initialize from saved settings on client
     try {
       const s = getSettings();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShow(s.showStats);
       const selected = s.statsBarMetrics?.[mode];
       if (selected && selected.length) {

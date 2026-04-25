@@ -52,7 +52,7 @@ const quoteUrl = `${siteUrl}/quote/`;
 			</a>
 			<main
 				id="quote-app"
-				class="relative w-full min-h-screen overflow-hidden stats-cq-host"
+				class="relative w-full h-screen overflow-hidden stats-cq-host"
 			>
 				<h1 class="sr-only">
 					Zen Quote Typing Test for Speed and Accuracy
@@ -70,7 +70,7 @@ const quoteUrl = `${siteUrl}/quote/`;
 				<SpotlightLayer client:load transition:persist="spotlight" />
 
 				<div
-					class="relative z-10 flex w-full items-center justify-center px-6 py-12 pb-40"
+					class="relative z-10 flex w-full items-center justify-center px-6 h-full"
 				>
 					<div class="w-full max-w-4xl">
 						<QuoteTyper
@@ -114,7 +114,7 @@ const quoteUrl = `${siteUrl}/quote/`;
 		</ErrorBoundary>
 
 		<section
-			class="mx-auto max-w-5xl px-6 pb-28 pt-16 text-muted"
+			class="sr-only"
 			aria-labelledby="quote-seo-heading"
 		>
 			<div
@@ -157,6 +157,11 @@ const quoteUrl = `${siteUrl}/quote/`;
 							rather than a long typing race. It keeps the passage, input,
 							and feedback close together so the session can stay focused
 							on the next keystroke.
+						</p>
+						<p>
+							Use it to compare consistency across sessions, not just peak
+							speed. A cleaner run with fewer corrections is often more
+							useful than one fast burst.
 						</p>
 					</div>
 					<div class="flex flex-wrap gap-4">

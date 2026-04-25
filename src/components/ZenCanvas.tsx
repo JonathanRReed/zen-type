@@ -69,7 +69,11 @@ const FALLBACK_STYLE_CACHE: StyleCache = {
   rpIris: '#c4a7e7',
 };
 
+const hexCache = new Map<string, string>();
 const hexToRgba = (hex: string, alpha: number) => {
+  const key = `${hex.trim()}|${alpha}`;
+  const cached = hexCache.get(key);
+  if (cached !== undefined) return cached;
   const normalized = hex.trim().replace(/^#/, '');
   const isShort = normalized.length === 3;
   const value = isShort
@@ -79,7 +83,13 @@ const hexToRgba = (hex: string, alpha: number) => {
   const r = (num >> 16) & 0xff;
   const g = (num >> 8) & 0xff;
   const b = num & 0xff;
-  return `rgba(${r}, ${g}, ${b}, ${Math.min(1, Math.max(0, alpha))})`;
+  const result = `rgba(${r}, ${g}, ${b}, ${Math.min(1, Math.max(0, alpha))})`;
+  hexCache.set(key, result);
+  if (hexCache.size > 256) {
+    const firstKey = hexCache.keys().next().value;
+    if (firstKey !== undefined) hexCache.delete(firstKey);
+  }
+  return result;
 };
 
 interface ZenCanvasProps {
@@ -99,9 +109,11 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const tokensRef = useRef<Token[]>([]);
   const [inputValue, setInputValue] = useState('');
+  // eslint-disable-next-line react-hooks/purity
   const [stats, setStats] = useState({ words: 0, chars: 0, startTime: Date.now() });
   const animationFrameRef = useRef<number | null>(null);
   const tokenIdRef = useRef(0);
+  // eslint-disable-next-line react-hooks/purity
   const lastStatsEmitRef = useRef(Date.now());
   const { reducedMotion: rm } = useMotionPreference({ forced: reducedMotion });
   const starsRef = useRef<Star[]>([]);
@@ -120,6 +132,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const frameTimesRef = useRef<number[]>([]);
   const perfGuardRef = useRef<boolean>(false);
   // Session timing
+  // eslint-disable-next-line react-hooks/purity
   const sessionStartRef = useRef<number>(Date.now());
   // Ghost buffer (event log of appended chars within rolling window)
   const ghostLogRef = useRef<{ t: number; ch: string }[]>([]);
@@ -127,11 +140,15 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const activeDraftIdRef = useRef<string | null>(null);
   const draftInitPromiseRef = useRef<Promise<void> | null>(null);
   const draftDirtyRef = useRef<boolean>(false);
+  // Animation loop ref to break circular dependency
+  const animateRef = useRef<(() => void) | null>(null);
   const draftSaveTimerRef = useRef<number | null>(null);
   const styleCacheRef = useRef<StyleCache | null>(null);
   // Markers
   const markersRef = useRef<number[]>([]);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
+  const statsRef = useRef(stats);
+  const themeRef = useRef({ isCosmic: false, isForest: false, isOcean: false });
 
   const getSettingsSnapshot = (): Settings => {
     if (!settingsRef.current) {
@@ -236,6 +253,22 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     };
   }, [fontFamily]);
 
+  useEffect(() => { statsRef.current = stats; }, [stats]);
+
+  useEffect(() => {
+    const updateTheme = () => {
+      const root = document.documentElement;
+      themeRef.current = {
+        isCosmic: root.classList.contains('theme-cosmic'),
+        isForest: root.classList.contains('theme-forest'),
+        isOcean: root.classList.contains('theme-ocean'),
+      };
+    };
+    updateTheme();
+    window.addEventListener('themeChanged', updateTheme as EventListener);
+    return () => window.removeEventListener('themeChanged', updateTheme as EventListener);
+  }, []);
+
   useEffect(() => {
     computeStyleCache();
   }, [computeStyleCache]);
@@ -290,6 +323,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     const onSettings = (e: Event) => {
       const s = (e as CustomEvent).detail as Settings;
       settingsRef.current = s;
+      const root = document.documentElement;
+      themeRef.current = {
+        isCosmic: root.classList.contains('theme-cosmic'),
+        isForest: root.classList.contains('theme-forest'),
+        isOcean: root.classList.contains('theme-ocean'),
+      };
     };
     const onToggleBreath = () => {
       const s = getSettingsSnapshot();
@@ -379,7 +418,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       id: tokenId,
       text,
       x,
-      y: Math.max(0, height - 80),
+      y: Math.max(0, height - 200),
       vy: Math.min(80, Math.max(30, 45 + Math.random() * 35)),
       swayAmp: amp,
       swayFreq: 0.6 + Math.random() * 0.6,
@@ -509,17 +548,11 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!styleCacheRef.current) {
-      computeStyleCache();
-    }
     const styleCache = styleCacheRef.current ?? { ...FALLBACK_STYLE_CACHE, typingFont: fontFamily };
-    const { rpText, moss, leaf: leafColor, typingFont, rpFoam, rpGold, rpLove } = styleCache;
-    const isCosmic = document.documentElement.classList.contains('theme-cosmic');
+    const { rpText, moss, leaf: leafColor, typingFont, rpFoam, rpGold, rpLove, rpIris } = styleCache;
+    const { isCosmic, isForest, isOcean } = themeRef.current;
     const sNow = getSettingsSnapshot();
     const perfMode = !!sNow.performanceMode;
-
-    const isForest = document.documentElement.classList.contains('theme-forest');
-    const isOcean = document.documentElement.classList.contains('theme-ocean');
     
     // Forest theme: Enhanced leaf drift and firefly ambience
     if (isForest && !perfMode) {
@@ -546,6 +579,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         lastLeafSpawnRef.current = now;
       }
       
+      /* eslint-disable react-hooks/immutability */
       ctx.save();
       const updatedLeaves: Leaf[] = [];
       for (const leaf of leavesRef.current) {
@@ -570,6 +604,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       }
       leavesRef.current = updatedLeaves;
       ctx.restore();
+      /* eslint-enable react-hooks/immutability */
 
       const fireflyPalette = [hexToRgba(rpGold, 0.92), hexToRgba(rpLove, 0.78), hexToRgba(rpFoam, 0.85), hexToRgba(moss, 0.88)];
       const canopyTop = canvas.height * 0.18;
@@ -599,6 +634,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         }
       }
 
+      /* eslint-disable react-hooks/immutability */
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       const updatedFireflies: Firefly[] = [];
@@ -631,6 +667,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       }
       firefliesRef.current = updatedFireflies;
       ctx.restore();
+      /* eslint-enable react-hooks/immutability */
     }
     
     // Ocean theme: bubbles and plankton ambience (kept subtle with reduced motion)
@@ -652,6 +689,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         });
       }
 
+      /* eslint-disable react-hooks/immutability */
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       const updatedSpecks: DriftSpeck[] = [];
@@ -681,6 +719,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       }
       driftRef.current = updatedSpecks;
       ctx.restore();
+      /* eslint-enable react-hooks/immutability */
     }
     
     // Cosmic theme: Starfield with slow twinkle
@@ -740,12 +779,46 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         opacity = Math.pow(1 - fadeProgress, 3); // Cubic ease-out
       }
       
-      // Draw token with minimal effects
+      // Draw token with glow, scale, and theme tint
       ctx.save();
-      ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
-      ctx.fillStyle = rpText;
+      const rawOpacity = Math.max(0, Math.min(1, opacity));
+      ctx.globalAlpha = rawOpacity;
+
+      // Theme-aware color tint
+      let tokenColor = rpText;
+      if (isCosmic) tokenColor = rpIris;
+      else if (isOcean) tokenColor = rpFoam;
+      else if (isForest) tokenColor = leafColor;
+
+      // Scale-in effect: 1.0 → 1.12 over first 0.4s, then settle
+      const scaleAge = Math.min(1, age / 0.4);
+      const scale = 1 + (1 - scaleAge) * 0.12;
+
+      // Slight rotation sway for organic feel
+      const rotation = Math.sin(age * 1.5) * 0.02;
+
+      ctx.translate(token.x, token.y);
+      ctx.rotate(rotation);
+      ctx.scale(scale, scale);
+
+      // Glow shadow — stronger when young
+      const glowStrength = rawOpacity * (1 - scaleAge * 0.6);
+      ctx.shadowColor = tokenColor;
+      ctx.shadowBlur = 8 + glowStrength * 18;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+
+      ctx.fillStyle = tokenColor;
       ctx.font = `18px ${typingFont}`;
-      ctx.fillText(token.text, token.x, token.y);
+      ctx.textAlign = 'center';
+      ctx.fillText(token.text, 0, 0);
+
+      // Second pass: crisp core text for readability
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = rawOpacity * 0.9;
+      ctx.fillStyle = rpText;
+      ctx.fillText(token.text, 0, 0);
+
       ctx.restore();
       
       updatedTokens.push(token);
@@ -755,17 +828,18 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
     // Emit stats every second
     if (now - lastStatsEmitRef.current >= 1000) {
-      const elapsedTime = (now - stats.startTime) / 1000;
+      const s = statsRef.current;
+      const elapsedTime = (now - s.startTime) / 1000;
       const minutes = elapsedTime > 0 ? (elapsedTime / 60) : 0;
-      const wpm = minutes > 0 ? Math.round(((stats.chars / 5) || 0) / minutes) : 0;
-      const payload = { words: stats.words, chars: stats.chars, time: Math.floor(elapsedTime), wpm };
+      const wpm = minutes > 0 ? Math.round(((s.chars / 5) || 0) / minutes) : 0;
+      const payload = { words: s.words, chars: s.chars, time: Math.floor(elapsedTime), wpm };
       // Optional callback
       if (onStats) onStats(payload);
       // Dispatch global event for StatsBar and others
       window.dispatchEvent(new CustomEvent('zenStats', { detail: payload }));
       // Session markers
-      const s = getSettingsSnapshot();
-      const every = Math.max(1, s.markersEveryMin || 2) * 60;
+      const settingsNow = getSettingsSnapshot();
+      const every = Math.max(1, settingsNow.markersEveryMin || 2) * 60;
       const lastMarker = markersRef.current[markersRef.current.length - 1] ?? 0;
       if (Math.floor(elapsedTime) > 0 && Math.floor(elapsedTime) % every === 0 && lastMarker !== Math.floor(elapsedTime)) {
         markersRef.current.push(Math.floor(elapsedTime));
@@ -828,15 +902,19 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         // @ts-ignore drawImage supports OffscreenCanvas in modern browsers
         frontCtx.drawImage(backCanvasRef.current as any, 0, 0);
       }
-      animationFrameRef.current = requestAnimationFrame(animate);
+      animationFrameRef.current = requestAnimationFrame(() => animateRef.current?.());
     }
-  }, [stats, fontFamily, rm, onStats, maxTokens, computeStyleCache, trimAmbientParticles]);
+  }, [fontFamily, rm, onStats, maxTokens, trimAmbientParticles]);
+
+  useEffect(() => {
+    animateRef.current = animate;
+  }, [animate]);
 
   // Start/stop animation based on document visibility
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && !animationFrameRef.current) {
-        animationFrameRef.current = requestAnimationFrame(animate);
+        animationFrameRef.current = requestAnimationFrame(() => animateRef.current?.());
       } else if (document.hidden && animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -846,7 +924,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     // Start animation
-    animationFrameRef.current = requestAnimationFrame(animate);
+    animationFrameRef.current = requestAnimationFrame(() => animateRef.current?.());
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -854,7 +932,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [animate]);
+  }, []);
 
   // Handle canvas resize
   useEffect(() => {
