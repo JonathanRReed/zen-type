@@ -36,3 +36,9 @@
 
 /*.webp
   Cache-Control: public, max-age=31536000, immutable
+
+https://zen-type.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.zen-type.pages.dev/*
+  X-Robots-Tag: noindex
