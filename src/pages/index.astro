@@ -81,7 +81,7 @@ const homeUrl = `${siteUrl}/`;
 					WPM and accuracy, or move into free-flow typing when you want
 					a calmer writing rhythm.
 				</p>
-				<SiteHeader client:load mode="quote" />
+				<SiteHeader client:only="react" mode="quote" />
 				<div
 					class="pointer-events-none fixed inset-0 z-0 theme-layer"
 				>
@@ -91,14 +91,14 @@ const homeUrl = `${siteUrl}/`;
 						<div class="stars-far" aria-hidden="true"></div>
 					</div>
 				</div>
-				<SpotlightLayer client:load transition:persist="spotlight" />
+				<SpotlightLayer client:only="react" transition:persist="spotlight" />
 
 				<div
 					class="relative z-10 flex w-full items-center justify-center px-6 h-full"
 				>
 					<div class="w-full max-w-4xl">
 						<QuoteTyper
-							client:load
+							client:only="react"
 							quote={randomQuote.text}
 							author={randomQuote.author}
 							onComplete={(summary) => {
@@ -113,14 +113,14 @@ const homeUrl = `${siteUrl}/`;
 				</div>
 
 				<StatsBar
-					client:idle
+					client:only="react"
 					mode="quote"
 					visible={true}
 					metrics={{}}
 				/>
 
 				<PauseMenu
-					client:idle
+					client:only="react"
 					mode="quote"
 					onReset={() => {
 						window.dispatchEvent(new CustomEvent("newQuote"));
@@ -128,10 +128,10 @@ const homeUrl = `${siteUrl}/`;
 					data-pause-menu
 				/>
 
-				<HelpSheet client:idle isOpen={false} onClose={() => {}} />
-				<ArchiveOverlay client:idle />
-				<AboutOverlay client:idle />
-				<SiteFooter client:idle />
+				<HelpSheet client:only="react" isOpen={false} onClose={() => {}} />
+				<ArchiveOverlay client:only="react" />
+				<AboutOverlay client:only="react" />
+				<SiteFooter client:only="react" />
 			</main>
 		</ErrorBoundary>
 

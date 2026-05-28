@@ -77,7 +77,10 @@ const zenUrl = `${siteUrl}/zen/`;
 				<h1 class="sr-only">
 					Free-Flow Typing Practice for Focused Writing
 				</h1>
-				<SiteHeader client:load mode="zen" />
+				<p class="sr-only">
+					Free-flow mode keeps typing practice local, private, and focused.
+				</p>
+				<SiteHeader client:only="react" mode="zen" />
 
 				<!-- Main canvas -->
 				<!-- Theme background layers (behind tokens) -->
@@ -90,20 +93,20 @@ const zenUrl = `${siteUrl}/zen/`;
 						<div class="stars-far" aria-hidden="true"></div>
 					</div>
 				</div>
-				<SpotlightLayer client:load transition:persist="spotlight" />
+				<SpotlightLayer client:only="react" transition:persist="spotlight" />
 
 				<ZenCanvas
-					client:load
+					client:only="react"
 					fontFamily="JetBrains Mono"
 					maxTokens={160}
 				/>
 
 				<!-- Stats bar -->
-				<StatsBar client:idle mode="zen" visible={true} metrics={{}} />
+				<StatsBar client:only="react" mode="zen" visible={true} metrics={{}} />
 
 				<!-- Pause menu -->
 				<PauseMenu
-					client:idle
+					client:only="react"
 					mode="zen"
 					onReset={() => {
 						window.location.reload();
@@ -112,12 +115,12 @@ const zenUrl = `${siteUrl}/zen/`;
 				/>
 
 				<!-- Help sheet -->
-				<HelpSheet client:idle isOpen={false} onClose={() => {}} />
+				<HelpSheet client:only="react" isOpen={false} onClose={() => {}} />
 
 				<!-- Archive & About overlays (hidden by default) -->
-				<ArchiveOverlay client:idle />
-				<AboutOverlay client:idle />
-				<SiteFooter client:idle />
+				<ArchiveOverlay client:only="react" />
+				<AboutOverlay client:only="react" />
+				<SiteFooter client:only="react" />
 			</main>
 		</ErrorBoundary>
 

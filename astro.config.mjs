@@ -7,6 +7,9 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://zentype.jonathanrreed.com',
   trailingSlash: 'always',
+  build: {
+    inlineStylesheets: 'never',
+  },
   integrations: [
     react({
       babel: {

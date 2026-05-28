@@ -26,6 +26,8 @@ describe('ZenCanvas', () => {
       fill: vi.fn(),
       stroke: vi.fn(),
       ellipse: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
       scale: vi.fn(),
       drawImage: vi.fn(),
     } as any;
