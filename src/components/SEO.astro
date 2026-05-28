@@ -31,14 +31,6 @@ const {
   twitterCard = "summary_large_image",
   noindex = false,
   nofollow = false,
-  keywords = [
-    "typing test",
-    "typing trainer",
-    "typing practice",
-    "mindful typing",
-    "typing speed test",
-    "WPM test",
-  ],
   breadcrumbItems = [],
   jsonLd,
 } = Astro.props;
@@ -47,8 +39,6 @@ const siteOrigin = new URL(Astro.site?.href || Astro.url.origin).origin;
 const siteRoot = new URL("/", siteOrigin).href;
 const currentUrl = canonical || new URL(Astro.url.pathname, siteOrigin).href;
 const fullOgImage = new URL(ogImage, siteOrigin).href;
-const keywordsContent = keywords.join(", ");
-
 const robotsContent = [
   noindex ? "noindex" : "index",
   nofollow ? "nofollow" : "follow",
@@ -208,7 +198,6 @@ const structuredData = [
 
 <title>{title}</title>
 <meta name="description" content={description} />
-<meta name="keywords" content={keywordsContent} />
 <meta name="robots" content={robotsContent} />
 <link rel="canonical" href={currentUrl} />
 <link rel="sitemap" href="/sitemap-index.xml" />
