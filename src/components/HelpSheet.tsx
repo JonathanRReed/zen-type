@@ -57,7 +57,7 @@ const HelpSheet = React.memo((props: HelpSheetProps) => {
 
   return (
     <div
-      className="fixed inset-0 z-[1100] flex items-center justify-center bg-base/80 backdrop-blur-md"
+      className="overlay-backdrop fixed inset-0 z-[1100] flex items-center justify-center bg-base/80 backdrop-blur-md"
       role="presentation"
       tabIndex={-1}
       onClick={(e) => {
@@ -76,7 +76,7 @@ const HelpSheet = React.memo((props: HelpSheetProps) => {
       }}
     >
       <div
-        className="glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain"
+        className="overlay-card glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain"
         role="dialog"
         aria-modal="true"
         aria-labelledby="help-title"

@@ -114,7 +114,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center bg-base/80 backdrop-blur-md"
+      className="overlay-backdrop fixed inset-0 z-[2000] flex items-center justify-center bg-base/80 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-labelledby="pause-title"
@@ -129,7 +129,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
         <span className="sr-only">Dismiss pause menu</span>
       </Button>
       <div
-        className={`glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain relative z-10 ${showSettings ? 'settings-shell settings-scroll' : ''}`}
+        className={`overlay-card glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain relative z-10 ${showSettings ? 'settings-shell settings-scroll' : ''}`}
         tabIndex={-1}
       >
         {!showSettings && !showAbout ? (

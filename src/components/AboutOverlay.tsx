@@ -25,7 +25,7 @@ const AboutOverlay = React.memo((props: AboutOverlayProps) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-base/82 backdrop-blur-lg" role="dialog" aria-modal="true">
+    <div className="overlay-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-base/82 backdrop-blur-lg" role="dialog" aria-modal="true">
       {/* background click to close */}
       <Button
         type="button"
@@ -40,7 +40,7 @@ const AboutOverlay = React.memo((props: AboutOverlayProps) => {
         <span className="sr-only">Dismiss overlay</span>
       </Button>
 
-      <div className="relative z-10 w-full max-w-2xl mx-4 overflow-hidden rounded-3xl border border-muted/20 bg-surface/70 backdrop-blur-xl shadow-[0_28px_80px_RGBA(10,4,22,0.45)]">
+      <div className="overlay-card relative z-10 w-full max-w-2xl mx-4 overflow-hidden rounded-3xl border border-muted/20 bg-surface/70 backdrop-blur-xl shadow-[0_28px_80px_RGBA(10,4,22,0.45)]">
         <div className="relative px-8 pt-8 pb-6 bg-gradient-to-br from-[color-mix(in_oklab,var(--rp-iris)80%,#0b0614_20%)]/38 via-transparent to-transparent">
           <h2 className="text-[clamp(1.6rem,2vw,2.1rem)] font-semibold tracking-tight text-foam drop-shadow-[0_1px_8px_RGBA(196,167,231,0.35)]">About Zen Typer</h2>
           <Button

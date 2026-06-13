@@ -522,6 +522,35 @@ html[data-motion="off"] .typing-cursor::after {
   text-decoration-color: color-mix(in oklab, var(--rp-foam) 70%, transparent);
 }
 
+/* ==========================================================================
+   Overlay / modal entrance choreography
+   Backdrop fades in while the card rises + scales into focus. Applied to the
+   PauseMenu, HelpSheet, and About overlays for a unified, premium entrance.
+   ========================================================================== */
+.overlay-backdrop {
+  animation: overlay-backdrop-in 0.26s var(--ease-smooth) both;
+}
+
+.overlay-card {
+  animation: overlay-card-in 0.34s var(--ease-smooth) both;
+  animation-delay: 0.04s;
+}
+
+@keyframes overlay-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes overlay-card-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+html[data-motion="off"] .overlay-backdrop,
+html[data-motion="off"] .overlay-card {
+  animation: none !important;
+}
+
 /* High contrast mode */
 html.high-contrast .glass {
   background: color-mix(in oklab, var(--rp-surface) 92%, transparent);
