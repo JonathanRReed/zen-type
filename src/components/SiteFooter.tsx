@@ -4,7 +4,7 @@ import KeyboardHint from './KeyboardHint';
 const SiteFooter: React.FC = React.memo(() => {
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none">
-      <div className="mx-auto max-w-6xl px-6 pb-5">
+      <div className="mx-auto max-w-6xl px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
         {/* Keyboard shortcuts hint row */}
         <div className="pointer-events-auto flex items-center justify-center gap-4 mb-3 opacity-60 hover:opacity-100 transition-opacity">
           <KeyboardHint keyLabel="Tab" description="Switch mode" />
