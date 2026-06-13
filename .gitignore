@@ -39,4 +39,6 @@ squirrel-audits/
 .idea/
 .vscode/
 *.swp
-# misc
+
+# Claude Code local tooling / session artifacts (preview launch config, locks)
+.claude/
