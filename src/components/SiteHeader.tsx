@@ -108,14 +108,14 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   };
 
   const navLinkClass = (active: boolean) =>
-    `inline-flex items-center justify-center px-3.5 h-10 rounded-full text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/70 ${
+    `inline-flex items-center justify-center px-3.5 h-10 rounded-full text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tint/70 ${
       active
-        ? 'bg-iris/20 border-iris/60 text-text shadow-sm'
+        ? 'bg-tint/20 border-tint/60 text-text shadow-sm'
         : 'border-muted/30 text-muted hover:text-text hover:border-muted/50'
     }`;
 
   const primaryButtonClass =
-    'group inline-flex items-center justify-center gap-2 px-5 h-11 min-w-[10rem] rounded-xl border border-iris/25 bg-[color:var(--rp-surface)]/45 text-sm font-medium text-foam/90 transition-colors shadow-[0_8px_20px_-16px_rgba(102,76,255,0.45)] hover:bg-[color:var(--rp-surface)]/60 hover:border-iris/40 hover:text-foam focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/55';
+    'group inline-flex items-center justify-center gap-2 px-5 h-11 min-w-[10rem] rounded-xl border border-tint/25 bg-[color:var(--rp-surface)]/45 text-sm font-medium text-tint transition-colors shadow-[0_8px_20px_-16px_color-mix(in_oklab,var(--theme-accent)_45%,transparent)] hover:bg-[color:var(--rp-surface)]/60 hover:border-tint/45 hover:text-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tint/55';
 
   const quickSettingIcons = {
     reducedMotion: (

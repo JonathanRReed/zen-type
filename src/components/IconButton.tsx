@@ -24,12 +24,12 @@ const IconButton: React.FC<IconButtonProps> = ({
     ? 'h-10 px-4 rounded-2xl gap-2'
     : 'h-10 w-10 rounded-xl';
   const palette = variant === 'subtlePill'
-    ? 'border-muted/25 text-muted bg-transparent hover:bg-surface/60 hover:text-text hover:border-iris/35 focus-visible:ring-1 focus-visible:ring-iris/45 focus-visible:ring-offset-2 focus-visible:ring-offset-base'
+    ? 'border-muted/25 text-muted bg-transparent hover:bg-surface/60 hover:text-text hover:border-tint/35 focus-visible:ring-1 focus-visible:ring-tint/45 focus-visible:ring-offset-2 focus-visible:ring-offset-base'
     : active
-    ? 'bg-iris/20 border-iris/60 text-iris shadow-[0_8px_16px_-10px_rgba(196,167,231,0.45)]'
+    ? 'bg-tint/20 border-tint/60 text-tint shadow-[0_8px_16px_-10px_color-mix(in_oklab,var(--theme-accent)_45%,transparent)]'
     : subtle
-    ? 'border-muted/25 text-muted bg-transparent hover:bg-iris/10 hover:border-iris/35 hover:text-text'
-    : 'border-muted/35 text-muted hover:border-iris/45 hover:text-text';
+    ? 'border-muted/25 text-muted bg-transparent hover:bg-tint/10 hover:border-tint/35 hover:text-text'
+    : 'border-muted/35 text-muted hover:border-tint/45 hover:text-text';
 
   return (
     <Button
