@@ -271,9 +271,17 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   useEffect(() => { statsRef.current = stats; }, [stats]);
 
   useEffect(() => {
-    const updateTheme = () => {
+    // Prefer the theme NAME carried on the themeChanged event. applyTheme()
+    // flips the <html> class inside a View Transition (async), so reading
+    // classList synchronously when the event fires returns the PREVIOUS theme —
+    // which made the canvas ambience (leaves/bubbles) lag one selection behind.
+    const updateTheme = (e?: Event) => {
       const root = document.documentElement;
-      const themeName = ['cosmic', 'forest', 'ocean', 'ember', 'sakura', 'aurora', 'glacier', 'void'].find((n) => root.classList.contains('theme-' + n)) || 'void';
+      const detail = e && (e as CustomEvent).detail;
+      const named = typeof detail === 'string' ? detail.toLowerCase() : null;
+      const themeName = named
+        || ['cosmic', 'forest', 'ocean', 'ember', 'sakura', 'aurora', 'glacier', 'void'].find((n) => root.classList.contains('theme-' + n))
+        || 'void';
       themeRef.current = {
         isCosmic: themeName === 'cosmic',
         isForest: themeName === 'forest',
@@ -341,7 +349,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const s = (e as CustomEvent).detail as Settings;
       settingsRef.current = s;
       const root = document.documentElement;
-      const themeName = ['cosmic', 'forest', 'ocean', 'ember', 'sakura', 'aurora', 'glacier', 'void'].find((n) => root.classList.contains('theme-' + n)) || 'void';
+      // Use the theme from the settings payload (set before the class flips via
+      // the View Transition) so the ambience switches immediately, not a step late.
+      const named = s && typeof s.theme === 'string' ? s.theme.toLowerCase() : null;
+      const themeName = named
+        || ['cosmic', 'forest', 'ocean', 'ember', 'sakura', 'aurora', 'glacier', 'void'].find((n) => root.classList.contains('theme-' + n))
+        || 'void';
       themeRef.current = {
         isCosmic: themeName === 'cosmic',
         isForest: themeName === 'forest',
@@ -963,7 +976,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
   // Handle canvas resize
   useEffect(() => {
-    const regenerateThemeParticles = () => {
+    const regenerateThemeParticles = (e?: Event) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
@@ -988,8 +1001,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
       const ctx = (backCtxRef.current as any) || canvas.getContext('2d');
 
-      // Regenerate particles for theme changes
-      const isCosmic = document.documentElement.classList.contains('theme-cosmic');
+      // Regenerate particles for theme changes. On a themeChanged event the
+      // <html> class hasn't flipped yet (View Transition), so trust the event's
+      // theme name; otherwise (resize/font) read the already-stable class.
+      const detail = e && (e as CustomEvent).detail;
+      const named = typeof detail === 'string' ? detail.toLowerCase() : null;
+      const isCosmic = named ? named === 'cosmic' : document.documentElement.classList.contains('theme-cosmic');
       const perfMode = !!getSettingsSnapshot().performanceMode;
       
       // Reset all theme particles
