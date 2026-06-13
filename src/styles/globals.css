@@ -433,8 +433,8 @@ html[data-motion="off"] .typing-cursor::after {
 .content-page {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 90% 55% at 50% -8%, color-mix(in oklab, var(--rp-iris) 15%, transparent) 0%, transparent 68%),
-    radial-gradient(ellipse 70% 50% at 82% 112%, color-mix(in oklab, var(--rp-foam) 9%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 90% 55% at 50% -8%, color-mix(in oklab, var(--theme-accent) 15%, transparent) 0%, transparent 68%),
+    radial-gradient(ellipse 70% 50% at 82% 112%, color-mix(in oklab, var(--theme-accent-2) 9%, transparent) 0%, transparent 70%),
     linear-gradient(180deg, var(--rp-base) 0%, color-mix(in oklab, var(--rp-overlay) 65%, var(--rp-base) 35%) 100%);
 }
 
