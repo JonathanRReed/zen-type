@@ -1123,9 +1123,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         className="zen-input bottom-[18vh] left-1/2 -translate-x-1/2
                    w-[90vw] max-w-xl px-6 py-4 text-lg font-mono caret-accent
                    backdrop-blur-soft
-                   border border-iris/25 rounded-2xl
+                   border border-tint/30 rounded-2xl
                    text-text placeholder-muted tracking-wide
-                   focus:outline-none focus:border-iris/40"
+                   focus:outline-none focus:border-tint/50"
         placeholder="Type freely…"
         onChange={handleInput}
         onKeyDown={handleKeyDown}

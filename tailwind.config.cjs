@@ -22,6 +22,9 @@ module.exports = {
         pine: "var(--rp-pine)",
         foam: "var(--rp-foam)",
         iris: "var(--rp-iris)",
+        // Theme-reactive accents — shift with the active theme so UI never clashes
+        tint: "var(--theme-accent)",
+        tint2: "var(--theme-accent-2)",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

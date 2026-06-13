@@ -90,16 +90,16 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
   return (
     <div className="stats-cq">
       <div className="stats-bar fixed bottom-[calc(6.5rem_+_env(safe-area-inset-bottom))] md:bottom-[calc(5.5rem_+_env(safe-area-inset-bottom))] left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-4" data-stats-bar>
-        <div className="rounded-full px-8 py-3.5 flex flex-wrap items-center justify-center gap-8 
-                        bg-surface/40 backdrop-blur-xl border border-iris/20
-                        shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(156,207,216,0.1)]
-                        transition-all duration-300 hover:bg-surface/50 hover:border-iris/30">
+        <div className="rounded-full px-8 py-3.5 flex flex-wrap items-center justify-center gap-8
+                        bg-surface/40 backdrop-blur-xl border border-tint/25
+                        shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)]
+                        transition-all duration-300 hover:bg-surface/50 hover:border-tint/35">
           {displayedMetrics.map((key) => {
             if (key === 'time') {
               return (
                 <div key={key} className="flex items-center gap-2.5 px-1">
                   <span className="text-[10px] text-muted/80 uppercase tracking-widest font-medium">Time</span>
-                  <span className="text-xl font-mono text-foam font-semibold tabular-nums">
+                  <span className="text-xl font-mono text-tint font-semibold tabular-nums">
                     {formatTime((data.time as number) || 0)}
                   </span>
                 </div>
@@ -110,7 +110,7 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
               return (
                 <div key={key} className="flex items-center gap-2.5 px-1">
                   <span className="text-[10px] text-muted/80 uppercase tracking-widest font-medium">Words</span>
-                  <span className="text-xl font-mono text-gold font-semibold tabular-nums">
+                  <span className="text-xl font-mono text-tint2 font-semibold tabular-nums">
                     {data.words ?? 0}
                   </span>
                 </div>
@@ -122,7 +122,7 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
               return (
                 <div key={key} className="flex items-center gap-2.5 px-1">
                   <span className="text-[10px] text-muted/80 uppercase tracking-widest font-medium">WPM</span>
-                  <span className="text-xl font-mono text-rose font-semibold tabular-nums">
+                  <span className="text-xl font-mono text-tint font-semibold tabular-nums">
                     {value !== undefined ? value : '—'}
                   </span>
                 </div>
@@ -134,7 +134,7 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
               return (
                 <div key={key} className="flex items-center gap-2.5 px-1">
                   <span className="text-[10px] text-muted/80 uppercase tracking-widest font-medium">Accuracy</span>
-                  <span className="text-xl font-mono text-iris font-semibold tabular-nums">
+                  <span className="text-xl font-mono text-tint2 font-semibold tabular-nums">
                     {value !== undefined ? `${value}%` : '—'}
                   </span>
                 </div>
