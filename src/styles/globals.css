@@ -1436,7 +1436,7 @@ html.theme-forest .forest-rays::before {
     radial-gradient(120% 90% at 50% 2%, color-mix(in oklab, var(--forest-ray-core) 58%, transparent) 0%, transparent 78%),
     radial-gradient(145% 95% at 48% 28%, color-mix(in oklab, var(--forest-ray-soft) 52%, transparent) 0%, transparent 85%),
     radial-gradient(100% 70% at 50% 8%, color-mix(in oklab, var(--jade) 24%, transparent) 0%, transparent 88%);
-  opacity: 0.22;
+  opacity: 0.32;
   animation:
     forest-ray-veil calc(150s * 1.04) cubic-bezier(0.28, 0.62, 0.3, 0.94) infinite;
 }
@@ -1447,7 +1447,7 @@ html.theme-forest .forest-rays::after {
     linear-gradient(102deg, transparent 0%, color-mix(in oklab, var(--forest-ray-falloff) 68%, transparent) 26%, transparent 58%),
     linear-gradient(168deg, transparent 0%, color-mix(in oklab, var(--forest-leaf-highlight) 58%, transparent) 38%, transparent 85%),
     radial-gradient(ellipse 80% 60% at 50% 15%, color-mix(in oklab, var(--emerald) 18%, transparent) 0%, transparent 100%);
-  opacity: 0.18;
+  opacity: 0.26;
   mix-blend-mode: screen;
   animation:
     forest-ray-sweep calc(146s * 0.96) cubic-bezier(0.26, 0.68, 0.3, 0.96) infinite;
@@ -1858,7 +1858,7 @@ html.theme-void .theme-layer::before {
   background-position: center;
   background-repeat: no-repeat;
   mix-blend-mode: screen;
-  opacity: .58;
+  opacity: .7;
   animation: void-aurora-drift calc(88s * 1.05) cubic-bezier(0.32, 0.68, 0.3, 0.96) infinite;
 }
 
@@ -2200,15 +2200,18 @@ html.theme-void[data-motion="on"] .theme-layer > .ocean-lights::after {
 }
 
 @keyframes void-dust-fade {
-  0%   { opacity: 0.28; }
-  100% { opacity: 0.42; }
+  0%   { opacity: 0.42; }
+  100% { opacity: 0.62; }
 }
 
-/* Reduced motion: freeze all flourishes */
+/* Reduced motion: freeze all flourishes (including the cosmic starfield, which
+   was previously left drifting/twinkling under reduced motion) */
 html[data-motion="off"] .theme-layer > .forest-rays::before,
 html[data-motion="off"] .theme-layer > .forest-rays::after,
 html[data-motion="off"] .theme-layer > .ocean-lights::before,
-html[data-motion="off"] .theme-layer > .ocean-lights::after {
+html[data-motion="off"] .theme-layer > .ocean-lights::after,
+html[data-motion="off"] .theme-layer > .ocean-lights > .stars-near,
+html[data-motion="off"] .theme-layer > .ocean-lights > .stars-far {
   animation: none !important;
   transform: none !important;
 }
@@ -2217,7 +2220,9 @@ html[data-motion="off"] .theme-layer > .ocean-lights::after {
   .theme-layer > .forest-rays::before,
   .theme-layer > .forest-rays::after,
   .theme-layer > .ocean-lights::before,
-  .theme-layer > .ocean-lights::after {
+  .theme-layer > .ocean-lights::after,
+  .theme-layer > .ocean-lights > .stars-near,
+  .theme-layer > .ocean-lights > .stars-far {
     animation: none !important;
     transform: none !important;
   }
@@ -2321,7 +2326,9 @@ html.theme-cosmic .theme-layer > .ocean-lights > .stars-near {
     radial-gradient(circle 2px at 77% 67%, rgba(255, 160, 100, 1), transparent),
     radial-gradient(circle 1.5px at 5% 58%, rgba(200, 180, 255, 1), transparent);
   opacity: 1;
-  animation: cosmic-star-drift 240s linear infinite;
+  animation:
+    cosmic-star-drift 240s linear infinite,
+    cosmic-star-twinkle 7s ease-in-out infinite;
 }
 
 /* Far starfield: smaller stars, independent drift */
@@ -2346,7 +2353,9 @@ html.theme-cosmic .theme-layer > .ocean-lights > .stars-far {
     radial-gradient(circle 1px at 82% 96%, rgba(255, 200, 100, 0.75), transparent);
   background-size: 520px 520px;
   opacity: 0.8;
-  animation: cosmic-star-drift-slow 420s linear infinite reverse;
+  animation:
+    cosmic-star-drift-slow 420s linear infinite reverse,
+    cosmic-star-twinkle 11s ease-in-out infinite 1.5s;
 }
 
 @keyframes cosmic-star-twinkle {
@@ -2380,20 +2389,20 @@ html.theme-ocean .theme-layer > .ocean-lights::before {
     conic-gradient(
       from 0deg at 50% 50%,
       transparent 0deg,
-      color-mix(in oklab, var(--seafoam) 22%, transparent) 12deg,
+      color-mix(in oklab, var(--seafoam) 30%, transparent) 12deg,
       transparent 40deg,
-      color-mix(in oklab, var(--cyan) 18%, transparent) 78deg,
+      color-mix(in oklab, var(--cyan) 25%, transparent) 78deg,
       transparent 110deg,
-      color-mix(in oklab, var(--seafoam) 24%, transparent) 168deg,
+      color-mix(in oklab, var(--seafoam) 32%, transparent) 168deg,
       transparent 200deg,
-      color-mix(in oklab, var(--aqua) 20%, transparent) 242deg,
+      color-mix(in oklab, var(--aqua) 27%, transparent) 242deg,
       transparent 282deg,
-      color-mix(in oklab, var(--seafoam) 22%, transparent) 320deg,
+      color-mix(in oklab, var(--seafoam) 30%, transparent) 320deg,
       transparent 360deg
     );
-  filter: blur(42px);
+  filter: blur(38px);
   mix-blend-mode: screen;
-  animation: ocean-caustic-rotate 140s linear infinite;
+  animation: ocean-caustic-rotate 110s linear infinite;
 }
 
 html.theme-ocean[data-motion="on"] .theme-layer > .ocean-lights::after {
@@ -2694,22 +2703,23 @@ html.theme-ocean .glass {
 /* Theme-swap transitions: only active when data-transition-theme is set by ThemeToggle.
    Uses the vt-theme-fade-* keyframes defined below for a smooth cross-fade. */
 html[data-transition-theme]::view-transition-old(root) {
-  animation: 400ms cubic-bezier(0.22, 1, 0.36, 1) both vt-theme-fade-out;
+  animation: 280ms cubic-bezier(0.4, 0, 1, 1) both vt-theme-fade-out;
 }
 
 html[data-transition-theme]::view-transition-new(root) {
-  animation: 400ms cubic-bezier(0.22, 1, 0.36, 1) both vt-theme-fade-in;
+  animation: 460ms cubic-bezier(0.22, 1, 0.36, 1) both vt-theme-fade-in;
 }
 
-/* Pure cross-fade specifically for theme swaps \u2014 no scale or blur,
-   just brightness so the color palette morphs cinematically */
+/* Cinematic theme swap: the outgoing palette drains (desaturates + dims) while
+   the incoming one snaps into focus from a touch over-saturated. The staggered
+   timing makes the new scene feel like it "fills in" rather than a flat blend. */
 @keyframes vt-theme-fade-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+  from { opacity: 1; filter: saturate(1) brightness(1); }
+  to   { opacity: 0; filter: saturate(0.65) brightness(0.9); }
 }
 @keyframes vt-theme-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from { opacity: 0; filter: saturate(1.14) brightness(1.05); }
+  to   { opacity: 1; filter: saturate(1) brightness(1); }
 }
 
 
