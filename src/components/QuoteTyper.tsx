@@ -112,6 +112,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     return Math.round((correctChars / totalTyped) * 100);
   }, [correctChars, totalTyped]);
 
+  // Overall progress through the quote (0–100)
+  const progressPct = useMemo(
+    () => Math.max(0, Math.min(100, Math.round((cursor / Math.max(1, activeQuote.length)) * 100))),
+    [cursor, activeQuote.length],
+  );
+
   // Chunk helpers
   const toggleAutoAdvance = useCallback((enabled: boolean) => {
     setAutoAdvance(enabled);
@@ -527,35 +533,51 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     return () => window.removeEventListener('keydown', handler as any, { capture: true } as any);
   }, []);
 
-  // Render character span
+  // Render a single character span \u2014 clean, borderless state system.
   const renderChar = (char: string, index: number) => {
     const isTyped = index < cursor;
     const isCurrent = index === cursor;
     const hasError = errors.has(index);
     const typedChar = typedChars[index];
 
-    let className = 'quote-char inline-block px-[2px] py-1 font-mono text-lg transition-all ';
+    let state = 'pending';
+    if (isCurrent) state = 'current';
+    else if (isTyped) state = hasError ? 'error' : 'correct';
 
-    if (isCurrent) {
-      className += 'bg-iris/20 border-b-2 border-iris zen-caret ';
-    } else if (isTyped) {
-      if (hasError) {
-        className += 'error underline decoration-wavy underline-offset-4 border-b-2 border-dashed border-love/70 ';
-      } else {
-        className += 'correct border-b-2 border-foam/70 ';
-      }
-    } else {
-      className += 'pending border-b-2 border-dotted border-muted/40 ';
-    }
-
-    // Handle spaces
     const displayChar = char === ' ' ? '\u00A0' : char;
+    const shown = isTyped && typedChar ? (hasError ? typedChar : displayChar) : displayChar;
 
     return (
-      <span key={index} className={className} style={{ animationDelay: `${index * 0.01}s` }}>
-        {isTyped && typedChar ? (hasError ? typedChar : displayChar) : displayChar}
+      <span key={index} className={`quote-char font-mono ${state}`} data-state={state}>
+        {shown}
       </span>
     );
+  };
+
+  // Render a range of the quote, grouping non-space runs into unbreakable words
+  // (.quote-word) so the typing surface never wraps in the middle of a word.
+  const renderRange = (start: number, end: number): React.ReactNode[] => {
+    const nodes: React.ReactNode[] = [];
+    let word: React.ReactNode[] = [];
+    let wordKey = start;
+    const flush = () => {
+      if (word.length) {
+        nodes.push(<span key={`w${wordKey}`} className="quote-word">{word}</span>);
+        word = [];
+      }
+    };
+    for (let i = start; i < end; i++) {
+      const ch = activeQuote[i] ?? '';
+      if (ch === ' ') {
+        flush();
+        nodes.push(renderChar(' ', i));
+      } else {
+        if (word.length === 0) wordKey = i;
+        word.push(renderChar(ch, i));
+      }
+    }
+    flush();
+    return nodes;
   };
 
   const containerClass = isComplete
@@ -612,126 +634,91 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           </div>
         )}
         {/* Quote display */}
-        <div className="glass rounded-2xl p-8 mb-8">
-          <div className="text-2xl leading-relaxed mb-4 select-none">
-            {chunks.length === 0 && activeQuote.split('').map((char, i) => renderChar(char, i))}
+        <div className="glass quote-card rounded-2xl px-8 pt-8 pb-7 mb-6">
+          <div key={activeQuote} className="quote-body text-2xl leading-relaxed select-none">
+            {chunks.length === 0 && renderRange(0, activeQuote.length)}
             {chunks.length > 0 && chunks.map((c, ci) => (
-              <div key={ci} className={`mb-2 relative ${ci === currentChunkIndex ? 'opacity-100' : 'opacity-80'}`}>
-                <span>
-                  {activeQuote.slice(c.start, c.end).split('').map((char, i) => renderChar(char, c.start + i))}
-                </span>
-                {/* Pace band under current chunk */}
-                {ci === currentChunkIndex && (
-                  <div className="mt-2 h-1 w-full bg-overlay/40 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-foam/60"
-                      style={{
-                        width: `${Math.max(0, Math.min(100, ((cursor - c.start) / Math.max(1, c.end - c.start)) * 100))}%`,
-                      }}
-                    />
-                  </div>
-                )}
+              <div key={ci} className="quote-line">
+                {renderRange(c.start, c.end)}
               </div>
             ))}
           </div>
           {activeAuthor && (
-            <div className="text-right text-muted text-lg">
-              <span aria-hidden="true">-</span> {activeAuthor}
+            <div className="text-right text-muted text-lg mt-5">
+              <span aria-hidden="true">—</span> {activeAuthor}
             </div>
           )}
-        </div>
-
-        {/* Stats display */}
-        <div className="glass rounded-xl p-6 mb-8 stagger-fade-in">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-sm text-muted mb-1">Progress</div>
-              <div className="text-2xl font-mono text-foam">
-                <AnimatedNumber
-                  value={Math.floor((cursor / activeQuote.length) * 100)}
-                  format={(v) => `${Math.round(v)}%`}
-                  showImprovement={true}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted mb-1">WPM</div>
-              <div className="text-2xl font-mono text-gold">
-                {startTime && !isComplete ? '-' : (
-                  <AnimatedNumber
-                    value={wpmValue}
-                    showImprovement={true}
-                  />
-                )}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted mb-1">Accuracy</div>
-              <div className="text-2xl font-mono text-rose">
-                <AnimatedNumber
-                  value={totalTyped === 0 ? 100 : accuracyValue}
-                  format={(v) => `${Math.round(v)}%`}
-                  showImprovement={false}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-muted mb-1">Errors</div>
-              <div className="text-2xl font-mono text-love">
-                <AnimatedNumber
-                  value={errors.size}
-                  showImprovement={false}
-                />
-              </div>
-            </div>
+          {/* Single, elegant progress indicator (live stats live in the StatsBar HUD) */}
+          <div
+            className="quote-progress-track mt-6"
+            role="progressbar"
+            aria-label="Quote progress"
+            aria-valuenow={progressPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div className="quote-progress-fill" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
         {/* Completion message */}
         {isComplete && (
-          <div className="glass rounded-xl p-6 text-center animate-fade-in completion-pulse">
-            <h2 className="text-2xl font-sans text-foam mb-2">
-              Breathe. Begin again.
-            </h2>
-            <p className="text-muted mb-4">
-              {wpmValue} WPM • {accuracyValue}% accuracy
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-left text-sm mb-4">
-              <div className="glass rounded p-3">
-                <div className="text-xs text-muted mb-1">Errors</div>
-                <div className="font-mono">Slip: {errorCounts.slip}</div>
-                <div className="font-mono">Skip: {errorCounts.skip}</div>
-                <div className="font-mono">Extra: {errorCounts.extra}</div>
+          <div className="glass rounded-2xl p-8 text-center completion-pulse">
+            <div className="stagger-fade-in">
+              <h2 className="text-2xl font-sans text-foam mb-6">
+                Breathe. Begin again.
+              </h2>
+              <div className="flex items-stretch justify-center gap-10 mb-6">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-muted/80 mb-1">WPM</div>
+                  <div className="text-5xl font-mono text-gold tabular-nums leading-none">
+                    <AnimatedNumber value={wpmValue} showImprovement={true} />
+                  </div>
+                </div>
+                <div className="w-px self-stretch bg-iris/15" aria-hidden="true" />
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-muted/80 mb-1">Accuracy</div>
+                  <div className="text-5xl font-mono text-rose tabular-nums leading-none">
+                    <AnimatedNumber value={accuracyValue} format={(v) => `${Math.round(v)}%`} />
+                  </div>
+                </div>
               </div>
-              <div className="glass rounded p-3">
-                <div className="text-xs text-muted mb-1">Totals</div>
-                <div className="font-mono">Characters typed: {totalTyped}</div>
-                <div className="font-mono">Correct chars: {correctChars}</div>
-                <div className="font-mono">Streak time: {streakTimeSec}s</div>
+              <div className="grid grid-cols-2 gap-4 text-left text-sm mb-6">
+                <div className="rounded-xl border border-iris/12 bg-surface/40 p-4">
+                  <div className="text-xs uppercase tracking-widest text-muted/80 mb-2">Errors</div>
+                  <div className="font-mono text-text/90">Slip: {errorCounts.slip}</div>
+                  <div className="font-mono text-text/90">Skip: {errorCounts.skip}</div>
+                  <div className="font-mono text-text/90">Extra: {errorCounts.extra}</div>
+                </div>
+                <div className="rounded-xl border border-iris/12 bg-surface/40 p-4">
+                  <div className="text-xs uppercase tracking-widest text-muted/80 mb-2">Totals</div>
+                  <div className="font-mono text-text/90">Characters: {totalTyped}</div>
+                  <div className="font-mono text-text/90">Correct: {correctChars}</div>
+                  <div className="font-mono text-text/90">Streak time: {streakTimeSec}s</div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              <Button
-                onClick={() => triggerNewQuote()}
-                variant="outline"
-                className="bg-gold/20 hover:bg-gold/30 border-gold/40 text-gold"
-              >
-                New Quote
-              </Button>
-              <Button
-                onClick={() => toggleAutoAdvance(!autoAdvance)}
-                variant="outline"
-                className={autoAdvance ? 'bg-surface/60 hover:bg-surface/80 border-muted/30 text-text' : 'bg-foam/20 hover:bg-foam/30 border-foam/40 text-foam'}
-              >
-                {autoAdvance ? 'Disable Auto Next' : 'Enable Auto Next'}
-              </Button>
-              <Button
-                onClick={handleReset}
-                variant="outline"
-                className="bg-iris/20 hover:bg-iris/30 border-iris/40 text-iris"
-              >
-                Type Again
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  onClick={handleReset}
+                  className="bg-iris/90 hover:bg-iris font-semibold shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--rp-iris)_60%,transparent)]"
+                >
+                  Type Again
+                </Button>
+                <Button
+                  onClick={() => triggerNewQuote()}
+                  variant="outline"
+                  className="border-foam/40 text-foam hover:bg-foam/15"
+                >
+                  New Quote
+                </Button>
+                <Button
+                  onClick={() => toggleAutoAdvance(!autoAdvance)}
+                  variant="ghost"
+                  className={autoAdvance ? 'text-foam hover:bg-foam/10' : 'text-muted hover:bg-overlay/50 hover:text-text'}
+                >
+                  {autoAdvance ? 'Auto Next: On' : 'Auto Next: Off'}
+                </Button>
+              </div>
             </div>
           </div>
         )}
