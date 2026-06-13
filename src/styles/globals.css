@@ -489,25 +489,112 @@ html:not([data-motion="off"]) .zen-input:focus:not([data-typing="true"]) {
   transform-origin: center;
 }
 
-/* Quote typing character animations */
+/* Quote typing character system — clean, borderless, premium
+   States are driven by class (pending / correct / error / current). No per-char
+   borders: legibility comes from color + a single glowing caret. Words are kept
+   whole via .quote-word so the surface never wraps mid-word. */
+.quote-line {
+  position: relative;
+  margin-bottom: 0.3rem;
+}
+
+.quote-line:last-child {
+  margin-bottom: 0;
+}
+
+.quote-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .quote-char {
   display: inline-block;
-  animation: zen-char-appear 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  padding: 0.04em 0.045em;
+  border-radius: 5px;
+  /* pending = dim, readable but clearly "ahead of you" */
+  color: color-mix(in oklab, var(--rp-text) 34%, transparent);
+  transition:
+    color 0.18s var(--ease-smooth),
+    background-color 0.18s var(--ease-smooth),
+    text-shadow 0.18s var(--ease-smooth);
 }
 
 .quote-char.correct {
   color: var(--rp-foam);
+  text-shadow: 0 0 10px color-mix(in oklab, var(--rp-foam) 20%, transparent);
+  animation: quote-char-pop 0.18s var(--ease-smooth);
 }
 
 .quote-char.error {
   color: var(--rp-love);
-  animation: zen-char-appear 0.15s cubic-bezier(0.4, 0, 0.2, 1) forwards,
-    zen-glow-pulse 0.3s ease-in-out;
+  background: color-mix(in oklab, var(--rp-love) 14%, transparent);
+  text-decoration: underline wavy color-mix(in oklab, var(--rp-love) 65%, transparent);
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1.5px;
+  animation: quote-char-shake 0.2s var(--ease-smooth);
 }
 
-.quote-char.pending {
-  opacity: 0.35;
-  transition: opacity 0.2s ease;
+.quote-char.current {
+  color: var(--rp-text);
+  background: color-mix(in oklab, var(--rp-iris) 20%, transparent);
+  box-shadow:
+    inset 0 -0.12em 0 0 color-mix(in oklab, var(--rp-iris) 85%, transparent),
+    0 0 16px color-mix(in oklab, var(--rp-iris) 28%, transparent);
+  animation: quote-caret-breathe 1.1s var(--ease-smooth) infinite;
+}
+
+@keyframes quote-char-pop {
+  0% { transform: translateY(1px) scale(0.96); }
+  60% { transform: translateY(0) scale(1.06); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes quote-char-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+@keyframes quote-caret-breathe {
+  0%, 100% {
+    box-shadow:
+      inset 0 -0.12em 0 0 color-mix(in oklab, var(--rp-iris) 85%, transparent),
+      0 0 16px color-mix(in oklab, var(--rp-iris) 26%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 -0.12em 0 0 var(--rp-iris),
+      0 0 22px color-mix(in oklab, var(--rp-iris) 44%, transparent);
+  }
+}
+
+/* Single, elegant progress indicator beneath the quote */
+.quote-progress-track {
+  height: 3px;
+  width: 100%;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--rp-iris) 10%, transparent);
+  overflow: hidden;
+}
+
+.quote-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+      color-mix(in oklab, var(--rp-foam) 85%, transparent),
+      color-mix(in oklab, var(--rp-iris) 85%, transparent));
+  box-shadow: 0 0 12px color-mix(in oklab, var(--rp-foam) 35%, transparent);
+  transition: width 0.25s var(--ease-smooth);
+}
+
+/* Gentle reveal when a fresh quote mounts */
+.quote-body {
+  animation: quote-body-in 0.45s var(--ease-smooth) both;
+}
+
+@keyframes quote-body-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Reduce motion preferences */
@@ -520,8 +607,19 @@ html[data-motion="off"] .zen-input:focus {
   animation: none !important;
 }
 
-html[data-motion="off"] .quote-char {
+html[data-motion="off"] .quote-char,
+html[data-motion="off"] .quote-char.correct,
+html[data-motion="off"] .quote-char.error,
+html[data-motion="off"] .quote-char.current,
+html[data-motion="off"] .quote-body {
   animation: none !important;
+}
+
+/* Static caret for reduced motion: keep the underline + halo, no breathing */
+html[data-motion="off"] .quote-char.current {
+  box-shadow:
+    inset 0 -0.12em 0 0 var(--rp-iris),
+    0 0 14px color-mix(in oklab, var(--rp-iris) 32%, transparent);
 }
 
 html[data-motion="off"] .zen-caret {
