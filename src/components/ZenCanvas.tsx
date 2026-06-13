@@ -152,7 +152,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const markersRef = useRef<number[]>([]);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const statsRef = useRef(stats);
-  const themeRef = useRef({ isCosmic: false, isForest: false, isOcean: false });
+  const themeRef = useRef({ isCosmic: false, isForest: false, isOcean: false, name: 'void' });
 
   const getSettingsSnapshot = (): Settings => {
     if (!settingsRef.current) {
@@ -273,10 +273,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   useEffect(() => {
     const updateTheme = () => {
       const root = document.documentElement;
+      const themeName = ['cosmic', 'forest', 'ocean', 'ember', 'sakura', 'aurora', 'glacier', 'void'].find((n) => root.classList.contains('theme-' + n)) || 'void';
       themeRef.current = {
-        isCosmic: root.classList.contains('theme-cosmic'),
-        isForest: root.classList.contains('theme-forest'),
-        isOcean: root.classList.contains('theme-ocean'),
+        isCosmic: themeName === 'cosmic',
+        isForest: themeName === 'forest',
+        isOcean: themeName === 'ocean',
+        name: themeName,
       };
     };
     updateTheme();
@@ -339,10 +341,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const s = (e as CustomEvent).detail as Settings;
       settingsRef.current = s;
       const root = document.documentElement;
+      const themeName = ['cosmic', 'forest', 'ocean', 'ember', 'sakura', 'aurora', 'glacier', 'void'].find((n) => root.classList.contains('theme-' + n)) || 'void';
       themeRef.current = {
-        isCosmic: root.classList.contains('theme-cosmic'),
-        isForest: root.classList.contains('theme-forest'),
-        isOcean: root.classList.contains('theme-ocean'),
+        isCosmic: themeName === 'cosmic',
+        isForest: themeName === 'forest',
+        isOcean: themeName === 'ocean',
+        name: themeName,
       };
     };
     const onToggleBreath = () => {
@@ -563,7 +567,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
     const styleCache = styleCacheRef.current ?? { ...FALLBACK_STYLE_CACHE, typingFont: fontFamily };
     const { rpText, moss, leaf: leafColor, typingFont, rpFoam, rpGold, rpLove, rpIris } = styleCache;
-    const { isCosmic, isForest, isOcean } = themeRef.current;
+    const { isCosmic, isForest, isOcean, name: themeName } = themeRef.current;
     const sNow = getSettingsSnapshot();
     const perfMode = !!sNow.performanceMode;
     
@@ -800,9 +804,11 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
       // Theme-aware color tint
       let tokenColor = rpText;
-      if (isCosmic) tokenColor = rpIris;
-      else if (isOcean) tokenColor = rpFoam;
-      else if (isForest) tokenColor = leafColor;
+      if (themeName === 'cosmic') tokenColor = rpIris;
+      else if (themeName === 'ocean' || themeName === 'aurora' || themeName === 'glacier') tokenColor = rpFoam;
+      else if (themeName === 'forest') tokenColor = leafColor;
+      else if (themeName === 'ember') tokenColor = rpGold;
+      else if (themeName === 'sakura') tokenColor = rpLove;
 
       // Entrance "pop": spring up from 0.84 → ~1.0 with a soft overshoot
       // (easeOutBack), so each word feels like it lands rather than shrinks in.
