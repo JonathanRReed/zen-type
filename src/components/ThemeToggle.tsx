@@ -4,7 +4,7 @@ import { useMotionPreference } from '../hooks/useMotionPreference';
 import IconButton from './IconButton';
 import { Button } from '@/components/ui/button';
 
-type Theme = 'Void' | 'Forest' | 'Ocean' | 'Cosmic';
+type Theme = 'Void' | 'Forest' | 'Ocean' | 'Cosmic' | 'Ember' | 'Sakura' | 'Aurora' | 'Glacier';
 
 interface ThemeToggleProps {
   className?: string;
@@ -14,7 +14,7 @@ type ViewTransitionStart = (cb: () => void) => { finished: Promise<void>; ready:
 
 const applyThemeClass = (newTheme: Theme) => {
   const root = document.documentElement;
-  root.classList.remove('theme-void', 'theme-forest', 'theme-ocean', 'theme-cosmic');
+  root.classList.remove('theme-void', 'theme-forest', 'theme-ocean', 'theme-cosmic', 'theme-ember', 'theme-sakura', 'theme-aurora', 'theme-glacier');
   root.classList.add(`theme-${newTheme.toLowerCase()}`);
 };
 
@@ -184,7 +184,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
     setIsOpen(false);
   };
 
-  const themes: Theme[] = ['Void', 'Forest', 'Ocean', 'Cosmic'];
+  const themes: Theme[] = ['Void', 'Cosmic', 'Aurora', 'Ocean', 'Glacier', 'Forest', 'Ember', 'Sakura'];
 
   return (
     <div className={`relative ${className}`.trim()}>
