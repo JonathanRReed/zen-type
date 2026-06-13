@@ -334,7 +334,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] glass-theme" role="dialog" aria-modal="true">
+    <div className="overlay-backdrop fixed inset-0 z-[1000] glass-theme" role="dialog" aria-modal="true">
       <div className="pointer-events-none fixed inset-0 z-0 theme-layer">
         <div className="forest-rays" aria-hidden="true" />
         <div className="ocean-lights" aria-hidden="true" />
@@ -406,7 +406,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                     'group relative w-full text-left px-5 py-4 rounded-xl border transition-all bg-surface/45 flex flex-col items-stretch justify-start whitespace-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface/60',
                     isActive
                       ? 'border-iris/55 bg-iris/20 shadow-[0_12px_28px_rgba(26,12,48,0.38)]'
-                      : 'border-muted/25 hover:border-iris/45 hover:bg-surface/60 hover:shadow-[0_10px_24px_rgba(26,12,48,0.32)]'
+                      : 'border-muted/25 hover:border-iris/45 hover:bg-surface/60 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(26,12,48,0.32)]'
                   )}
                 >
                   <div className="flex w-full flex-col gap-2">
