@@ -665,32 +665,32 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         {isComplete && (
           <div className="glass rounded-2xl p-8 text-center completion-pulse">
             <div className="stagger-fade-in">
-              <h2 className="text-2xl font-sans text-foam mb-6">
+              <h2 className="text-2xl font-sans text-tint mb-6">
                 Breathe. Begin again.
               </h2>
               <div className="flex items-stretch justify-center gap-10 mb-6">
                 <div>
                   <div className="text-xs uppercase tracking-widest text-muted/80 mb-1">WPM</div>
-                  <div className="text-5xl font-mono text-gold tabular-nums leading-none">
+                  <div className="text-5xl font-mono text-tint tabular-nums leading-none">
                     <AnimatedNumber value={wpmValue} showImprovement={true} />
                   </div>
                 </div>
-                <div className="w-px self-stretch bg-iris/15" aria-hidden="true" />
+                <div className="w-px self-stretch bg-tint/20" aria-hidden="true" />
                 <div>
                   <div className="text-xs uppercase tracking-widest text-muted/80 mb-1">Accuracy</div>
-                  <div className="text-5xl font-mono text-rose tabular-nums leading-none">
+                  <div className="text-5xl font-mono text-tint2 tabular-nums leading-none">
                     <AnimatedNumber value={accuracyValue} format={(v) => `${Math.round(v)}%`} />
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 text-left text-sm mb-6">
-                <div className="rounded-xl border border-iris/12 bg-surface/40 p-4">
+                <div className="rounded-xl border border-tint/15 bg-surface/40 p-4">
                   <div className="text-xs uppercase tracking-widest text-muted/80 mb-2">Errors</div>
                   <div className="font-mono text-text/90">Slip: {errorCounts.slip}</div>
                   <div className="font-mono text-text/90">Skip: {errorCounts.skip}</div>
                   <div className="font-mono text-text/90">Extra: {errorCounts.extra}</div>
                 </div>
-                <div className="rounded-xl border border-iris/12 bg-surface/40 p-4">
+                <div className="rounded-xl border border-tint/15 bg-surface/40 p-4">
                   <div className="text-xs uppercase tracking-widest text-muted/80 mb-2">Totals</div>
                   <div className="font-mono text-text/90">Characters: {totalTyped}</div>
                   <div className="font-mono text-text/90">Correct: {correctChars}</div>
@@ -700,21 +700,21 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button
                   onClick={handleReset}
-                  className="bg-iris/90 hover:bg-iris font-semibold shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--rp-iris)_60%,transparent)]"
+                  className="bg-tint/90 hover:bg-tint text-base font-semibold text-[color-mix(in_oklab,var(--rp-base)_88%,black_12%)] shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--theme-accent)_60%,transparent)]"
                 >
                   Type Again
                 </Button>
                 <Button
                   onClick={() => triggerNewQuote()}
                   variant="outline"
-                  className="border-foam/40 text-foam hover:bg-foam/15"
+                  className="border-tint2/45 text-tint2 hover:bg-tint2/15"
                 >
                   New Quote
                 </Button>
                 <Button
                   onClick={() => toggleAutoAdvance(!autoAdvance)}
                   variant="ghost"
-                  className={autoAdvance ? 'text-foam hover:bg-foam/10' : 'text-muted hover:bg-overlay/50 hover:text-text'}
+                  className={autoAdvance ? 'text-tint2 hover:bg-tint2/10' : 'text-muted hover:bg-overlay/50 hover:text-text'}
                 >
                   {autoAdvance ? 'Auto Next: On' : 'Auto Next: Off'}
                 </Button>

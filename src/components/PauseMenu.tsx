@@ -134,13 +134,13 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
       >
         {!showSettings && !showAbout ? (
           <>
-            <h2 id="pause-title" className="text-2xl font-sans text-foam mb-6">Paused</h2>
-            
+            <h2 id="pause-title" className="text-2xl font-sans text-tint mb-6">Paused</h2>
+
             <div className="space-y-3">
               <Button
                 onClick={closeMenu}
                 variant="outline"
-                className="w-full px-6 py-3 bg-iris/20 hover:bg-iris/30 border-iris/40 text-iris font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-iris/50 focus-visible:ring-2 focus-visible:ring-iris/50 active:scale-[0.98]"
+                className="w-full px-6 py-3 bg-tint/20 hover:bg-tint/30 border-tint/45 text-tint font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--theme-accent)_55%,transparent)] focus-visible:ring-2 focus-visible:ring-tint/50 active:scale-[0.98]"
               >
                 Resume
               </Button>
