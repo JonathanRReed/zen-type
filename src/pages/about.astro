@@ -26,46 +26,48 @@ const aboutUrl = `${siteUrl}/about/`;
 		/>
 	</head>
 	<body>
-		<main class="min-h-screen bg-base px-6 pb-32 pt-12 text-text">
-			<div class="mx-auto max-w-3xl space-y-10">
-				<nav aria-label="Primary" class="flex flex-wrap gap-4 text-sm text-muted">
-					<a class="text-foam hover:text-text" href="/">Home</a>
-					<a class="text-foam hover:text-text" href="/quote/">Quote mode</a>
-					<a class="text-foam hover:text-text" href="/zen/">Zen mode</a>
-					<a class="text-foam hover:text-text" href="/contact/">Contact</a>
-					<a class="text-foam hover:text-text" href="/privacy/">Privacy</a>
+		<main class="content-page px-6 pb-32 pt-16 text-text">
+			<div class="mx-auto max-w-3xl space-y-8">
+				<nav aria-label="Primary" class="content-nav">
+					<a href="/">Home</a>
+					<a href="/quote/">Quote mode</a>
+					<a href="/zen/">Zen mode</a>
+					<a href="/contact/">Contact</a>
+					<a href="/privacy/">Privacy</a>
 				</nav>
 
-				<header class="space-y-4 border-b border-iris/15 pb-8">
-					<p class="text-sm font-medium uppercase tracking-[0.28em] text-iris">About</p>
-					<h1 class="text-4xl font-semibold tracking-tight text-text md:text-5xl">About Zen Typer</h1>
-					<p class="text-lg leading-8 text-muted">
-						Zen Typer is a focused typing practice app built by Jonathan Reed for people who want a calmer way to improve rhythm, accuracy, and writing momentum.
-					</p>
-				</header>
+				<article class="glass content-prose rounded-2xl p-8 md:p-10 space-y-8 stagger-fade-in">
+					<header class="space-y-4 border-b border-iris/15 pb-7">
+						<p class="eyebrow text-sm font-medium uppercase tracking-[0.28em]">About</p>
+						<h1>About Zen Typer</h1>
+						<p class="!text-lg !leading-8">
+							Zen Typer is a focused typing practice app built by Jonathan Reed for people who want a calmer way to improve rhythm, accuracy, and writing momentum.
+						</p>
+					</header>
 
-				<section class="space-y-5 text-base leading-8 text-muted">
-					<h2 class="text-2xl font-semibold text-text">Why it exists</h2>
-					<p>
-						Most typing tools are optimized for speed runs, leaderboards, and constant pressure. Zen Typer keeps the useful parts of typing practice, including quote prompts, WPM feedback, accuracy tracking, and session flow, while removing distractions that make practice feel noisy. The app is meant to work as a short warmup before deep work, a quiet drill for improving accuracy, or a small writing space when you need to get words moving.
-					</p>
-					<p>
-						Quote Mode gives a measured practice surface with curated passages and immediate feedback. Zen Mode opens a free-flow canvas where typed words drift through the screen and local session stats stay available without taking over the experience. The two modes support different needs, one for structured practice and one for open writing rhythm.
-					</p>
-				</section>
+					<section class="space-y-4">
+						<h2>Why it exists</h2>
+						<p>
+							Most typing tools are optimized for speed runs, leaderboards, and constant pressure. Zen Typer keeps the useful parts of typing practice, including quote prompts, WPM feedback, accuracy tracking, and session flow, while removing distractions that make practice feel noisy. The app is meant to work as a short warmup before deep work, a quiet drill for improving accuracy, or a small writing space when you need to get words moving.
+						</p>
+						<p>
+							Quote Mode gives a measured practice surface with curated passages and immediate feedback. Zen Mode opens a free-flow canvas where typed words drift through the screen and local session stats stay available without taking over the experience. The two modes support different needs, one for structured practice and one for open writing rhythm.
+						</p>
+					</section>
 
-				<section class="space-y-5 text-base leading-8 text-muted">
-					<h2 class="text-2xl font-semibold text-text">Privacy and design principles</h2>
-					<p>
-						Zen Typer is intentionally lightweight. It does not require an account, login, or external writing service to practice. Settings, drafts, and session details are handled locally in the browser so the app can stay fast and private. The interface uses a dark visual system, accessible controls, reduced-motion support, and clear keyboard paths for people who want typing practice without a heavy dashboard.
-					</p>
-					<p>
-						The project is maintained as a small, practical tool. Updates focus on accuracy, accessibility, performance, and search clarity rather than adding features that make the experience feel crowded.
-					</p>
-					<p>
-						The public pages explain how the app works so people can decide whether it fits their practice routine before opening a typing session. They also give crawlers and assistive tools plain text context without changing the main app surface.
-					</p>
-				</section>
+					<section class="space-y-4">
+						<h2>Privacy and design principles</h2>
+						<p>
+							Zen Typer is intentionally lightweight. It does not require an account, login, or external writing service to practice. Settings, drafts, and session details are handled locally in the browser so the app can stay fast and private. The interface uses a dark visual system, accessible controls, reduced-motion support, and clear keyboard paths for people who want typing practice without a heavy dashboard.
+						</p>
+						<p>
+							The project is maintained as a small, practical tool. Updates focus on accuracy, accessibility, performance, and search clarity rather than adding features that make the experience feel crowded.
+						</p>
+						<p>
+							The public pages explain how the app works so people can decide whether it fits their practice routine before opening a typing session. They also give crawlers and assistive tools plain text context without changing the main app surface.
+						</p>
+					</section>
+				</article>
 			</div>
 		</main>
 	</body>
