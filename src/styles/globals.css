@@ -2385,6 +2385,16 @@ html.high-contrast.theme-void .theme-layer::after {
   pointer-events: none;
   z-index: 2;
   overflow: hidden;
+  /* Interactive depth: the FX layer drifts gently toward the cursor for every
+     theme (SpotlightLayer exposes --cursor-nx/ny on :root, 0..1 normalized).
+     Cosmic overrides this with a stronger parallax below; reduced-motion forces
+     transform:none via the freeze rules. */
+  transform: translate3d(
+    calc((var(--cursor-nx, 0.5) - 0.5) * -14px),
+    calc((var(--cursor-ny, 0.5) - 0.5) * -14px),
+    0
+  );
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* On small viewports (mostly mobile GPUs) drop the most expensive layers:
@@ -2606,7 +2616,7 @@ html.theme-void .theme-layer > .ocean-lights::before {
   filter: blur(56px);
   mix-blend-mode: screen;
   transform-origin: 50% 50%;
-  animation: void-aurora-sweep 180s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation: void-aurora-sweep 120s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 html.theme-void[data-motion="on"] .theme-layer > .ocean-lights::after {
@@ -2626,7 +2636,7 @@ html.theme-void[data-motion="on"] .theme-layer > .ocean-lights::after {
   filter: blur(40px);
   mix-blend-mode: screen;
   opacity: 0.7;
-  animation: void-aurora-sweep-2 220s cubic-bezier(0.45, 0, 0.55, 1) infinite reverse;
+  animation: void-aurora-sweep-2 150s cubic-bezier(0.45, 0, 0.55, 1) infinite reverse;
 }
 
 @keyframes void-aurora-sweep {
