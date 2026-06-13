@@ -89,7 +89,7 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
 
   return (
     <div className="stats-cq">
-      <div className="stats-bar fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] md:bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-4" data-stats-bar>
+      <div className="stats-bar fixed bottom-[calc(6.5rem_+_env(safe-area-inset-bottom))] md:bottom-[calc(5.5rem_+_env(safe-area-inset-bottom))] left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-4" data-stats-bar>
         <div className="rounded-full px-8 py-3.5 flex flex-wrap items-center justify-center gap-8 
                         bg-surface/40 backdrop-blur-xl border border-iris/20
                         shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(156,207,216,0.1)]
