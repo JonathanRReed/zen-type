@@ -166,7 +166,7 @@ export function applySettingsSideEffects(patch: Partial<Settings>, next: Setting
 
 // Type definitions
 export interface Settings {
-  theme: 'Void' | 'Forest' | 'Ocean' | 'Cosmic';
+  theme: 'Void' | 'Forest' | 'Ocean' | 'Cosmic' | 'Ember' | 'Sakura' | 'Aurora' | 'Glacier';
   reducedMotion: boolean;
   showStats: boolean;
   highContrast: boolean;
@@ -290,7 +290,7 @@ export function getSettings(): Settings {
     normalized.theme = 'Void';
   }
 
-  const allowedThemes: Settings['theme'][] = ['Void', 'Forest', 'Ocean', 'Cosmic'];
+  const allowedThemes: Settings['theme'][] = ['Void', 'Forest', 'Ocean', 'Cosmic', 'Ember', 'Sakura', 'Aurora', 'Glacier'];
   if (!allowedThemes.includes(normalized.theme)) {
     normalized.theme = 'Void';
   }
