@@ -24,6 +24,7 @@ interface Token {
   vy: number;
   swayAmp: number;
   swayFreq: number;
+  swayPhase: number;
   lifetime: number;
   maxLifetime: number;
   birth: number;
@@ -109,6 +110,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const tokensRef = useRef<Token[]>([]);
   const [inputValue, setInputValue] = useState('');
+  // Brief "active typing" flag that drives the input's commit-ripple animation.
+  const [isCommitting, setIsCommitting] = useState(false);
+  const commitPulseTimerRef = useRef<number | null>(null);
   // eslint-disable-next-line react-hooks/purity
   const [stats, setStats] = useState({ words: 0, chars: 0, startTime: Date.now() });
   const animationFrameRef = useRef<number | null>(null);
@@ -165,7 +169,6 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     const id = activeDraftIdRef.current;
     if (!id || !draftDirtyRef.current) return;
     const text = transcriptRef.current;
-    console.log('[DEBUG] Saving draft - text:', text);
     try {
       await updateDraftBody(id, text);
       draftDirtyRef.current = false;
@@ -229,6 +232,18 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     draftDirtyRef.current = true;
     scheduleDraftSave();
   }, [scheduleDraftSave]);
+
+  // Pulse the input on each word commit so it feels like a living instrument
+  // (drives the .zen-input ripple/breathe animations in globals.css).
+  const pulseInput = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    setIsCommitting(true);
+    if (commitPulseTimerRef.current !== null) window.clearTimeout(commitPulseTimerRef.current);
+    commitPulseTimerRef.current = window.setTimeout(() => {
+      setIsCommitting(false);
+      commitPulseTimerRef.current = null;
+    }, 700);
+  }, []);
 
   const computeStyleCache = useCallback(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -422,6 +437,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       vy: Math.min(80, Math.max(30, 45 + Math.random() * 35)),
       swayAmp: amp,
       swayFreq: 0.6 + Math.random() * 0.6,
+      swayPhase: Math.random() * Math.PI * 2,
       lifetime,
       maxLifetime: lifetime,
       birth: birthTime
@@ -456,10 +472,11 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       if (Math.random() < frac) spawnToken(word);
     }
     
+    pulseInput();
+
     // Update transcript
     transcriptRef.current += word + delimiter;
-    console.log('[DEBUG] Committed word:', word, 'with delimiter:', delimiter, 'transcript now:', transcriptRef.current);
-    
+
     // Record in ghost log
     const now = (Date.now() - sessionStartRef.current) / 1000;
     for (const ch of word) {
@@ -473,7 +490,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     ghostLogRef.current = ghostLogRef.current.filter(ev => ev.t >= cutoff);
     
     markDraftDirty();
-  }, [spawnToken, markDraftDirty, ensureDraftInitialized]);
+  }, [spawnToken, markDraftDirty, ensureDraftInitialized, pulseInput]);
 
   // Handle input changes with proper controlled input pattern
   const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -487,9 +504,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       // Extract the word (everything except the delimiter)
       const word = newValue.slice(0, -1);
       const delimiter = lastChar ?? ' ';
-      
-      console.log('[DEBUG] Committing word:', word, 'delimiter:', delimiter);
-      
+
       // Commit the word
       commitWord(word, delimiter);
       
@@ -525,9 +540,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     
     if (e.key === 'Backspace' && inputValue.length === 0 && transcriptRef.current.length > 0) {
       // If input is empty and backspace is pressed, remove from transcript
-      const oldTranscript = transcriptRef.current;
       transcriptRef.current = transcriptRef.current.slice(0, -1);
-      console.log('[DEBUG] Backspace on empty input - removed char from transcript, was:', oldTranscript, 'now:', transcriptRef.current);
       markDraftDirty();
     }
   }, [inputValue, commitWord, markDraftDirty]);
@@ -752,33 +765,34 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       const easeOut = 1 - Math.pow(1 - ageProgress, 2); // Quadratic ease-out
       token.y -= (token.vy / 60) * (1 - easeOut * 0.3); // Slow down as it rises
       
-      // Add horizontal sway if not reduced motion
+      // Add horizontal sway if not reduced motion. Two layered sines with a
+      // per-token phase keep tokens from oscillating in mechanical unison.
       const effectiveAmp = (perfGuardRef.current || perfMode) ? 0 : token.swayAmp;
       if (!rm && effectiveAmp > 0) {
-        const swayOffset = Math.sin(age * token.swayFreq * 2 * Math.PI) * effectiveAmp;
-        token.x += swayOffset / 60;
+        const primary = Math.sin(age * token.swayFreq * 2 * Math.PI + token.swayPhase) * effectiveAmp;
+        const secondary = Math.sin(age * token.swayFreq * 0.55 * Math.PI + token.swayPhase * 1.7) * effectiveAmp * 0.4;
+        token.x += (primary + secondary) / 60;
       }
-      
+
       // Check if still on screen
       if (token.y < -50 || token.x < -50 || token.x > canvas.width + 50) {
         return; // Remove off-screen tokens
       }
-      
-      // Smooth opacity fade in and fade out
+
+      // Smooth opacity fade in (quick ease-out so the word "arrives") and a
+      // long, gentle ease-out fade as it rises and evaporates.
       let opacity = 1;
-      const fadeInDuration = 0.3; // Gentle fade in
-      const fadeOutStart = 0.65; // Start fading earlier for longer transition
-      
+      const fadeInDuration = 0.32;
+      const fadeOutStart = 0.6;
+
       if (age < fadeInDuration) {
-        // Cubic ease-in for smooth appearance
         const t = age / fadeInDuration;
-        opacity = t * t * t;
+        opacity = 1 - Math.pow(1 - t, 2); // ease-out: appears promptly
       } else if (ageProgress > fadeOutStart) {
-        // Long, gentle fade out
         const fadeProgress = (ageProgress - fadeOutStart) / (1 - fadeOutStart);
-        opacity = Math.pow(1 - fadeProgress, 3); // Cubic ease-out
+        opacity = Math.pow(1 - fadeProgress, 3); // cubic ease-out
       }
-      
+
       // Draw token with glow, scale, and theme tint
       ctx.save();
       const rawOpacity = Math.max(0, Math.min(1, opacity));
@@ -790,21 +804,28 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
       else if (isOcean) tokenColor = rpFoam;
       else if (isForest) tokenColor = leafColor;
 
-      // Scale-in effect: 1.0 → 1.12 over first 0.4s, then settle
-      const scaleAge = Math.min(1, age / 0.4);
-      const scale = 1 + (1 - scaleAge) * 0.12;
+      // Entrance "pop": spring up from 0.84 → ~1.0 with a soft overshoot
+      // (easeOutBack), so each word feels like it lands rather than shrinks in.
+      const entranceT = Math.min(1, age / 0.45);
+      let scale = 1;
+      if (!rm) {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        const back = 1 + c3 * Math.pow(entranceT - 1, 3) + c1 * Math.pow(entranceT - 1, 2);
+        scale = 0.84 + 0.16 * back;
+      }
 
       // Slight rotation sway for organic feel
-      const rotation = Math.sin(age * 1.5) * 0.02;
+      const rotation = rm ? 0 : Math.sin(age * 1.5 + token.swayPhase) * 0.02;
 
       ctx.translate(token.x, token.y);
       ctx.rotate(rotation);
       ctx.scale(scale, scale);
 
-      // Glow shadow — stronger when young
-      const glowStrength = rawOpacity * (1 - scaleAge * 0.6);
+      // Layered glow — luminous when young, settling as it ages
+      const glowStrength = rawOpacity * (1 - Math.min(1, age / 0.45) * 0.55);
       ctx.shadowColor = tokenColor;
-      ctx.shadowBlur = 8 + glowStrength * 18;
+      ctx.shadowBlur = 10 + glowStrength * 22;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
 
@@ -815,7 +836,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
 
       // Second pass: crisp core text for readability
       ctx.shadowBlur = 0;
-      ctx.globalAlpha = rawOpacity * 0.9;
+      ctx.globalAlpha = rawOpacity * 0.92;
       ctx.fillStyle = rpText;
       ctx.fillText(token.text, 0, 0);
 
@@ -1042,6 +1063,13 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
     inputRef.current?.focus();
   }, []);
 
+  // Clear the commit-pulse timer on unmount
+  useEffect(() => () => {
+    if (commitPulseTimerRef.current !== null) {
+      window.clearTimeout(commitPulseTimerRef.current);
+    }
+  }, []);
+
   return (
     <div className="relative w-full h-screen overflow-hidden">
       <canvas
@@ -1084,14 +1112,15 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         type="text"
         aria-label="Free-flow typing input"
         value={inputValue}
-        className="absolute bottom-[18vh] left-1/2 -translate-x-1/2 
+        data-typing={isCommitting ? 'true' : undefined}
+        style={{ position: 'absolute' }}
+        className="zen-input bottom-[18vh] left-1/2 -translate-x-1/2
                    w-[90vw] max-w-xl px-6 py-4 text-lg font-mono caret-accent
-                   bg-surface/70 backdrop-blur-soft shadow-soft
+                   backdrop-blur-soft
                    border border-iris/25 rounded-2xl
                    text-text placeholder-muted tracking-wide
-                   focus:outline-none focus:ring-2 focus:ring-iris/40 focus:border-iris/40
-                   transition-all duration-200"
-        placeholder="Type freely..."
+                   focus:outline-none focus:border-iris/40"
+        placeholder="Type freely…"
         onChange={handleInput}
         onKeyDown={handleKeyDown}
         autoComplete="off"
