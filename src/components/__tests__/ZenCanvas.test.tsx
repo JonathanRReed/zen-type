@@ -13,6 +13,8 @@ vi.mock('../../hooks/useMotionPreference', () => ({
 describe('ZenCanvas', () => {
   let mockCanvas: HTMLCanvasElement;
   let mockContext: CanvasRenderingContext2D;
+  const getTypingInput = () =>
+    screen.getByRole('textbox', { name: 'Free-flow typing input' });
 
   beforeEach(() => {
     mockContext = {
@@ -55,7 +57,7 @@ describe('ZenCanvas', () => {
       render(<ZenCanvas />);
       
       const canvas = document.querySelector('canvas');
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       expect(canvas).toBeInTheDocument();
       expect(input).toBeInTheDocument();
@@ -64,7 +66,7 @@ describe('ZenCanvas', () => {
     it('focuses input on mount', async () => {
       render(<ZenCanvas />);
       
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       await waitFor(() => {
         expect(document.activeElement).toBe(input);
       });
@@ -74,7 +76,7 @@ describe('ZenCanvas', () => {
   describe('Token Spawning', () => {
     it('spawns tokens with valid dimensions', async () => {
       render(<ZenCanvas maxTokens={100} />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'hello ');
       
@@ -92,7 +94,7 @@ describe('ZenCanvas', () => {
       });
 
       render(<ZenCanvas />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       // Type multiple words to ensure spawning
       await userEvent.type(input, 'word one two three ');
@@ -111,7 +113,7 @@ describe('ZenCanvas', () => {
       });
       
       render(<ZenCanvas />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'test ');
       
@@ -127,7 +129,7 @@ describe('ZenCanvas', () => {
       });
 
       render(<ZenCanvas maxTokens={200} />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       for (let i = 0; i < 100; i++) {
         await userEvent.type(input, `word${i} `);
@@ -153,7 +155,7 @@ describe('ZenCanvas', () => {
       vi.spyOn(draftStore, 'updateDraftBody').mockResolvedValue(undefined);
 
       render(<ZenCanvas />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'a ');
       
@@ -167,7 +169,7 @@ describe('ZenCanvas', () => {
       vi.spyOn(draftStore, 'createDraft').mockRejectedValue(new Error('Storage quota exceeded'));
 
       render(<ZenCanvas />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'test ');
       
@@ -236,7 +238,7 @@ describe('ZenCanvas', () => {
   describe('Input Handling', () => {
     it('commits word on space', async () => {
       render(<ZenCanvas />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'test ');
       
@@ -247,7 +249,7 @@ describe('ZenCanvas', () => {
 
     it('commits word on punctuation', async () => {
       render(<ZenCanvas />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'test.');
       
@@ -258,7 +260,7 @@ describe('ZenCanvas', () => {
 
     it('commits word on Enter key', async () => {
       render(<ZenCanvas />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'test{Enter}');
       
@@ -275,7 +277,7 @@ describe('ZenCanvas', () => {
 
       const onStats = vi.fn();
       render(<ZenCanvas onStats={onStats} />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'hello world ');
       
@@ -295,7 +297,7 @@ describe('ZenCanvas', () => {
       });
 
       render(<ZenCanvas />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'test ');
       
@@ -311,7 +313,7 @@ describe('ZenCanvas', () => {
       });
 
       render(<ZenCanvas />);
-      const input = screen.getByPlaceholderText('Type freely...');
+      const input = getTypingInput();
       
       await userEvent.type(input, 'test ');
       
