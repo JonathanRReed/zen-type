@@ -21,7 +21,7 @@ const SiteFooter: React.FC = React.memo(() => {
             loading="lazy"
           />
           <span className="text-muted/50">/</span>
-          <span className="font-semibold text-text">Made by Jonathan R Reed</span>
+          <span className="font-semibold text-text">Made by Jonathan R. Reed</span>
           <span className="text-muted/50">/</span>
           <span className="text-muted/70">Cybersecurity & AI developer</span>
           <span className="text-muted/50">•</span>
@@ -37,13 +37,17 @@ const SiteFooter: React.FC = React.memo(() => {
             Privacy
           </a>
           <span className="text-muted/50">•</span>
+          <a className="text-iris hover:text-foam transition-colors" href="/subprocessors/">
+            Subprocessors
+          </a>
+          <span className="text-muted/50">•</span>
           <a
             className="text-iris hover:text-foam transition-colors"
             href="https://jonathanrreed.com/projects/"
             target="_blank"
             rel="noopener noreferrer"
           >
-            See more projects by Jonathan R Reed
+            See more projects by Jonathan R. Reed
           </a>
           <span className="text-muted/50">•</span>
           <a

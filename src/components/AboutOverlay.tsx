@@ -72,7 +72,7 @@ const AboutOverlay = React.memo((props: AboutOverlayProps) => {
               honored, and everything runs locally for a distraction-free flow.
             </p>
             <p className="leading-relaxed text-muted">
-              Settings, streaks, and archives stay on your device—no logins, no telemetry, just the cadence of your typing.
+              Settings, streaks, and archives stay on your device. No logins, no telemetry, just the cadence of your typing.
             </p>
           </div>
 
@@ -91,7 +91,7 @@ const AboutOverlay = React.memo((props: AboutOverlayProps) => {
           </div>
 
           <div className="mt-6 pt-5 border-t border-muted/20">
-            <div className="text-xs uppercase tracking-[0.28em] text-muted/60">Made by Jonathan Reed</div>
+            <div className="text-xs uppercase tracking-[0.28em] text-muted/60">Made by Jonathan R. Reed</div>
             <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
               <a className="text-iris transition-colors hover:text-foam" href="https://jonathanrreed.com" target="_blank" rel="noopener noreferrer">
                 Website

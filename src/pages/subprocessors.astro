@@ -1,0 +1,72 @@
+---
+import "../styles/globals.css";
+import SEO from "../components/SEO.astro";
+
+const siteUrl = "https://zentype.jonathanrreed.com";
+const subprocessorUrl = `${siteUrl}/subprocessors/`;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<SEO
+			title="Zen Typer Subprocessor Disclosure"
+			description="Subprocessor disclosure for Zen Typer, including Cloudflare Pages hosting and browser-local typing practice storage."
+			canonical={subprocessorUrl}
+			keywords={[
+				"Zen Typer subprocessors",
+				"typing app subprocessors",
+				"local storage typing app",
+				"Zen Typer privacy",
+			]}
+			breadcrumbItems={[
+				{ name: "Mindful typing test", url: `${siteUrl}/` },
+				{ name: "Zen Typer subprocessors", url: subprocessorUrl },
+			]}
+		/>
+	</head>
+	<body>
+		<main class="content-page px-6 pb-32 pt-16 text-text">
+			<div class="mx-auto max-w-3xl space-y-8">
+				<nav aria-label="Primary" class="content-nav">
+					<a href="/">Home</a>
+					<a href="/quote/">Quote mode</a>
+					<a href="/zen/">Zen mode</a>
+					<a href="/about/">About</a>
+					<a href="/contact/">Contact</a>
+					<a href="/privacy/">Privacy</a>
+				</nav>
+
+				<article class="glass content-prose rounded-2xl p-8 md:p-10 space-y-8 stagger-fade-in">
+					<header class="space-y-4 border-b border-iris/15 pb-7">
+						<p class="eyebrow text-sm font-medium uppercase tracking-[0.28em]">Subprocessors</p>
+						<h1>Zen Typer keeps the public site stack small.</h1>
+						<p class="!text-lg !leading-8">
+							Zen Typer is an account-free typing practice app. Core typing sessions, drafts, settings, and archives stay in browser storage on the device you use.
+						</p>
+					</header>
+
+					<section class="space-y-4">
+						<h2>Current infrastructure</h2>
+						<p>
+							Zen Typer is hosted on Cloudflare Pages. Cloudflare may process routine request metadata, such as IP address, user agent, request time, and security signals, to deliver and protect the site.
+						</p>
+						<p>
+							The app does not run user accounts, payments, cloud sync, hosted draft storage, or shared writing workspaces. Typing state is handled in the browser unless you export, copy, or save it somewhere else.
+						</p>
+					</section>
+
+					<section class="space-y-4">
+						<h2>Future changes</h2>
+						<p>
+							If Zen Typer later adds accounts, hosted sync, analytics, payments, team features, or cloud writing storage, this disclosure should be updated before those services receive production traffic.
+						</p>
+						<p>
+							Questions about subprocessors or data handling can be sent through the <a href="/contact/">Zen Typer contact page</a>. This disclosure was last updated on June 19, 2026.
+						</p>
+					</section>
+				</article>
+			</div>
+		</main>
+	</body>
+</html>

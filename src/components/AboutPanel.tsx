@@ -57,7 +57,7 @@ export const AboutPanel: React.FC<AboutPanelProps> = ({ onClose }) => {
       </div>
 
       <div className="relative mt-6 pt-5 border-t border-muted/20 text-xs text-muted space-y-2">
-        <div className="uppercase tracking-[0.28em] text-muted/60">Made by Jonathan Reed</div>
+        <div className="uppercase tracking-[0.28em] text-muted/60">Made by Jonathan R. Reed</div>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <a
             className="text-iris hover:text-foam transition-colors"

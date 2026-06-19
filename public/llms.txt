@@ -43,6 +43,17 @@ Zen Typer is a standalone web application with no external APIs. All data is sto
 
 For deployment, the build process generates optimized static files with code splitting and image optimization.
 
+## Canonical pages
+
+- Homepage: https://zentype.jonathanrreed.com/
+- Quote mode: https://zentype.jonathanrreed.com/quote/
+- Zen mode: https://zentype.jonathanrreed.com/zen/
+- About: https://zentype.jonathanrreed.com/about/
+- Privacy: https://zentype.jonathanrreed.com/privacy/
+- Contact: https://zentype.jonathanrreed.com/contact/
+- Subprocessors: https://zentype.jonathanrreed.com/subprocessors/
+- Creator: https://jonathanrreed.com/
+
 ## Optional
 
 - [Vitest Documentation](https://vitest.dev/): Testing framework used for component and utility tests
