@@ -524,6 +524,17 @@ html[data-motion="off"] .typing-cursor::after {
 }
 
 /* ==========================================================================
+   On-page copy sections below the app (home / quote / zen)
+   These sit over the theme gradient and the starfield. text-muted (#6e6a86)
+   only reaches ~2.9:1 against the gradient's lower stop, so body copy set in
+   it read as faint. Reuse the same readable mix the .content-prose article
+   pages already use for their body text (~7:1 on the same background).
+   ========================================================================== */
+.seo-body {
+  color: color-mix(in oklab, var(--rp-muted) 42%, var(--rp-text) 58%);
+}
+
+/* ==========================================================================
    Overlay / modal entrance choreography
    Backdrop fades in while the card rises + scales into focus. Applied to the
    PauseMenu, HelpSheet, and About overlays for a unified, premium entrance.
