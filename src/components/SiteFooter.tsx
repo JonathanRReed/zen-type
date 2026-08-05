@@ -22,8 +22,6 @@ const SiteFooter: React.FC = React.memo(() => {
           />
           <span className="text-muted/50">/</span>
           <span className="font-semibold text-text">Made by Jonathan R. Reed</span>
-          <span className="text-muted/50">/</span>
-          <span className="text-muted/70">Cybersecurity & AI developer</span>
           <span className="text-muted/50">•</span>
           <a className="text-iris hover:text-foam transition-colors" href="/about/">
             About
@@ -47,7 +45,7 @@ const SiteFooter: React.FC = React.memo(() => {
             target="_blank"
             rel="noopener noreferrer"
           >
-            See more projects by Jonathan R. Reed
+            More projects
           </a>
           <span className="text-muted/50">•</span>
           <a
