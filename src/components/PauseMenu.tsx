@@ -1,12 +1,24 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { getSettings, saveSettings, getStats, updateStats, updateStreak, type Settings, FONT_OPTIONS, applySettingsSideEffects, DEFAULT_STATS_BAR_METRICS, type StatsBarMetricKey, type FontOption } from '../utils/storage';
-import { SettingsPanel } from './SettingsPanel';
-import { AboutPanel } from './AboutPanel';
+// Both panels are one click deep inside a menu that is closed at first paint,
+// so they load on demand instead of shipping with the initial bundle.
+const SettingsPanel = lazy(() =>
+  import('./SettingsPanel').then(m => ({ default: m.SettingsPanel })),
+);
+const AboutPanel = lazy(() =>
+  import('./AboutPanel').then(m => ({ default: m.AboutPanel })),
+);
+
+const PanelFallback = () => (
+  <div className="py-10 text-center" role="status" aria-live="polite">
+    <span className="animate-pulse text-sm text-muted">Loading…</span>
+  </div>
+);
 
 interface PauseMenuProps {
   onReset?: () => void;
@@ -349,19 +361,23 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
             </div>
           </>
         ) : showSettings ? (
-          <SettingsPanel
-            settings={settings}
-            onSettingChange={(key, value) => {
-              setSettings(prev => {
-                const next = { ...prev, [key]: value } as Settings;
-                saveSettings(next);
-                return next;
-              });
-            }}
-            onClose={() => setShowSettings(false)}
-          />
+          <Suspense fallback={<PanelFallback />}>
+            <SettingsPanel
+              settings={settings}
+              onSettingChange={(key, value) => {
+                setSettings(prev => {
+                  const next = { ...prev, [key]: value } as Settings;
+                  saveSettings(next);
+                  return next;
+                });
+              }}
+              onClose={() => setShowSettings(false)}
+            />
+          </Suspense>
         ) : showAbout ? (
-          <AboutPanel onClose={() => setShowAbout(false)} />
+          <Suspense fallback={<PanelFallback />}>
+            <AboutPanel onClose={() => setShowAbout(false)} />
+          </Suspense>
         ) : null}
       </div>
     </div>

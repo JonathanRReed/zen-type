@@ -8,7 +8,10 @@ export default defineConfig({
   site: 'https://zentype.jonathanrreed.com',
   trailingSlash: 'always',
   build: {
-    inlineStylesheets: 'never',
+    // 'auto' inlines only stylesheets under Vite's assetsInlineLimit. The big
+    // Tailwind bundle stays a cacheable file; the tiny ones stop costing a
+    // render-blocking round trip.
+    inlineStylesheets: 'auto',
   },
   integrations: [
     react({
