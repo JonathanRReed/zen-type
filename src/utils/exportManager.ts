@@ -146,8 +146,7 @@ Quote Sessions: ${stats.quoteSessions}
 === PERFORMANCE METRICS ===
 Average WPM: ${metadata.averageWpm}
 Export Format: ${options.format.toUpperCase()}
-
-Keep practicing! 🚀`;
+`;
 
     const blob = new Blob([content], { type: 'text/plain' });
     this.downloadBlob(blob, `zen-type-summary-${timestamp}.txt`);
@@ -280,7 +279,7 @@ Keep practicing! 🚀`;
     ctx.fillStyle = text;
     ctx.font = '300 18px Inter, system-ui, sans-serif';
     ctx.fillText(`Generated ${new Date().toLocaleDateString()}`, 60, height - 50);
-    ctx.fillText('Built with Rosé Pine • Keep typing! 🚀', 60, height - 20);
+    ctx.fillText('Built with Rosé Pine', 60, height - 20);
 
     const png = canvas.toDataURL('image/png');
     const link = document.createElement('a');

@@ -34,11 +34,11 @@ export const AboutPanel: React.FC<AboutPanelProps> = ({ onClose }) => {
 
       <div className="relative space-y-4 text-text">
         <p className="text-sm leading-relaxed">
-          Zen Typer is a minimalist typing retreat for mindful practice. Drift in <strong className="text-iris">Zen mode </strong>
-          to let your thoughts float upward, or refine precision in <strong className="text-foam">Quote mode</strong> with gentle pacing cues.
+          Zen Typer is a small typing app with two modes. <strong className="text-iris">Zen mode </strong>
+          is a blank canvas: every word you commit drifts up the screen. <strong className="text-foam">Quote mode</strong> gives you one short passage at a time with live WPM and accuracy.
         </p>
         <p className="text-sm leading-relaxed text-muted">
-          The interface leans on Rosé Pine hues, soft gradients, and motion that respects reduced-motion settings. Everything runs locally so your flow stays private.
+          The colors come from the Rosé Pine palette, and the motion backs off when your system asks for reduced motion. Everything runs in your browser.
         </p>
       </div>
 

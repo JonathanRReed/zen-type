@@ -390,7 +390,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
 
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {drafts.length === 0 ? (
-            <p className="text-muted text-center py-8 text-sm">No drafts yet. Create your first draft!</p>
+            <p className="text-muted text-center py-8 text-sm">No drafts yet. Use New Draft to start one.</p>
           ) : (
             drafts.map(draft => {
               const isActive = currentDraft?.id === draft.id;

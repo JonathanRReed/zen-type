@@ -63,16 +63,18 @@ const AboutOverlay = React.memo((props: AboutOverlayProps) => {
         <div className="px-8 pb-8 pt-4">
           <div className="space-y-4 text-text">
             <p className="text-base leading-relaxed">
-              Zen Typer is a minimalist typing retreat for mindful practice. Drift in <strong className="text-iris">Zen mode</strong>
-              to write freely as your words float upward, or sharpen accuracy in <strong className="text-foam">Quote mode</strong>
-              with gentle pacing cues.
+              Zen Typer is a small typing app with two modes. <strong className="text-iris">Zen mode</strong>
+              {' '}is a blank canvas: every word you commit drifts up the screen.{' '}
+              <strong className="text-foam">Quote mode</strong> gives you one short passage at a time
+              with live WPM and accuracy.
             </p>
             <p className="leading-relaxed text-muted">
-              The experience leans on Rosé Pine hues, soft gradients, and respectful motion. Reduced-motion preferences are
-              honored, and everything runs locally for a distraction-free flow.
+              The colors come from the Rosé Pine palette. If your system asks for reduced motion, the
+              app drops the animation it does not need.
             </p>
             <p className="leading-relaxed text-muted">
-              Settings, streaks, and archives stay on your device. No logins, no telemetry, just the cadence of your typing.
+              Settings, streaks, and archives are written to your browser and stay there. No account,
+              nothing sent anywhere.
             </p>
           </div>
 

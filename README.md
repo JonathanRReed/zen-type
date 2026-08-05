@@ -20,7 +20,7 @@ Zen Type is a typing app built with Astro 5 and React 19, themed with the Rosé 
 
 ### Quote Mode
 
-- `QuoteTyper.tsx` tracks accuracy and WPM for curated quotes
+- `QuoteTyper.tsx` tracks accuracy and WPM for the quote set in `public/quotes.json`
 - Live region announcements surface progress for screen reader users
 - Export helpers in `src/utils/export.ts` create shareable session summaries
 
@@ -35,7 +35,7 @@ Zen Type is a typing app built with Astro 5 and React 19, themed with the Rosé 
 ## Architecture
 
 - **Astro islands** host React components such as `AboutPanel.tsx`, `StatsBar.tsx`, and `SettingsPanel.tsx`
-- **State Management** leverages hooks in `src/hooks/`, including motion preference detection and session state machines
+- **State Management** lives in hooks under `src/hooks/`, including motion preference detection and session state machines
 - **Utilities** in `src/utils/` handle Dexie-backed archives, quote hydration, web vitals logging, and preference schemas
 - **Testing** sits alongside components using Vitest and Testing Library for realistic interaction checks
 
