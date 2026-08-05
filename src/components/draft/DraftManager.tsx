@@ -199,6 +199,24 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
       const isMac = userAgent.includes('mac');
       const mod = isMac ? e.metaKey : e.ctrlKey;
 
+      if (e.key === 'Escape') {
+        // The command palette and search box close themselves on Escape, so
+        // let those win first. Otherwise close the drafts overlay and stop the
+        // event: the page-level Escape handler would otherwise open the pause
+        // menu on top of the still-open overlay instead of dismissing it.
+        if (commandPaletteOpen || searchOpen) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (versionHistoryOpen) {
+          setVersionHistoryOpen(false);
+        } else if (toolsPanelOpen) {
+          setToolsPanelOpen(false);
+        } else {
+          onClose();
+        }
+        return;
+      }
+
       if (e.key === 't' && !mod && !e.shiftKey && !e.altKey) {
         const target = e.target as HTMLElement;
         if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
@@ -233,9 +251,12 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, handleManualSnapshot]);
+    // Capture phase: the page-level Escape handler is bound on `document`, so a
+    // bubble-phase listener here would run after it and could not stop the
+    // pause menu from opening behind the overlay.
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen, handleManualSnapshot, commandPaletteOpen, searchOpen, versionHistoryOpen, toolsPanelOpen, onClose]);
 
   // Update preferences
   const handlePrefsChange = useCallback((updates: Partial<DraftPrefs>) => {
