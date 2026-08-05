@@ -348,9 +348,16 @@ const webApplicationJsonLd = {
 				const onTypingSurface = !!(
 					ae && ae.hasAttribute && ae.hasAttribute("data-typing-surface")
 				);
+				// The typing surface keeps focus while an overlay is open, so
+				// without this guard Tab would navigate away from a paused
+				// session instead of moving into the pause menu.
+				const overlayOpen = !!document.querySelector(
+					'[role="dialog"], .overlay-backdrop',
+				);
 
 				if (
 					onTypingSurface &&
+					!overlayOpen &&
 					e.key === "Tab" &&
 					!e.ctrlKey &&
 					!e.metaKey &&
