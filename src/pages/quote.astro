@@ -209,6 +209,24 @@ const quoteUrl = `${siteUrl}/quote/`;
 				}
 			});
 
+			// Track the menu's real state. The header button and the Resume
+			// button both dispatch `togglePause` on their own, so without this
+			// `isPaused` drifted and the next Escape spent itself undoing the
+			// drift instead of opening the menu. zen.astro already does this.
+			window.addEventListener("togglePause", function (event) {
+				let detail;
+				if (
+					typeof event === "object" &&
+					event !== null &&
+					"detail" in event
+				) {
+					detail = /** @type {CustomEvent<boolean | undefined>} */ (
+						event
+					).detail;
+				}
+				isPaused = typeof detail === "boolean" ? detail : !isPaused;
+			});
+
 			// Quote completion is handled within QuoteTyper (stats persisted + event dispatched)
 		</script>
 	</body>

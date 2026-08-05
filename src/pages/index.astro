@@ -376,6 +376,24 @@ const webApplicationJsonLd = {
 				}
 			};
 
+			// Track the menu's real state. The header button and the Resume
+			// button both dispatch `togglePause` on their own, so without this
+			// `isPaused` drifted and the next Escape spent itself undoing the
+			// drift instead of opening the menu. zen.astro already does this.
+			window.addEventListener("togglePause", function (event) {
+				let detail;
+				if (
+					typeof event === "object" &&
+					event !== null &&
+					"detail" in event
+				) {
+					detail = /** @type {CustomEvent<boolean | undefined>} */ (
+						event
+					).detail;
+				}
+				isPaused = typeof detail === "boolean" ? detail : !isPaused;
+			});
+
 			// Attach once; ClientRouter preserves listeners via persist markers.
 			document.addEventListener("keydown", handleKeys);
 			document.addEventListener("astro:before-swap", () => {
