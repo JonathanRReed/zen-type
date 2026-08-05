@@ -3,3 +3,15 @@
 /privacy /privacy/ 301
 /quote /quote/ 301
 /zen /zen/ 301
+
+# Legacy sitemap files that used to sit in public/. They were stale hand-written
+# copies with 2026-04-21 lastmods and none of them is declared in robots.txt,
+# which points at the Astro-generated /sitemap-index.xml. Crawlers that already
+# know the old paths land on the real index instead of a 404.
+/sitemap.xml /sitemap-index.xml 301
+/sitemap1.xml /sitemap-index.xml 301
+/sitemap_index.xml /sitemap-index.xml 301
+/sitemaps.xml /sitemap-index.xml 301
+/page-sitemap.xml /sitemap-index.xml 301
+/post-sitemap.xml /sitemap-index.xml 301
+/news-sitemap.xml /sitemap-index.xml 301
