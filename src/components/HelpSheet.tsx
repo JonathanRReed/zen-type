@@ -108,6 +108,10 @@ const HelpSheet = React.memo((props: HelpSheetProps) => {
                 <span className="text-text">Switch between Zen and Quote modes</span>
               </div>
               <div className="flex items-center justify-between">
+                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Shift + Tab</kbd>
+                <span className="text-text">Leave the typing field for the page controls</span>
+              </div>
+              <div className="flex items-center justify-between">
                 <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Esc</kbd>
                 <span className="text-text">Open pause menu</span>
               </div>

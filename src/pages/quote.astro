@@ -212,11 +212,13 @@ const quoteUrl = `${siteUrl}/quote/`;
 			let isPaused = false;
 			document.addEventListener("keydown", (e) => {
 				const ae = document.activeElement;
-				const tag = ae && ae.tagName ? ae.tagName.toLowerCase() : "";
-				const isTyping = tag === "input" || tag === "textarea";
-				// Tab to switch to Zen mode
+				// Tab switches mode only from the typing surface. See index.astro
+				// for why the old "not in any input" check never fired.
+				const onTypingSurface = !!(
+					ae && ae.hasAttribute && ae.hasAttribute("data-typing-surface")
+				);
 				if (
-					!isTyping &&
+					onTypingSurface &&
 					e.key === "Tab" &&
 					!e.ctrlKey &&
 					!e.metaKey &&

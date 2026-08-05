@@ -228,10 +228,13 @@ const zenUrl = `${siteUrl}/zen/`;
 
 			document.addEventListener("keydown", (e) => {
 				const el = document.activeElement;
-				const tag = el && el.tagName ? el.tagName.toLowerCase() : "";
-				const isTyping = tag === "input" || tag === "textarea";
+				// Tab switches mode only from the typing surface. See index.astro
+				// for why the old "not in any input" check never fired.
+				const onTypingSurface = !!(
+					el && el.hasAttribute && el.hasAttribute("data-typing-surface")
+				);
 				if (
-					!isTyping &&
+					onTypingSurface &&
 					e.key === "Tab" &&
 					!e.ctrlKey &&
 					!e.metaKey &&

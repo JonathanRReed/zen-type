@@ -348,11 +348,18 @@ const webApplicationJsonLd = {
 			/** @param {KeyboardEvent} e */
 			const handleKeys = (e) => {
 				const ae = document.activeElement;
-				const tag = ae && ae.tagName ? ae.tagName.toLowerCase() : "";
-				const isTyping = tag === "input" || tag === "textarea";
+				// Tab switches mode only from the typing surface itself. The old
+				// check was "not in any input", which never matched (the hidden
+				// typing input always holds focus) so the documented shortcut
+				// never fired, and it would have hijacked Tab everywhere else on
+				// the page. Shift+Tab is deliberately left alone so keyboard
+				// users can always step back out to the header.
+				const onTypingSurface = !!(
+					ae && ae.hasAttribute && ae.hasAttribute("data-typing-surface")
+				);
 
 				if (
-					!isTyping &&
+					onTypingSurface &&
 					e.key === "Tab" &&
 					!e.ctrlKey &&
 					!e.metaKey &&

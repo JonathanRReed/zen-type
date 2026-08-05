@@ -1135,6 +1135,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({
         type="text"
         aria-label="Free-flow typing input"
         value={inputValue}
+        data-typing-surface="zen"
         data-typing={isCommitting ? 'true' : undefined}
         style={{ position: 'absolute' }}
         className="zen-input bottom-[18vh] left-1/2 -translate-x-1/2

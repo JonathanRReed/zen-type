@@ -518,9 +518,20 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     const onBlur = () => {
       // If a modal/dialog is open, don't steal focus
       const modalOpen = !!document.querySelector('[role="dialog"][aria-modal="true"]');
-      if (!modalOpen) {
-        setTimeout(() => inputRef.current?.focus(), 0);
-      }
+      if (modalOpen) return;
+      setTimeout(() => {
+        // Only reclaim focus when nothing else took it. Unconditionally
+        // refocusing here trapped keyboard users: Shift+Tab moved focus to the
+        // header/footer and this handler yanked it straight back, so the theme
+        // toggle, nav and footer links were unreachable without a mouse. The
+        // capture-phase keydown listener below still pulls focus back the
+        // moment a printable key is pressed, which is what actually keeps the
+        // browser's quick-find from opening.
+        const active = document.activeElement;
+        if (!active || active === document.body || active === document.documentElement) {
+          inputRef.current?.focus();
+        }
+      }, 0);
     };
     input.addEventListener('blur', onBlur);
     return () => input.removeEventListener('blur', onBlur);
@@ -737,6 +748,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           type="text"
           className="sr-only"
           onKeyDown={handleKeyDown}
+          data-typing-surface="quote"
           aria-label="Type the quote shown above"
           autoComplete="off"
           autoCorrect="off"
