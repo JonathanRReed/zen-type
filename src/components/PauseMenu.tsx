@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -33,6 +33,8 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
   const [stats, setStats] = useState(getStats());
   const [markers, setMarkers] = useState<number[]>([]);
   const [statsMetricMode, setStatsMetricMode] = useState<'zen' | 'quote'>('zen');
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const closeMenu = useCallback(() => {
     setOpen(false);
@@ -59,6 +61,62 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
       document.body.style.overflow = prev;
     };
   }, [open, closeMenu]);
+
+  // Keyboard access to the dialog. The typing surface holds focus for the
+  // whole session, so opening the menu left focus outside it: nothing was
+  // announced, and Shift+Tab walked into the header instead of the dialog.
+  // Move focus in on open, keep Tab inside while it is open, and hand focus
+  // back to whatever opened it on close.
+  useEffect(() => {
+    if (!open) return;
+    const backdrop = backdropRef.current;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    cardRef.current?.focus();
+
+    const FOCUSABLE = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !backdrop) return;
+      const items = Array.from(backdrop.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter(el => el.getClientRects().length > 0);
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!first || !last) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    // Bound on the backdrop, not the window: Radix renders its select popover
+    // into a portal outside this subtree and manages focus itself, so those
+    // keypresses never reach this handler and are left alone.
+    backdrop?.addEventListener('keydown', onKeyDown);
+    return () => {
+      backdrop?.removeEventListener('keydown', onKeyDown);
+      // document.body means nothing owns focus; the typing surface reclaims it
+      // on its own, so leave that path alone.
+      if (
+        previouslyFocused &&
+        previouslyFocused.isConnected &&
+        previouslyFocused !== document.body &&
+        previouslyFocused !== document.documentElement
+      ) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [open]);
 
   // Respond to global toggle events
   useEffect(() => {
@@ -126,6 +184,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
 
   return (
     <div
+      ref={backdropRef}
       className="overlay-backdrop fixed inset-0 z-[2000] flex items-center justify-center bg-base/80 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
@@ -141,6 +200,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
         <span className="sr-only">Dismiss pause menu</span>
       </Button>
       <div
+        ref={cardRef}
         className={`overlay-card glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain relative z-10 ${showSettings ? 'settings-shell settings-scroll' : ''}`}
         tabIndex={-1}
       >

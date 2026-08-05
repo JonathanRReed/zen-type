@@ -541,6 +541,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // An open modal owns the keyboard. Without this, Space or Enter on a
+      // pause-menu button was swallowed here and focus snapped back to the
+      // typing field, so the dialog could not be operated from the keyboard.
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       const el = document.activeElement as HTMLElement | null;
       const inField = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
       if (!inField && (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter')) {
