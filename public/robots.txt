@@ -192,4 +192,3 @@ User-agent: omgilibot
 Disallow: /
 
 Sitemap: https://zentype.jonathanrreed.com/sitemap-index.xml
-Sitemap: https://zentype.jonathanrreed.com/sitemap.xml
