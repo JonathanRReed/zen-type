@@ -24,32 +24,68 @@ const HelpSheet = React.memo((props: HelpSheetProps) => {
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as boolean;
-      setOpen(detail);
+      const detail = (e as CustomEvent).detail;
+      // A bare `toggleHelp` with no detail means toggle, the same contract
+      // PauseMenu uses for `togglePause`. This used to run setOpen(undefined),
+      // so a dispatch without a detail could only ever leave the sheet closed.
+      setOpen(prev => (typeof detail === 'boolean' ? detail : !prev));
     };
     window.addEventListener('toggleHelp', handler as EventListener);
     return () => window.removeEventListener('toggleHelp', handler as EventListener);
   }, []);
 
+  // Ctrl+H toggles the sheet. The shortcut used to live in the global
+  // KeyboardManager, which no page ever imported, so it never reached the
+  // browser at all. Capture phase keeps it ahead of the typing surface's own
+  // key handling.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!e.ctrlKey || e.metaKey || e.altKey || e.key.toLowerCase() !== 'h') return;
+      e.preventDefault();
+      if (open) {
+        setOpen(false);
+        onClose?.();
+      } else {
+        setOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [open, onClose]);
+
   // Escape-only close, focus management, and body scroll lock
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setOpen(false);
-        onClose?.();
-      }
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      // Capture phase plus stopPropagation, the same shape as the drafts
+      // overlay: the page-level Escape handler is bound on `document` and
+      // would otherwise toggle the pause menu open behind the sheet that this
+      // very keypress is closing.
+      e.stopPropagation();
+      setOpen(false);
+      onClose?.();
     };
-    window.addEventListener('keydown', onKey);
-    // focus the close button for accessibility
+    window.addEventListener('keydown', onKey, true);
+    // focus the close button for accessibility, and remember where focus came
+    // from so closing the sheet hands it back
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     closeBtnRef.current?.focus();
     // lock background scroll
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keydown', onKey, true);
       document.body.style.overflow = prevOverflow;
+      if (
+        previouslyFocused &&
+        previouslyFocused.isConnected &&
+        previouslyFocused !== document.body &&
+        previouslyFocused !== document.documentElement
+      ) {
+        previouslyFocused.focus();
+      }
     };
   }, [open, onClose]);
 
