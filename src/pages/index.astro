@@ -206,8 +206,20 @@ const webApplicationJsonLd = {
 			</main>
 		</ErrorBoundary>
 
+		<!--
+			`relative z-10` is load-bearing, not decoration. `.theme-layer` is
+			`fixed inset-0 z-0` with an opaque theme gradient, so a static
+			(z-index: auto) section paints in the in-flow background phase —
+			underneath it — and this copy would be readable by crawlers but
+			invisible to humans. z-10 matches the app's own content wrapper and
+			puts this section above the theme layer in the root stacking context.
+
+			pb-40 (was pb-28) is the same concern: the fixed `.stats-bar` sits at
+			z-40 and, at max scroll, clipped the last 34px of the tallest column.
+			160px of bottom padding lets the final row clear it.
+		-->
 		<section
-			class="mx-auto max-w-5xl px-6 pb-28 pt-16 text-muted"
+			class="relative z-10 mx-auto max-w-5xl px-6 pb-40 pt-16 text-muted"
 			aria-labelledby="home-seo-heading"
 		>
 			<div
