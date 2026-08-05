@@ -376,22 +376,31 @@ export function getStreak(): number {
   return getJSON(STORAGE_KEYS.STREAK, 0);
 }
 
+// Call this BEFORE updateStats for the session that just ended: it compares
+// today against the previously stored session, and updateStats overwrites
+// LAST_SESSION.
 export function updateStreak(): void {
   const lastSession = getJSON<SessionSummary | null>(STORAGE_KEYS.LAST_SESSION, null);
   const currentStreak = getStreak();
 
-  if (lastSession) {
-    const lastDate = new Date(lastSession.endedAt);
-    const today = new Date();
-    const dayDiff = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+  if (!lastSession) {
+    setJSON(STORAGE_KEYS.STREAK, 1);
+    return;
+  }
 
-    if (dayDiff === 0) {
-      return;
-    } else if (dayDiff === 1) {
-      setJSON(STORAGE_KEYS.STREAK, currentStreak + 1);
-    } else {
-      setJSON(STORAGE_KEYS.STREAK, 1);
-    }
+  // Calendar days apart, not elapsed 24h windows. Typing at 9am today and 8am
+  // tomorrow is a two-day streak; counting whole 24h blocks would score it 0
+  // and the streak would never move.
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const lastDay = startOfDay(new Date(lastSession.endedAt));
+  const today = startOfDay(new Date());
+  const dayDiff = Math.round((today - lastDay) / (1000 * 60 * 60 * 24));
+
+  if (dayDiff === 0) {
+    // Already counted today. Seed it if the streak was never written.
+    if (currentStreak < 1) setJSON(STORAGE_KEYS.STREAK, 1);
+  } else if (dayDiff === 1) {
+    setJSON(STORAGE_KEYS.STREAK, currentStreak + 1);
   } else {
     setJSON(STORAGE_KEYS.STREAK, 1);
   }

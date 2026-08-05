@@ -152,6 +152,9 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                       const z = (window as any).__zenStats || { time: 0, words: 0, chars: 0 };
                       const endedAt = new Date();
                       const startedAt = new Date(endedAt.getTime() - (z.time || 0) * 1000);
+                      // Streak first: it reads the previous session's date,
+                      // which updateStats is about to overwrite.
+                      updateStreak();
                       updateStats({
                         mode: 'zen',
                         startedAt,
@@ -159,7 +162,6 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode: _mode }) => {
                         wordsTyped: z.words || 0,
                         charactersTyped: z.chars || 0,
                       });
-                      updateStreak();
                       // Finalize archive entry for this session
                       window.dispatchEvent(new CustomEvent('finalizeArchive'));
                     } catch (e) {

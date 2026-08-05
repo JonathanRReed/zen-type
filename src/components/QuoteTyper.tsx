@@ -400,9 +400,11 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
       setCursor(cursor + 1);
 
-      // Check for completion
+      // Check for completion. The final tallies are passed in because the
+      // setCorrectChars/setTotalTyped calls above have not flushed yet, and
+      // the wpm/accuracy memos still hold the pre-completion render's values.
       if (cursor + 1 === activeQuote.length && isCorrect) {
-        handleComplete();
+        handleComplete(correctChars + 1, totalTyped + 1);
       }
 
       // Announce progress at milestones
@@ -420,16 +422,21 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     }
   };
 
-  // Handle completion
-  const handleComplete = () => {
+  // Handle completion.
+  // `finalCorrect` / `finalTyped` are the tallies including the keystroke that
+  // finished the quote. Reading the wpmValue/accuracyValue memos here would
+  // read the render that is still in flight: endTime is null at that point, so
+  // wpm would be persisted as 0 on every run.
+  const handleComplete = (finalCorrect: number, finalTyped: number) => {
     const end = new Date();
     setEndTime(end);
     setIsComplete(true);
 
     if (startTime) {
       const words = activeQuote.split(' ').length;
-      const wpm = wpmValue;
-      const accuracy = accuracyValue;
+      const minutes = (end.getTime() - startTime.getTime()) / 1000 / 60;
+      const wpm = minutes > 0 ? Math.round((finalCorrect / 5) / minutes) : 0;
+      const accuracy = finalTyped === 0 ? 100 : Math.round((finalCorrect / finalTyped) * 100);
       // Insights
       const summary = {
         mode: 'quote' as const,
@@ -443,12 +450,13 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         skip: errorCounts.skip,
         extra: errorCounts.extra,
       };
-      // Persist stats locally
-      updateStats(summary as any);
-      // Increment streak only with ≥95% accuracy or full completion
+      // Increment the streak before updateStats overwrites LAST_SESSION —
+      // updateStreak compares against the *previous* session's date.
       if (accuracy >= 95) {
         updateStreak();
       }
+      // Persist stats locally
+      updateStats(summary as any);
       // Inform listeners
       window.dispatchEvent(new CustomEvent('quoteComplete', { detail: summary }));
       onComplete?.(summary);
@@ -456,8 +464,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       // Aggregate into streak metrics
       const elapsed = Math.max(0, Math.floor((end.getTime() - startTime.getTime()) / 1000));
       setStreakTimeSec(prev => prev + elapsed);
-      setStreakCorrect(prev => prev + correctChars);
-      setStreakTotal(prev => prev + totalTyped);
+      setStreakCorrect(prev => prev + finalCorrect);
+      setStreakTotal(prev => prev + finalTyped);
 
       // Auto-advance flow
       if (autoAdvance) {
