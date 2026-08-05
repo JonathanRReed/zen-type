@@ -17,15 +17,48 @@ const quotes = await loadQuotes();
 const randomQuote = getRandomQuote(quotes);
 const siteUrl = "https://zentype.jonathanrreed.com";
 const homeUrl = `${siteUrl}/`;
+
+const webApplicationJsonLd = {
+	"@context": "https://schema.org",
+	"@type": "WebApplication",
+	"@id": `${homeUrl}#webapp`,
+	name: "Zen Typer",
+	alternateName: "ZenType",
+	url: homeUrl,
+	description:
+		"A free mindful typing test and typing practice app. Type curated Zen quotes with live WPM and accuracy, or switch to a free-flow writing mode. No account, and sessions stay in the browser.",
+	applicationCategory: "EducationalApplication",
+	applicationSubCategory: "Typing test",
+	operatingSystem: "Any device with a modern web browser",
+	browserRequirements: "Requires JavaScript.",
+	inLanguage: "en-US",
+	isAccessibleForFree: true,
+	offers: {
+		"@type": "Offer",
+		price: "0",
+		priceCurrency: "USD",
+		availability: "https://schema.org/InStock",
+	},
+	featureList: [
+		"Quote typing test with live WPM and accuracy",
+		"Free-flow Zen Mode for open writing practice",
+		"Session stats, streaks, and drafts stored in the browser",
+		"Keyboard-first controls with reduced-motion support",
+	],
+	creator: { "@id": `${homeUrl}#creator` },
+	publisher: { "@id": `${homeUrl}#creator` },
+	isPartOf: { "@id": `${homeUrl}#website` },
+};
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<SEO
-			title="Mindful Typing Test and Practice for Focus"
-			description="Zen Typer is a free mindful typing test and practice app for focus, WPM, accuracy, Zen quotes, and free-flow writing in a distraction-free workspace."
+			title="Mindful Typing Test and Practice for Focus | Zen Typer"
+			description="Zen Typer is a free mindful typing test with Zen quotes, live WPM and accuracy, and a free-flow writing mode. No account, and sessions stay in your browser."
 			canonical={homeUrl}
+			jsonLd={webApplicationJsonLd}
 			keywords={[
 				"typing test",
 				"mindful typing test",
@@ -112,6 +145,41 @@ const homeUrl = `${siteUrl}/`;
 								window.dispatchEvent(completeEvent);
 							}}
 						/>
+						<!--
+							First-paint stand-in for the client:only typing surface above.
+							QuoteTyper renders nothing on the server, so without this the
+							viewport stays blank until React hydrates and LCP is pushed
+							behind the whole island bundle. This mirrors the hydrated card,
+							carries the same build-time quote, and is retired by CSS the
+							moment the island drops its `ssr` flag (see .quote-boot in
+							globals.css). Must stay the element directly after the island.
+						-->
+						<div
+							class="quote-boot absolute inset-0 flex flex-col items-center justify-center px-12 pt-12 pb-24"
+						>
+							<div class="w-full max-w-4xl">
+								<div
+									class="glass quote-card rounded-2xl px-8 pt-8 pb-7 mb-6"
+								>
+									<p
+										class="quote-boot-text font-mono text-2xl leading-relaxed"
+									>
+										{randomQuote.text}
+									</p>
+									<p class="text-right text-muted text-lg mt-5">
+										<span aria-hidden="true">—</span>
+										{randomQuote.author}
+									</p>
+									<div class="quote-progress-track mt-6">
+										<div
+											class="quote-progress-fill"
+											style="width: 0%"
+										>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -192,6 +260,42 @@ const homeUrl = `${siteUrl}/`;
 						<a class="text-foam transition-colors hover:text-text" href="/zen/">
 							Free-flow typing practice
 						</a>
+					</div>
+				</div>
+				<div class="md:col-span-2 grid gap-6 border-t border-iris/15 pt-8 text-sm leading-6 md:grid-cols-3">
+					<div>
+						<h3 class="font-semibold text-text">How the test works</h3>
+						<p>
+							A Zen quote is shown one character at a time. The timer
+							starts on your first keystroke and stops on the final
+							character, so reading the quote first costs you nothing.
+							Backspace rewinds to the last mistake instead of one
+							character at a time.
+						</p>
+					</div>
+					<div>
+						<h3 class="font-semibold text-text">
+							How WPM and accuracy are calculated
+						</h3>
+						<p>
+							Words per minute is your correct characters divided by five,
+							then divided by the elapsed minutes — the standard
+							five-character word. Accuracy is correct characters divided
+							by every character you typed. Mistakes are grouped as slips,
+							skips, and extras so you can see the pattern, not just the
+							score.
+						</p>
+					</div>
+					<div>
+						<h3 class="font-semibold text-text">What is stored</h3>
+						<p>
+							Settings, session stats, streaks, archived sessions, and Zen
+							Mode drafts are written to your browser's local storage and
+							IndexedDB. There is no account and no sync, so clearing site
+							data for this domain removes them. See the
+							<a class="text-foam transition-colors hover:text-text" href="/privacy/">privacy notice</a>
+							for the full detail.
+						</p>
 					</div>
 				</div>
 				<div class="md:col-span-2 grid gap-6 border-t border-iris/15 pt-8 text-sm leading-6 md:grid-cols-3">

@@ -720,6 +720,30 @@ html:not([data-motion="off"]) .zen-input:focus:not([data-typing="true"]) {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Server-rendered stand-in for the client:only quote surface. It is the LCP
+   element on the home page: it paints with CSS alone, so first paint no longer
+   waits on the React island bundle. Deliberately no entry animation — an
+   opacity-0 start would defer the very paint this exists to produce.
+   Letter-spacing matches the 0.045em per-side padding on .quote-char so the
+   placeholder wraps like the hydrated card. */
+.quote-boot-text {
+  color: color-mix(in oklab, var(--rp-text) 34%, transparent);
+  letter-spacing: 0.09em;
+}
+
+/* Retire the placeholder once Astro clears `ssr` from the hydrated island. */
+astro-island:not([ssr]) + .quote-boot {
+  display: none;
+}
+
+/* Where :has() is available, hold it until the island has actually painted its
+   own card, so hydration never exposes a blank frame in between. */
+@supports selector(:has(*)) {
+  astro-island:not([ssr]):not(:has(.quote-card)) + .quote-boot {
+    display: flex;
+  }
+}
+
 /* Reduce motion preferences */
 html[data-motion="off"] .zen-input {
   animation: none !important;
