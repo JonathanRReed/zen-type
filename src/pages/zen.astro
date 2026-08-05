@@ -5,7 +5,6 @@ import StatsBar from "../components/StatsBar";
 import PauseMenu from "../components/PauseMenu";
 import HelpSheet from "../components/HelpSheet";
 import ArchiveOverlay from "../components/ArchiveOverlay";
-import AboutOverlay from "../components/AboutOverlay";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
 import ErrorBoundary from "../components/ErrorBoundary";
@@ -114,9 +113,8 @@ const zenUrl = `${siteUrl}/zen/`;
 				<!-- Help sheet -->
 				<HelpSheet client:only="react" isOpen={false} onClose={() => {}} />
 
-				<!-- Archive & About overlays (hidden by default) -->
+				<!-- Archive overlay (hidden by default) -->
 				<ArchiveOverlay client:only="react" />
-				<AboutOverlay client:only="react" />
 				<SiteFooter client:only="react" />
 			</main>
 		</ErrorBoundary>
