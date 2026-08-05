@@ -77,12 +77,6 @@ const zenUrl = `${siteUrl}/zen/`;
 				<h1 class="sr-only">
 					Free-Flow Typing Practice for Focused Writing
 				</h1>
-				<p class="sr-only">
-					Free-flow mode keeps typing practice local, private, and focused.
-					It supports quiet warmups, early drafting, rhythm building, and
-					low-friction writing sessions where the words stay in the browser
-					and the interface stays out of the way.
-				</p>
 				<SiteHeader client:only="react" mode="zen" />
 
 				<!-- Main canvas -->
@@ -127,12 +121,18 @@ const zenUrl = `${siteUrl}/zen/`;
 			</main>
 		</ErrorBoundary>
 
+		<!--
+			`relative z-10` is load-bearing. `.theme-layer` is `fixed inset-0 z-0`
+			with an opaque gradient, so a static section would paint underneath it
+			and be readable by crawlers but invisible to humans. pb-40 clears the
+			fixed `.stats-bar` at z-40 on the last row.
+		-->
 		<section
-			class="sr-only"
+			class="relative z-10 mx-auto max-w-5xl px-6 pb-40 pt-16 seo-body"
 			aria-labelledby="zen-seo-heading"
 		>
 			<div
-				class="grid gap-10 border-t border-iris/15 pt-10 md:grid-cols-[1.15fr_0.85fr]"
+				class="grid gap-8 border-t border-iris/15 pt-10 md:grid-cols-[1.1fr_0.9fr]"
 			>
 				<div class="space-y-4">
 					<p class="text-sm font-medium text-foam">Free-flow mode</p>
@@ -142,45 +142,31 @@ const zenUrl = `${siteUrl}/zen/`;
 					>
 						Typing practice for focused writing sessions.
 					</h2>
-					<p class="max-w-2xl text-base leading-7 text-muted md:text-lg">
+					<p class="max-w-2xl leading-7 seo-body md:text-lg">
 						Zen Mode turns typing practice into an open writing flow.
-						Words move through the canvas while local stats track
-						rhythm, pace, and session progress without breaking focus.
+						Words move through the canvas while local stats track pace
+						and session progress without breaking focus.
 					</p>
 				</div>
 				<div class="space-y-5 text-sm leading-6">
 					<div>
-						<h3 class="font-semibold text-text">Best for</h3>
+						<h3 class="font-semibold text-text">How it works</h3>
 						<p>
-							Use this mode for warmups, mindful typing practice,
-							drafting, and longer sessions where steady rhythm matters
-							more than racing a timer.
+							Each committed word becomes part of a moving canvas, so you
+							get a sense of progress without turning the page into a
+							scoreboard. Good for warmups, note fragments, and early
+							drafting where seeing words pile up matters more than
+							polishing a final document.
 						</p>
 					</div>
 					<div>
-						<h3 class="font-semibold text-text">How it works</h3>
+						<h3 class="font-semibold text-text">What is kept</h3>
 						<p>
-							Each committed word becomes part of a moving canvas, giving
-							you a sense of progress without turning the page into a
-							scoreboard. The text field stays centered near the bottom of
-							the screen so the hands can keep moving while the rest of the
-							interface stays out of the way.
-						</p>
-						<p>
-							Use it when the goal is not a score but a clean start. The
-							mode supports warmups, note fragments, and early drafting
-							where seeing words accumulate matters more than polishing a
-							final document.
-						</p>
-						<p>
-							Zen Mode is also useful after a timed drill. Moving from
-							measured practice into free writing helps turn keyboard
-							accuracy into a calmer drafting habit.
-						</p>
-						<p>
-							Because the page keeps the canvas, archive, and settings local
-							to the browser, it works well for private practice notes that
-							do not need accounts, sync, or a public profile.
+							Drafts and archives stay in your browser. It is not a
+							replacement for a full editor, just a low-friction place to
+							start. The
+							<a class="text-foam transition-colors hover:text-text" href="/privacy/">privacy notice</a>
+							has the detail.
 						</p>
 					</div>
 					<div class="flex flex-wrap gap-4">
@@ -190,34 +176,6 @@ const zenUrl = `${siteUrl}/zen/`;
 						<a class="text-foam transition-colors hover:text-text" href="/quote/">
 							Quote typing test
 						</a>
-					</div>
-				</div>
-				<div class="md:col-span-2 grid gap-6 border-t border-iris/15 pt-8 text-sm leading-6 md:grid-cols-3">
-					<div>
-						<h3 class="font-semibold text-text">Draft-friendly</h3>
-						<p>
-							Zen Mode can keep local drafts and archives in your browser.
-							It is not a replacement for a full editor, but it gives you
-							a low-friction place to start writing before moving text
-							elsewhere.
-						</p>
-					</div>
-					<div>
-						<h3 class="font-semibold text-text">Calm controls</h3>
-						<p>
-							Keyboard shortcuts, pause controls, reduced-motion handling,
-							and theme choices are available without covering the writing
-							surface unless you open them.
-						</p>
-					</div>
-					<div>
-						<h3 class="font-semibold text-text">Project details</h3>
-						<p>
-							Visit <a class="text-foam transition-colors hover:text-text" href="/about/">about</a>
-							for background, <a class="text-foam transition-colors hover:text-text" href="/contact/">contact</a>
-							for feedback, and <a class="text-foam transition-colors hover:text-text" href="/privacy/">privacy</a>
-							for local storage details.
-						</p>
 					</div>
 				</div>
 			</div>
