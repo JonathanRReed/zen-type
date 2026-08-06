@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import { pageModifiedDate } from "../utils/page-dates";
 
 export interface Props {
   title: string;
@@ -43,6 +44,9 @@ const robotsContent = [
   noindex ? "noindex" : "index",
   nofollow ? "nofollow" : "follow",
 ].join(", ");
+// Per page, from the committed map the sitemap also reads. One shared date
+// meant every page claimed the same edit, which was wrong for most of them.
+const modifiedDate = pageModifiedDate(new URL(currentUrl).pathname);
 
 const creatorJsonLd: JsonLdNode = {
   "@context": "https://schema.org",
@@ -95,7 +99,7 @@ const pageJsonLd: JsonLdNode = {
   description,
   url: currentUrl,
   datePublished: "2026-04-21",
-  dateModified: "2026-06-19",
+  dateModified: modifiedDate,
   inLanguage: "en-US",
   isPartOf: {
     "@id": new URL("#website", siteRoot).href,

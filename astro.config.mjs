@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
+import { pageModifiedDate } from './src/utils/page-dates';
 
 export default defineConfig({
   site: 'https://zentype.jonathanrreed.com',
@@ -22,7 +23,16 @@ export default defineConfig({
     tailwind({
       applyBaseStyles: false,
     }),
-    sitemap()
+    sitemap({
+      // Same committed dates the JSON-LD uses, so lastmod and dateModified
+      // always say the same thing for a given URL.
+      serialize(item) {
+        return {
+          ...item,
+          lastmod: pageModifiedDate(new URL(item.url).pathname),
+        };
+      },
+    })
   ],
   vite: {
     build: {
