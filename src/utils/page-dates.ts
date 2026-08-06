@@ -13,9 +13,6 @@
  * When you change what a page says, change its date in the same commit.
  */
 
-/** Fallback for a page that isn't listed here yet. Still a literal. */
-export const DEFAULT_MODIFIED_DATE = "2026-08-06";
-
 /**
  * Pathname (with the trailing slash the site uses) to the date of the last
  * commit that changed that page's content.
@@ -30,8 +27,26 @@ export const PAGE_MODIFIED_DATES: Record<string, string> = {
   "/zen/": "2026-08-05",
 };
 
-/** Look up a page's date. Tolerates a missing trailing slash. */
+/**
+ * Look up a page's date. Tolerates a missing trailing slash.
+ *
+ * An unlisted page throws instead of falling back to a default. Both callers
+ * run at build time — the SEO component and the sitemap serializer — so a new
+ * page with no entry here fails the build by name. A fallback would have been
+ * worse than no date at all: the page would ship a wrong-but-plausible
+ * dateModified in its schema and the same wrong lastmod in the sitemap, and
+ * nothing would look broken enough to notice.
+ */
 export function pageModifiedDate(pathname: string): string {
   const key = pathname.endsWith("/") ? pathname : `${pathname}/`;
-  return PAGE_MODIFIED_DATES[key] ?? DEFAULT_MODIFIED_DATE;
+  const date = PAGE_MODIFIED_DATES[key];
+  if (date === undefined) {
+    const known = Object.keys(PAGE_MODIFIED_DATES).join(", ");
+    throw new Error(
+      `No modified date for "${key}". Add it to PAGE_MODIFIED_DATES in ` +
+        `src/utils/page-dates.ts, set to the date that page's content last ` +
+        `actually changed. Pages currently listed: ${known}.`,
+    );
+  }
+  return date;
 }
