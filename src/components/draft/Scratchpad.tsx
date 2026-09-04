@@ -63,7 +63,7 @@ export const Scratchpad: React.FC<ScratchpadProps> = ({ value, onChange, onClose
           className="text-muted hover:text-text transition-colors"
           aria-label="Close scratchpad"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
@@ -73,7 +73,7 @@ export const Scratchpad: React.FC<ScratchpadProps> = ({ value, onChange, onClose
       <textarea
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="flex-1 resize-none bg-transparent px-4 py-3 font-mono text-sm text-text focus:outline-none"
+        className="draft-focusable flex-1 resize-none bg-transparent px-4 py-3 font-mono text-sm text-text"
         placeholder="Quick notes, ideas, snippets..."
         spellCheck={false}
         aria-label="Scratchpad textarea"

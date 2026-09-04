@@ -31,9 +31,15 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    onSearch(query, caseSensitive);
-  }, [query, caseSensitive, onSearch]);
+  const handleQueryChange = (val: string) => {
+    setQuery(val);
+    onSearch(val, caseSensitive);
+  };
+
+  const handleCaseChange = (val: boolean) => {
+    setCaseSensitive(val);
+    onSearch(query, val);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -57,11 +63,12 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
         <input
           ref={inputRef}
           type="text"
+          aria-label="Search in draft"
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={e => handleQueryChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Search in draft..."
-          className="flex-1 px-3 py-2 bg-overlay/40 border border-muted/20 rounded-lg text-sm text-text placeholder-muted/60 focus:outline-none focus:border-iris/40 focus:ring-1 focus:ring-iris/40"
+          className="flex-1 px-3 py-2 bg-overlay/40 border border-muted/20 rounded-lg text-sm text-text placeholder-muted focus:outline-none focus:border-iris/40 focus:ring-1 focus:ring-iris/40"
         />
         <Button
           onClick={onClose}
@@ -70,7 +77,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
           className="text-muted hover:text-text transition-colors"
           aria-label="Close search"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
@@ -82,7 +89,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
           <Checkbox
             id="search-case-sensitive"
             checked={caseSensitive}
-            onCheckedChange={checked => setCaseSensitive(!!checked)}
+            onCheckedChange={checked => handleCaseChange(!!checked)}
             className="h-3 w-3 border-muted/40"
           />
           <span>Case sensitive</span>
@@ -90,7 +97,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
 
         <div className="flex items-center gap-2">
           {totalMatches > 0 && (
-            <span className="text-xs text-muted">
+            <span className="text-xs text-muted" role="status">
               {currentMatch + 1} / {totalMatches}
             </span>
           )}
@@ -102,7 +109,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
             className="p-1.5 bg-overlay/40 hover:bg-overlay/60 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Previous match"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </Button>
@@ -114,7 +121,7 @@ export const SearchBox: React.FC<SearchBoxProps> = ({
             className="p-1.5 bg-overlay/40 hover:bg-overlay/60 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Next match"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </Button>

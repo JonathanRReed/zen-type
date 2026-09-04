@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import type { Draft } from '../../lib/draftStore';
 import type { GrammarIssue } from '../../lib/grammar';
 import type { SearchMatch } from '../../lib/textMetrics';
+import { audioEngine } from '../../utils/audioEngine';
 
 interface EditorProps {
   draft: Draft;
@@ -88,13 +89,20 @@ export const Editor: React.FC<EditorProps> = ({
     };
   }, []);
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key !== 'Escape') {
+      audioEngine.playSwitch(undefined, e.key);
+    }
+  };
+
   return (
     <div className="relative h-full bg-transparent">
       <textarea
         ref={textareaRef}
         defaultValue={draft.body}
         onChange={handleChange}
-        className="w-full h-full resize-none bg-transparent px-6 py-4 font-mono text-base text-text focus:outline-none leading-relaxed"
+        onKeyDown={handleKeyDown}
+        className="draft-focusable w-full h-full resize-none bg-transparent px-6 py-4 font-mono text-base text-text leading-relaxed"
         placeholder="Start writing..."
         spellCheck={false}
         aria-label="Draft editor"

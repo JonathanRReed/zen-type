@@ -35,7 +35,7 @@ interface DraftManagerProps {
 export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [currentDraft, setCurrentDraft] = useState<Draft | null>(null);
-  const [prefs, setPrefs] = useState<DraftPrefs>(getDraftPrefs());
+  const [prefs, setPrefs] = useState<DraftPrefs>(() => getDraftPrefs());
   const [toolsPanelOpen, setToolsPanelOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -44,10 +44,24 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
   const [searchCaseSensitive, setSearchCaseSensitive] = useState(false);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
   const [newTagInput, setNewTagInput] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [persistError, setPersistError] = useState<string | null>(null);
 
   const autoSaveTimerRef = useRef<number | null>(null);
   const snapshotTimerRef = useRef<number | null>(null);
   const lastBodyRef = useRef<string>('');
+  // True while keystrokes are waiting out the 1s autosave debounce. The
+  // background sync below must not overwrite the editor while this is set.
+  const dirtyRef = useRef<boolean>(false);
+  // Render-mirror so interval callbacks always see the latest draft without
+  // re-subscribing (re-subscribing is what used to reset the snapshot timer
+  // on every keystroke).
+  const currentDraftRef = useRef<Draft | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+
+  const flagPersistError = useCallback(() => {
+    setPersistError('Could not save — browser storage is blocked or full. Your text is still on screen, so copy it somewhere safe.');
+  }, []);
 
   const loadDrafts = useCallback(async () => {
     // Sync from Zen mode archive first
@@ -78,33 +92,100 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
     }
   }, [isOpen, loadDrafts]);
 
+  // Mirror for interval callbacks (see dirtyRef/snapshot notes below).
+  useEffect(() => {
+    currentDraftRef.current = currentDraft;
+  }, [currentDraft]);
+
+  // Focus choreography for the full-screen overlay: move focus in on open
+  // (the draft title when it has rendered), contain Tab while open, lock
+  // background scroll, and hand focus back to the opener on close.
+  useEffect(() => {
+    if (!isOpen) return;
+    const overlay = overlayRef.current;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const focusTimer = window.setTimeout(() => {
+      const title = overlay?.querySelector<HTMLInputElement>('input[aria-label="Draft title"]');
+      if (title) title.focus();
+      else overlay?.focus();
+    }, 0);
+
+    const FOCUSABLE = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !overlay) return;
+      const items = Array.from(overlay.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter(el => el.getClientRects().length > 0);
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!first || !last) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    overlay?.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      overlay?.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
+      if (
+        previouslyFocused &&
+        previouslyFocused.isConnected &&
+        previouslyFocused !== document.body &&
+        previouslyFocused !== document.documentElement
+      ) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [isOpen]);
+
   // Auto-sync from archive and refresh active draft every 2 seconds while open
   useEffect(() => {
     if (!isOpen) return;
 
     const syncInterval = setInterval(() => {
-      syncFromArchive().then(() => {
-        getAllDrafts().then(allDrafts => {
+      syncFromArchive()
+        .then(() => getAllDrafts())
+        .then(allDrafts => {
           setDrafts(allDrafts);
-          
-          // Refresh current draft if it's the active one
-          if (currentDraft) {
-            const activeDraftId = getActiveDraftId();
-            if (activeDraftId === currentDraft.id) {
-              getDraft(activeDraftId).then(updated => {
-                if (updated && updated.body !== currentDraft.body) {
+
+          // Never clobber keystrokes that are still waiting out the autosave
+          // debounce: if dirty, our pending save wins and the refresh waits.
+          const ref = currentDraftRef.current;
+          if (!ref || dirtyRef.current) return;
+          const activeDraftId = getActiveDraftId();
+          if (activeDraftId === ref.id) {
+            getDraft(activeDraftId)
+              .then(updated => {
+                if (updated && updated.body !== currentDraftRef.current?.body) {
                   setCurrentDraft(updated);
                   lastBodyRef.current = updated.body;
                 }
-              });
-            }
+              })
+              .catch(() => {});
           }
-        });
-      });
+        })
+        .catch(() => {});
     }, 2000);
 
     return () => clearInterval(syncInterval);
-  }, [isOpen, currentDraft]);
+  }, [isOpen]);
 
   const handleCreateDraft = async () => {
     const draft = await createDraft('New Draft');
@@ -126,14 +207,35 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
     URL.revokeObjectURL(url);
   };
 
+  const handleCopyDraft = async () => {
+    if (!currentDraft) return;
+    try {
+      await navigator.clipboard.writeText(currentDraft.body);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard access fallback
+    }
+  };
+
+  const handleExportDraft = () => {
+    if (!currentDraft) return;
+    const safeTitle = (currentDraft.title || 'draft').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const blob = new Blob([currentDraft.body], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${safeTitle}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleClearAll = async () => {
     if (drafts.length === 0) return;
     if (!confirm(`This will permanently delete all ${drafts.length} drafts. This action cannot be undone. Continue?`)) return;
     
     // Delete all drafts
-    for (const draft of drafts) {
-      await deleteDraft(draft.id);
-    }
+    await Promise.all(drafts.map(draft => deleteDraft(draft.id)));
     
     setDrafts([]);
     setCurrentDraft(null);
@@ -149,30 +251,45 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
     }
   };
 
-  // Auto-save with debounce (1s)
+  // Auto-save with debounce (1s). Failures are surfaced, never swallowed:
+  // an unhandled IndexedDB rejection used to leave the UI looking saved.
   const handleBodyChange = useCallback((body: string) => {
     if (!currentDraft) return;
 
     setCurrentDraft(prev => prev ? { ...prev, body } : null);
+    dirtyRef.current = true;
+    setPersistError(null);
 
     if (autoSaveTimerRef.current !== null) {
       window.clearTimeout(autoSaveTimerRef.current);
     }
 
     autoSaveTimerRef.current = window.setTimeout(() => {
-      updateDraft(currentDraft.id, { body });
-      lastBodyRef.current = body;
+      updateDraft(currentDraft.id, { body })
+        .then(() => {
+          dirtyRef.current = false;
+          lastBodyRef.current = body;
+        })
+        .catch(() => {
+          flagPersistError();
+        });
     }, 1000);
-  }, [currentDraft]);
+  }, [currentDraft, flagPersistError]);
 
-  // Periodic snapshots (120s)
+  // Periodic snapshots (120s). Keyed on the draft id with a ref mirror, so
+  // typing no longer resubscribes (and starves) the timer on every keystroke.
+  const currentDraftId = currentDraft?.id;
   useEffect(() => {
-    if (!currentDraft) return;
+    if (!currentDraftId) return;
 
     snapshotTimerRef.current = window.setInterval(() => {
-      if (currentDraft.body !== lastBodyRef.current) {
-        addSnapshot(currentDraft.id, currentDraft.body);
-        lastBodyRef.current = currentDraft.body;
+      const ref = currentDraftRef.current;
+      if (ref && ref.id === currentDraftId && ref.body !== lastBodyRef.current) {
+        addSnapshot(currentDraftId, ref.body)
+          .then(() => {
+            lastBodyRef.current = ref.body;
+          })
+          .catch(() => {});
       }
     }, 120000);
 
@@ -181,14 +298,19 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
         window.clearInterval(snapshotTimerRef.current);
       }
     };
-  }, [currentDraft]);
+  }, [currentDraftId]);
 
   // Manual snapshot (Cmd+S)
   const handleManualSnapshot = useCallback(() => {
     if (!currentDraft) return;
-    addSnapshot(currentDraft.id, currentDraft.body);
-    lastBodyRef.current = currentDraft.body;
-  }, [currentDraft]);
+    addSnapshot(currentDraft.id, currentDraft.body)
+      .then(() => {
+        lastBodyRef.current = currentDraft.body;
+      })
+      .catch(() => {
+        flagPersistError();
+      });
+  }, [currentDraft, flagPersistError]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -225,12 +347,12 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
         }
       }
 
-      if (mod && e.key === 'k') {
+      if (mod && e.key === 'k' && prefs.quickJump) {
         e.preventDefault();
         setCommandPaletteOpen(true);
       }
 
-      if (mod && e.key === 'f') {
+      if (mod && e.key === 'f' && prefs.search) {
         e.preventDefault();
         setSearchOpen(prev => !prev);
       }
@@ -256,15 +378,16 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
     // pause menu from opening behind the overlay.
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isOpen, handleManualSnapshot, commandPaletteOpen, searchOpen, versionHistoryOpen, toolsPanelOpen, onClose]);
+  }, [isOpen, handleManualSnapshot, commandPaletteOpen, searchOpen, versionHistoryOpen, toolsPanelOpen, onClose, prefs.quickJump, prefs.search]);
 
   // Update preferences
   const handlePrefsChange = useCallback((updates: Partial<DraftPrefs>) => {
     setPrefs(prev => {
       const next = { ...prev, ...updates };
-      saveDraftPrefs(next);
       return next;
     });
+    const current = getDraftPrefs();
+    saveDraftPrefs({ ...current, ...updates });
   }, []);
 
   // Computed values
@@ -309,40 +432,44 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
 
   const handleRestoreSnapshot = useCallback(async (snapshotId: string) => {
     if (!currentDraft) return;
-    await restoreSnapshot(currentDraft.id, snapshotId);
-    const updated = await getDraft(currentDraft.id);
-    if (updated) {
-      setCurrentDraft(updated);
-      lastBodyRef.current = updated.body;
+    try {
+      await restoreSnapshot(currentDraft.id, snapshotId);
+      const updated = await getDraft(currentDraft.id);
+      if (updated) {
+        setCurrentDraft(updated);
+        lastBodyRef.current = updated.body;
+      }
+    } catch {
+      flagPersistError();
     }
-  }, [currentDraft]);
+  }, [currentDraft, flagPersistError]);
 
   const handleTitleChange = useCallback((title: string) => {
     if (!currentDraft) return;
     setCurrentDraft(prev => prev ? { ...prev, title } : null);
-    updateDraft(currentDraft.id, { title });
-  }, [currentDraft]);
+    updateDraft(currentDraft.id, { title }).catch(() => flagPersistError());
+  }, [currentDraft, flagPersistError]);
 
   const handleAddTag = useCallback(() => {
     if (!currentDraft || !newTagInput.trim()) return;
     const newTags = [...currentDraft.tags, newTagInput.trim()];
     setCurrentDraft(prev => prev ? { ...prev, tags: newTags } : null);
-    updateDraft(currentDraft.id, { tags: newTags });
+    updateDraft(currentDraft.id, { tags: newTags }).catch(() => flagPersistError());
     setNewTagInput('');
-  }, [currentDraft, newTagInput]);
+  }, [currentDraft, newTagInput, flagPersistError]);
 
   const handleRemoveTag = useCallback((tag: string) => {
     if (!currentDraft) return;
     const newTags = currentDraft.tags.filter(t => t !== tag);
     setCurrentDraft(prev => prev ? { ...prev, tags: newTags } : null);
-    updateDraft(currentDraft.id, { tags: newTags });
-  }, [currentDraft]);
+    updateDraft(currentDraft.id, { tags: newTags }).catch(() => flagPersistError());
+  }, [currentDraft, flagPersistError]);
 
   const handleScratchpadChange = useCallback((scratchpad: string) => {
     if (!currentDraft) return;
     setCurrentDraft(prev => prev ? { ...prev, scratchpad } : null);
-    updateDraft(currentDraft.id, { scratchpad });
-  }, [currentDraft]);
+    updateDraft(currentDraft.id, { scratchpad }).catch(() => flagPersistError());
+  }, [currentDraft, flagPersistError]);
 
   const recentLines = useMemo(() => {
     if (!currentDraft) return [];
@@ -355,14 +482,14 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
   if (!isOpen) return null;
 
   return (
-    <div className="overlay-backdrop fixed inset-0 z-[1000] glass-theme" role="dialog" aria-modal="true">
+    <div ref={overlayRef} tabIndex={-1} className="overlay-backdrop fixed inset-0 z-[1000] glass-theme" role="dialog" aria-modal="true" aria-label="Drafts Manager">
       <div className="pointer-events-none fixed inset-0 z-0 theme-layer">
         <div className="forest-rays" aria-hidden="true" />
         <div className="ocean-lights" aria-hidden="true" />
       </div>
-      <div className="relative z-10 flex h-full">
+      <div className="relative z-10 flex h-full flex-col md:flex-row">
         {/* Sidebar */}
-        <div className="w-72 bg-surface/40 backdrop-blur-sm border-r border-muted/20 flex flex-col">
+        <div className="w-full md:w-72 shrink-0 bg-surface/40 backdrop-blur-sm border-b md:border-b-0 md:border-r border-muted/20 flex flex-col">
         <div className="p-4 border-b border-muted/20 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-sans text-foam">Drafts</h2>
@@ -373,7 +500,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
               className="text-muted hover:text-text transition-colors"
               aria-label="Close drafts"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18"/>
                 <line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -388,7 +515,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[32vh] md:max-h-none">
           {drafts.length === 0 ? (
             <p className="text-muted text-center py-8 text-sm">No drafts yet. Use New Draft to start one.</p>
           ) : (
@@ -524,7 +651,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
         {currentDraft ? (
           <>
             {/* Header */}
@@ -532,9 +659,10 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
               <div className="flex-1 mr-4">
                 <input
                   type="text"
+                  aria-label="Draft title"
                   value={currentDraft.title}
                   onChange={e => handleTitleChange(e.target.value)}
-                  className="w-full bg-transparent text-2xl font-bold text-text focus:outline-none placeholder-muted/50"
+                  className="draft-focusable w-full bg-transparent text-2xl font-bold text-text placeholder-muted"
                   placeholder="Untitled"
                 />
                 {prefs.tags && (
@@ -549,7 +677,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                           onClick={() => handleRemoveTag(tag)}
                           variant="ghost"
                           size="icon"
-                          className="h-4 w-4 p-0 hover:text-love"
+                          className="h-6 w-6 min-h-6 min-w-6 p-0 hover:text-love"
                           aria-label={`Remove tag ${tag}`}
                         >
                           ×
@@ -558,6 +686,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                     ))}
                     <input
                       type="text"
+                      aria-label="Add tag"
                       value={newTagInput}
                       onChange={e => setNewTagInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleAddTag()}
@@ -576,6 +705,22 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                   </div>
                 )}
                 <Button
+                  onClick={handleCopyDraft}
+                  variant="ghost"
+                  className="px-3 py-2 rounded-lg border border-overlay/40 bg-overlay/30 text-sm font-medium hover:bg-overlay/45 text-text"
+                  title="Copy draft text to clipboard"
+                >
+                  {copied ? 'Copied!' : 'Copy'}
+                </Button>
+                <Button
+                  onClick={handleExportDraft}
+                  variant="ghost"
+                  className="px-3 py-2 rounded-lg border border-overlay/40 bg-overlay/30 text-sm font-medium hover:bg-overlay/45 text-text"
+                  title="Export draft as Markdown (.md)"
+                >
+                  Export .md
+                </Button>
+                <Button
                   onClick={() => setVersionHistoryOpen(true)}
                   variant="ghost"
                   className="px-4 py-2 rounded-lg border border-overlay/40 bg-overlay/30 text-sm font-medium hover:bg-overlay/45"
@@ -591,7 +736,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                   aria-label="Open tools panel"
                   title="Tools (T)"
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+                  <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
                     <path d="M9.67 5h4.67l.82 2.32a1.33 1.33 0 0 0 .82.82l2.32.82v4.67l-2.32.82a1.33 1.33 0 0 0-.82.82l-.82 2.32H9.67l-.82-2.32a1.33 1.33 0 0 0-.82-.82l-2.32-.82V9.66l2.32-.82a1.33 1.33 0 0 0 .82-.82Z" />
                     <circle cx="12" cy="12" r="2.5" />
                   </svg>
@@ -599,8 +744,27 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
               </div>
             </div>
 
+            {/* Storage failure banner: drafts look saved by default, so a
+                failed write must say so out loud. */}
+            {persistError && (
+              <div
+                role="alert"
+                className="px-4 py-2 text-xs bg-love/15 border-b border-love/30 text-love flex items-center justify-between gap-3"
+              >
+                <span>{persistError}</span>
+                <Button
+                  onClick={() => setPersistError(null)}
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 text-love/80 hover:text-love underline"
+                >
+                  Dismiss
+                </Button>
+              </div>
+            )}
+
             {/* Editor area */}
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden min-h-0">
               {/* Outline sidebar */}
               {prefs.outline && (
                 <ResizableOutline
@@ -637,10 +801,10 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
               <div className="border-t border-muted/20 bg-surface/30 p-4 max-h-48 overflow-y-auto">
                 {prefs.grammar && grammarIssues.length > 0 && (
                   <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-text mb-2">Writing Issues</h4>
+                    <h3 className="text-sm font-semibold text-text mb-2">Writing Issues</h3>
                     <div className="space-y-1">
-                      {grammarIssues.slice(0, 5).map((issue, idx) => (
-                        <div key={idx} className="text-xs text-muted bg-overlay/30 rounded px-2 py-1">
+                      {grammarIssues.slice(0, 5).map((issue) => (
+                        <div key={`${issue.startIndex}_${issue.message}`} className="text-xs text-muted bg-overlay/30 rounded px-2 py-1">
                           {issue.message}
                         </div>
                       ))}
@@ -649,7 +813,7 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
                 )}
                 {prefs.keywordHighlighter && keywordFrequencies.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-text mb-2">Repeated Words</h4>
+                    <h3 className="text-sm font-semibold text-text mb-2">Repeated Words</h3>
                     <div className="flex flex-wrap gap-2">
                       {keywordFrequencies.map(kf => (
                         <span key={kf.word} className="text-xs bg-gold/20 text-gold px-2 py-1 rounded">

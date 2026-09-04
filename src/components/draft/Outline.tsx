@@ -18,9 +18,9 @@ export const Outline: React.FC<OutlineProps> = ({ items, onItemClick }) => {
 
   return (
     <nav className="p-4 space-y-1" aria-label="Document outline">
-      {items.map((item, index) => (
+      {items.map((item) => (
         <Button
-          key={index}
+          key={`${item.startIndex}_${item.text}`}
           onClick={() => onItemClick(item.startIndex)}
           variant="ghost"
           className={`w-full justify-start text-left px-3 py-2 rounded-lg text-sm transition-colors hover:bg-overlay/40 focus-visible:ring-iris/40 ${

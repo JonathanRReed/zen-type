@@ -51,7 +51,7 @@ export const ResizableOutline: React.FC<ResizableOutlineProps> = ({ items, onIte
           className="text-muted hover:text-text transition-colors"
           aria-label="Close outline"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
@@ -65,9 +65,9 @@ export const ResizableOutline: React.FC<ResizableOutlineProps> = ({ items, onIte
           </div>
         ) : (
           <nav className="p-4 space-y-1" aria-label="Document outline">
-            {items.map((item, index) => (
+            {items.map((item) => (
               <Button
-                key={index}
+                key={`${item.startIndex}_${item.text}`}
                 onClick={() => onItemClick(item.startIndex)}
                 variant="ghost"
                 className={`w-full justify-start text-left px-3 py-2 rounded-lg text-sm transition-colors hover:bg-overlay/40 ${

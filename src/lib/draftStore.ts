@@ -57,12 +57,25 @@ class DraftDatabase extends Dexie {
 
 const db = new DraftDatabase();
 
+// Older or corrupt records may predate an array field. Normalize on read so
+// callers can trust the shape instead of throwing on `undefined.slice`.
+function normalizeDraft(draft: Draft): Draft {
+  return {
+    ...draft,
+    tags: Array.isArray(draft.tags) ? draft.tags : [],
+    snapshots: Array.isArray(draft.snapshots) ? draft.snapshots : [],
+    scratchpad: typeof draft.scratchpad === 'string' ? draft.scratchpad : '',
+  };
+}
+
 export async function getAllDrafts(): Promise<Draft[]> {
-  return await db.drafts.orderBy('updatedAt').reverse().toArray();
+  const drafts = await db.drafts.orderBy('updatedAt').reverse().toArray();
+  return drafts.map(normalizeDraft);
 }
 
 export async function getDraft(id: string): Promise<Draft | undefined> {
-  return await db.drafts.get(id);
+  const draft = await db.drafts.get(id);
+  return draft ? normalizeDraft(draft) : undefined;
 }
 
 export async function createDraft(title: string = 'Untitled'): Promise<Draft> {
@@ -136,13 +149,14 @@ export async function restoreSnapshot(draftId: string, snapshotId: string): Prom
 }
 
 // Preferences stored in localStorage for simplicity
-const PREFS_KEY = 'zt.draft.prefs';
+const PREFS_KEY = 'zt.draft.prefs.v1';
+const LEGACY_PREFS_KEY = 'zt.draft.prefs';
 
 export function getDraftPrefs(): DraftPrefs {
   if (typeof window === 'undefined') return DEFAULT_DRAFT_PREFS;
   
   try {
-    const stored = localStorage.getItem(PREFS_KEY);
+    const stored = localStorage.getItem(PREFS_KEY) || localStorage.getItem(LEGACY_PREFS_KEY);
     if (!stored) return DEFAULT_DRAFT_PREFS;
     return { ...DEFAULT_DRAFT_PREFS, ...JSON.parse(stored) };
   } catch {
@@ -167,17 +181,25 @@ const ACTIVE_DRAFT_KEY = 'zt.activeDraft';
 
 export function getActiveDraftId(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(ACTIVE_DRAFT_KEY);
+  try {
+    return localStorage.getItem(ACTIVE_DRAFT_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function setActiveDraftId(id: string | null): void {
   if (typeof window === 'undefined') return;
-  if (id) {
-    localStorage.setItem(ACTIVE_DRAFT_KEY, id);
-    window.dispatchEvent(new CustomEvent('activeDraftChanged', { detail: { id } }));
-  } else {
-    localStorage.removeItem(ACTIVE_DRAFT_KEY);
-    window.dispatchEvent(new CustomEvent('activeDraftChanged', { detail: { id: null } }));
+  try {
+    if (id) {
+      localStorage.setItem(ACTIVE_DRAFT_KEY, id);
+      window.dispatchEvent(new CustomEvent('activeDraftChanged', { detail: { id } }));
+    } else {
+      localStorage.removeItem(ACTIVE_DRAFT_KEY);
+      window.dispatchEvent(new CustomEvent('activeDraftChanged', { detail: { id: null } }));
+    }
+  } catch (e) {
+    console.error('Failed to persist active draft id:', e);
   }
 }
 
@@ -234,52 +256,48 @@ export async function syncFromArchive(): Promise<void> {
     if (typeof window === 'undefined') return;
 
     const archiveData = localStorage.getItem(archiveKey);
-    console.log('[DEBUG] Archive data from localStorage:', archiveData);
     if (!archiveData) return;
 
     const entries = JSON.parse(archiveData);
-    console.log('[DEBUG] Parsed entries:', entries);
     if (!Array.isArray(entries)) return;
 
     // Get last sync timestamp
     const lastSync = parseInt(localStorage.getItem(lastSyncKey) || '0');
     let newEntriesCount = 0;
 
-    for (const entry of entries) {
-      console.log('[DEBUG] Processing entry:', entry);
-      if (!entry.text || !entry.text.trim()) continue;
+    const validEntries = entries.filter((e: any) => e.text && e.text.trim() && new Date(e.startedAt).getTime() > lastSync);
+    const existingDrafts = await Promise.all(validEntries.map((e: any) => db.drafts.get(e.id)));
+    const operations: Promise<unknown>[] = [];
 
-      const entryTime = new Date(entry.startedAt).getTime();
+    for (let i = 0; i < validEntries.length; i++) {
+      const entry = validEntries[i];
+      const existingDraft = existingDrafts[i];
 
-      // Only sync entries newer than last sync or if draft doesn't exist
-      if (entryTime > lastSync) {
-        const existingDraft = await db.drafts.get(entry.id);
-
-        if (!existingDraft) {
-          const draft: Draft = {
-            id: entry.id || `zen_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-            title: `Zen Session: ${new Date(entry.startedAt).toLocaleString()}`,
+      if (!existingDraft) {
+        const draft: Draft = {
+          id: entry.id || `zen_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+          title: `Zen Session: ${new Date(entry.startedAt).toLocaleString()}`,
+          body: entry.text,
+          tags: ['zen-mode'],
+          createdAt: new Date(entry.startedAt).getTime(),
+          updatedAt: entry.endedAt ? new Date(entry.endedAt).getTime() : new Date(entry.startedAt).getTime(),
+          snapshots: [],
+          scratchpad: '',
+        };
+        operations.push(db.drafts.add(draft));
+        newEntriesCount++;
+      } else if (entry.endedAt) {
+        // Update existing draft if it has new content
+        const updatedAt = new Date(entry.endedAt).getTime();
+        if (updatedAt > existingDraft.updatedAt) {
+          operations.push(db.drafts.update(entry.id, {
             body: entry.text,
-            tags: ['zen-mode'],
-            createdAt: new Date(entry.startedAt).getTime(),
-            updatedAt: entry.endedAt ? new Date(entry.endedAt).getTime() : new Date(entry.startedAt).getTime(),
-            snapshots: [],
-            scratchpad: '',
-          };
-          await db.drafts.add(draft);
-          newEntriesCount++;
-        } else if (entry.endedAt) {
-          // Update existing draft if it has new content
-          const updatedAt = new Date(entry.endedAt).getTime();
-          if (updatedAt > existingDraft.updatedAt) {
-            await db.drafts.update(entry.id, {
-              body: entry.text,
-              updatedAt,
-            });
-          }
+            updatedAt,
+          }));
         }
       }
     }
+    await Promise.all(operations);
 
     // Update last sync timestamp
     localStorage.setItem(lastSyncKey, Date.now().toString());

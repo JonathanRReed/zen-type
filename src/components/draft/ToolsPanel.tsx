@@ -75,7 +75,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
 
   return (
     <div
-      className="fixed inset-y-0 right-0 w-96 bg-surface/90 backdrop-blur-md border-l border-muted/20 flex flex-col z-[1001] shadow-xl"
+      className="fixed inset-y-0 right-0 w-96 max-w-[calc(100vw-2rem)] bg-surface/90 backdrop-blur-md border-l border-muted/20 flex flex-col z-[1001] shadow-xl"
       role="dialog"
       aria-modal="true"
       aria-label="Tools panel"
@@ -88,7 +88,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
           className="text-muted hover:text-text transition-colors"
           aria-label="Close tools panel"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>

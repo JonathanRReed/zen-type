@@ -121,6 +121,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-label="Jump to heading or line"
+            aria-expanded={filteredItems.length > 0}
+            aria-controls="cmd-palette-listbox"
+            aria-activedescendant={filteredItems.length > 0 ? `cmd-palette-option-${selectedIndex}` : undefined}
             value={query}
             onChange={e => {
               setSelectedIndex(0);
@@ -128,18 +133,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             }}
             onKeyDown={handleKeyDown}
             placeholder="Jump to heading or line..."
-            className="w-full bg-transparent text-lg text-text placeholder-muted/60 focus:outline-none"
+            className="draft-focusable w-full bg-transparent text-lg text-text placeholder-muted"
           />
         </div>
 
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto" role="listbox" id="cmd-palette-listbox" aria-label="Matching headings and lines">
           {filteredItems.length === 0 ? (
             <div className="p-8 text-center text-muted/60">No results found</div>
           ) : (
             <div className="p-2">
               {filteredItems.map((item, index) => (
                 <Button
-                  key={index}
+                  key={`${item.type}_${item.text}_${index}`}
+                  id={`cmd-palette-option-${index}`}
+                  role="option"
+                  aria-selected={index === selectedIndex}
                   onClick={() => handleItemClick(item)}
                   variant="ghost"
                   className={`w-full justify-start text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${
