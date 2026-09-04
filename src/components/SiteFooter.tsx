@@ -15,8 +15,10 @@ const SiteFooter: React.FC = React.memo(() => {
         {/* Attribution row */}
         <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 text-xs text-muted">
           <img
-            src="/zen_type_assets/zen-type-logo-footer-transparent.png"
+            src="/zen_type_assets/zen-type-logo-footer-512w.png"
             alt="Zen Typer"
+            width={73}
+            height={20}
             className="h-5 w-auto object-contain opacity-80"
             loading="lazy"
           />

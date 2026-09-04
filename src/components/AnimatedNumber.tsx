@@ -16,9 +16,11 @@ interface AnimatedNumberProps {
  * AnimatedNumber - Smoothly animates between number values.
  * Features a subtle pop animation and optional improvement glow.
  */
+const defaultFormat = (v: number) => String(Math.round(v));
+
 const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
     value,
-    format = (v) => String(Math.round(v)),
+    format = defaultFormat,
     duration = 300,
     className = '',
     showImprovement = true,
@@ -35,10 +37,19 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
         // Skip animation if value hasn't changed
         if (previousValue === value) return;
 
-        // Check for reduced motion
+        // Check for reduced motion: the OS setting or the app's own toggle.
+        // (The app flag used to be ignored here, so in-app Reduced Motion
+        // still animated the count-ups.)
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let appReducedMotion = false;
+        try {
+            const raw = localStorage.getItem('zt.settings');
+            appReducedMotion = !!raw && !!(JSON.parse(raw) as { reducedMotion?: boolean }).reducedMotion;
+        } catch {
+            appReducedMotion = false;
+        }
 
-        if (prefersReducedMotion) {
+        if (prefersReducedMotion || appReducedMotion) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setDisplayValue(value);
             previousValueRef.current = value;

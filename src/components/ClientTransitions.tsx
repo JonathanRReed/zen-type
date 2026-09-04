@@ -19,7 +19,7 @@ const ClientTransitions: React.FC = () => {
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    const navigateTo = async (to: string) => {
+    const navigateTo = (to: string) => {
       if (isNavigatingRef.current) return;
 
       const current = window.location.pathname;
@@ -27,15 +27,13 @@ const ClientTransitions: React.FC = () => {
 
       isNavigatingRef.current = true;
 
-      try {
-        // Use Astro's navigate function for smooth View Transitions
-        await navigate(to);
-      } catch {
-        // Fallback to standard navigation if View Transitions fail
-        window.location.assign(to);
-      } finally {
-        isNavigatingRef.current = false;
-      }
+      navigate(to)
+        .catch(() => {
+          window.location.assign(to);
+        })
+        .finally(() => {
+          isNavigatingRef.current = false;
+        });
     };
 
     // Handle custom app:navigate events (from Tab key, etc.)

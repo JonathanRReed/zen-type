@@ -8,32 +8,28 @@ interface StatsBarProps {
 }
 
 const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
-  const [show, setShow] = useState<boolean>(visible);
+  const [userToggledShow, setUserToggledShow] = useState<boolean | null>(() => {
+    try {
+      return getSettings().showStats;
+    } catch {
+      return null;
+    }
+  });
   const [data, setData] = useState<Record<string, number>>(metrics || {});
-  const [metricOrder, setMetricOrder] = useState<StatsBarMetricKey[]>(DEFAULT_STATS_BAR_METRICS[mode]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setShow(visible);
-  }, [visible]);
-
-  useEffect(() => {
-    // Initialize from saved settings on client
+  const [metricOrder, setMetricOrder] = useState<StatsBarMetricKey[]>(() => {
     try {
       const s = getSettings();
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShow(s.showStats);
       const selected = s.statsBarMetrics?.[mode];
-      if (selected && selected.length) {
-        setMetricOrder(selected);
-      } else {
-        setMetricOrder(DEFAULT_STATS_BAR_METRICS[mode]);
-      }
+      if (selected && selected.length) return selected;
     } catch {}
+    return DEFAULT_STATS_BAR_METRICS[mode];
+  });
+  const show = userToggledShow !== null ? userToggledShow : visible;
 
+  useEffect(() => {
     const handleToggle = (e: Event) => {
       const detail = (e as CustomEvent).detail as boolean;
-      setShow(detail);
+      setUserToggledShow(detail);
     };
     const handleZenStats = (e: Event) => {
       const detail = (e as CustomEvent).detail as Record<string, number>;
@@ -89,11 +85,11 @@ const StatsBar: React.FC<StatsBarProps> = ({ mode, visible, metrics }) => {
 
   return (
     <div className="stats-cq">
-      <div className="stats-bar fixed bottom-[calc(6.5rem_+_env(safe-area-inset-bottom))] md:bottom-[calc(5.5rem_+_env(safe-area-inset-bottom))] left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-4" data-stats-bar>
+      <div className="stats-bar fixed bottom-[calc(6.5rem_+_env(safe-area-inset-bottom))] md:bottom-[calc(5.5rem_+_env(safe-area-inset-bottom))] left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-4" data-stats-bar role="region" aria-label={mode === 'zen' ? 'Zen session statistics' : 'Quote session statistics'}>
         <div className="rounded-full px-8 py-3.5 flex flex-wrap items-center justify-center gap-8
                         bg-surface/40 backdrop-blur-xl border border-tint/25
                         shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)]
-                        transition-all duration-300 hover:bg-surface/50 hover:border-tint/35">
+                        transition-colors duration-300 hover:bg-surface/50 hover:border-tint/35">
           {displayedMetrics.map((key) => {
             if (key === 'time') {
               return (

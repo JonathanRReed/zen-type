@@ -31,6 +31,7 @@ describe('ZenCanvas', () => {
       translate: vi.fn(),
       rotate: vi.fn(),
       scale: vi.fn(),
+      setTransform: vi.fn(),
       drawImage: vi.fn(),
     } as any;
 

@@ -63,13 +63,8 @@ const ArchiveOverlay: React.FC = () => {
         openOverlay();
         return;
       }
-      setOpen(prev => {
-        const next = !prev;
-        if (next) {
-          clearPendingFlag();
-        }
-        return next;
-      });
+      setOpen(prev => !prev);
+      clearPendingFlag();
     };
     window.addEventListener('toggleArchive', handler as EventListener);
     return () => window.removeEventListener('toggleArchive', handler as EventListener);

@@ -269,11 +269,11 @@ Export Format: ${options.format.toUpperCase()}
       return `${m}:${s.toString().padStart(2, '0')}`;
     };
 
-    drawMetric('Mode', data.mode.toUpperCase(), iris, '🏷️');
-    drawMetric('Duration', formatTime(data.time), foam, '⏱️');
-    drawMetric('Words', data.words.toString(), gold, '📝');
-    if (data.wpm) drawMetric('WPM', data.wpm.toString(), rose, '⚡');
-    if (data.accuracy) drawMetric('Accuracy', `${Math.round(data.accuracy)}%`, iris, '🎯');
+    drawMetric('Mode', data.mode === 'quote' ? 'QUOTE' : 'ZEN', iris, '🏷️');
+    drawMetric('Duration', formatTime(Number(data.time) || 0), foam, '⏱️');
+    drawMetric('Words', Math.round(Number(data.words) || 0).toString(), gold, '📝');
+    if (data.wpm) drawMetric('WPM', Math.round(Number(data.wpm) || 0).toString(), rose, '⚡');
+    if (data.accuracy) drawMetric('Accuracy', `${Math.round(Number(data.accuracy) || 0)}%`, iris, '🎯');
 
     // Footer
     ctx.fillStyle = text;
@@ -304,10 +304,26 @@ Export Format: ${options.format.toUpperCase()}
     const iris = (css.getPropertyValue('--rp-iris') || '#c4a7e7').trim();
 
     const formatTime = (seconds: number): string => {
-      const m = Math.floor(seconds / 60);
-      const s = Math.floor(seconds % 60);
+      const total = Math.max(0, Math.floor(Number(seconds) || 0));
+      const m = Math.floor(total / 60);
+      const s = total % 60;
       return `${m}:${s.toString().padStart(2, '0')}`;
     };
+
+    // An exported .svg opened in a browser is a live document, so every
+    // interpolated value is coerced/escaped even though today's callers only
+    // pass app-generated enums and numbers.
+    const escapeXml = (value: unknown): string =>
+      String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    const safeInt = (value: unknown): number => {
+      const n = Math.round(Number(value));
+      return Number.isFinite(n) ? n : 0;
+    };
+    const safeMode = data.mode === 'quote' ? 'QUOTE' : 'ZEN';
 
     const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="628" viewBox="0 0 1200 628">
@@ -336,22 +352,22 @@ Export Format: ${options.format.toUpperCase()}
     <g font-family="'JetBrains Mono', ui-monospace, monospace" text-anchor="end">
       <g transform="translate(1140, 180)">
         <text x="0" y="0" font-size="24" font-weight="500" fill="${iris}">Mode</text>
-        <text x="0" y="60" font-size="36" font-weight="bold" fill="${foam}">${data.mode.toUpperCase()}</text>
+          <text x="0" y="60" font-size="36" font-weight="bold" fill="${foam}">${safeMode}</text>
 
-        <text x="0" y="140" font-size="24" font-weight="500" fill="${foam}">Duration</text>
-        <text x="0" y="200" font-size="36" font-weight="bold" fill="${gold}">${formatTime(data.time)}</text>
+          <text x="0" y="140" font-size="24" font-weight="500" fill="${foam}">Duration</text>
+          <text x="0" y="200" font-size="36" font-weight="bold" fill="${gold}">${escapeXml(formatTime(data.time))}</text>
 
-        <text x="0" y="280" font-size="24" font-weight="500" fill="${gold}">Words</text>
-        <text x="0" y="340" font-size="36" font-weight="bold" fill="${rose}">${data.words}</text>
+          <text x="0" y="280" font-size="24" font-weight="500" fill="${gold}">Words</text>
+          <text x="0" y="340" font-size="36" font-weight="bold" fill="${rose}">${safeInt(data.words)}</text>
 
-        ${data.wpm ? `
+          ${data.wpm ? `
           <text x="0" y="420" font-size="24" font-weight="500" fill="${rose}">WPM</text>
-          <text x="0" y="480" font-size="36" font-weight="bold" fill="${iris}">${data.wpm}</text>
+          <text x="0" y="480" font-size="36" font-weight="bold" fill="${iris}">${safeInt(data.wpm)}</text>
         ` : ''}
 
-        ${data.accuracy ? `
+          ${data.accuracy ? `
           <text x="0" y="${data.wpm ? '560' : '420'}" font-size="24" font-weight="500" fill="${iris}">Accuracy</text>
-          <text x="0" y="${data.wpm ? '620' : '480'}" font-size="36" font-weight="bold" fill="${foam}">${Math.round(data.accuracy)}%</text>
+          <text x="0" y="${data.wpm ? '620' : '480'}" font-size="36" font-weight="bold" fill="${foam}">${safeInt(data.accuracy)}%</text>
         ` : ''}
       </g>
     </g>

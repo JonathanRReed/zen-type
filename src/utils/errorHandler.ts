@@ -176,6 +176,16 @@ export class ErrorHandler {
    * Show retryable error with user-friendly UI
    */
   private showRetryableError(error: AppError): void {
+    // Create a toast notification for retryable errors. Message and operation
+    // are escaped: they can carry arbitrary text (filenames, fetch errors),
+    // and this sink is innerHTML behind an inline handler.
+    const escapeHtml = (value: unknown): string =>
+      String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     // Create a toast notification for retryable errors
     const toast = document.createElement('div');
     toast.className = 'fixed top-4 right-4 z-[9999] bg-love/90 text-text px-4 py-3 rounded-lg shadow-lg border border-love/40 backdrop-blur-sm max-w-sm';
@@ -183,8 +193,8 @@ export class ErrorHandler {
       <div class="flex items-center gap-3">
         <div class="text-love">⚠️</div>
         <div class="flex-1">
-          <div class="font-medium text-sm">${error.context.userMessage || 'Operation failed'}</div>
-          <div class="text-xs text-text/70 mt-1">${error.context.operation}</div>
+          <div class="font-medium text-sm">${escapeHtml(error.context.userMessage || 'Operation failed')}</div>
+          <div class="text-xs text-text/70 mt-1">${escapeHtml(error.context.operation)}</div>
         </div>
         <button class="text-text/70 hover:text-text text-sm underline" onclick="this.parentElement.parentElement.remove()">
           Retry

@@ -101,7 +101,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
           <div className="mb-4">
             <div className="w-full bg-overlay/40 rounded-full h-2 mb-2">
               <div
-                className="bg-foam h-2 rounded-full transition-all duration-300 ease-out"
+                className="bg-foam h-2 rounded-full transition-[width] duration-300 ease-out"
                 style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
               />
             </div>

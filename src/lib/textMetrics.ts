@@ -63,11 +63,13 @@ export function getKeywordFrequencies(text: string, topN: number = 10): KeywordF
     freq.set(word, (freq.get(word) || 0) + 1);
   }
 
-  return Array.from(freq.entries())
-    .map(([word, count]) => ({ word, count }))
-    .filter(item => item.count > 1)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, topN);
+  const result: KeywordFrequency[] = [];
+  for (const [word, count] of freq.entries()) {
+    if (count > 1) {
+      result.push({ word, count });
+    }
+  }
+  return result.sort((a, b) => b.count - a.count).slice(0, topN);
 }
 
 export interface OutlineItem {
