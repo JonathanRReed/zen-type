@@ -7,6 +7,7 @@ import HelpSheet from "../components/HelpSheet";
 import ArchiveOverlay from "../components/ArchiveOverlay";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
+import GlobalShortcuts from "../components/GlobalShortcuts";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
 import SpotlightLayer from "../components/SpotlightLayer";
@@ -51,6 +52,7 @@ const quoteUrl = `${siteUrl}/quote/`;
 			</a>
 			<main
 				id="quote-app"
+				tabindex="-1"
 				class="relative w-full h-screen overflow-hidden stats-cq-host"
 			>
 				<h1 class="sr-only">
@@ -85,6 +87,40 @@ const quoteUrl = `${siteUrl}/quote/`;
 								window.dispatchEvent(completeEvent);
 							}}
 						/>
+						<!--
+							First-paint stand-in for the client:only typing surface above.
+							Same pattern as index.astro: QuoteTyper renders nothing on
+							the server, so without this the viewport stays blank until
+							React hydrates. Retired by CSS the moment the island drops
+							its `ssr` flag (see .quote-boot in globals.css). Must stay
+							the element directly after the island.
+						-->
+						<div
+							class="quote-boot absolute inset-0 flex flex-col items-center justify-center px-12 pt-12 pb-24"
+						>
+							<div class="w-full max-w-4xl">
+								<div
+									class="glass quote-card rounded-2xl px-8 pt-8 pb-7 mb-6"
+								>
+									<p
+										class="quote-boot-text font-mono text-2xl leading-relaxed"
+									>
+										{randomQuote.text}
+									</p>
+									<p class="text-right text-muted text-lg mt-5">
+										<span aria-hidden="true">—</span>
+										{randomQuote.author}
+									</p>
+									<div class="quote-progress-track mt-6">
+										<div
+											class="quote-progress-fill"
+											style="width: 0%"
+										>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -108,6 +144,8 @@ const quoteUrl = `${siteUrl}/quote/`;
 				<HelpSheet client:only="react" isOpen={false} onClose={() => {}} />
 				<ArchiveOverlay client:only="react" />
 				<SiteFooter client:only="react" />
+				<!-- Documented Ctrl/Cmd shortcuts (Help: Notes & Drafts, mute) -->
+				<GlobalShortcuts client:only="react" />
 			</main>
 		</ErrorBoundary>
 

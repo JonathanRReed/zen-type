@@ -63,6 +63,18 @@ export function getFallbackQuotes(): Quote[] {
       text: "In the middle of difficulty lies opportunity.",
       author: "Albert Einstein",
       source: "Public domain"
+    },
+    {
+      id: "fallback-03",
+      text: "Nature does not hurry, yet everything is accomplished.",
+      author: "Lao Tzu",
+      source: "Tao Te Ching"
+    },
+    {
+      id: "fallback-04",
+      text: "You have power over your mind - not outside events. Realize this, and you will find strength.",
+      author: "Marcus Aurelius",
+      source: "Meditations"
     }
   ];
 }

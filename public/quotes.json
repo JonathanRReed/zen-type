@@ -166,5 +166,773 @@
     "text": "Love is not about possession. Love is about appreciation.",
     "author": "Osho",
     "source": "ZenQuotes.io"
+  },
+  {
+    "id": "dogen-02",
+    "text": "To study the self is to forget the self. To forget the self is to be actualized by myriad things.",
+    "author": "Eihei Dōgen",
+    "source": "Genjōkōan"
+  },
+  {
+    "id": "suzuki-01",
+    "text": "In the beginner's mind there are many possibilities, but in the expert's there are few.",
+    "author": "Shunryu Suzuki",
+    "source": "Zen Mind, Beginner's Mind"
+  },
+  {
+    "id": "zhuangzi-01",
+    "text": "Flow with whatever may happen, and let your mind be free: Stay centered by accepting whatever you are doing.",
+    "author": "Zhuangzi",
+    "source": "Wandering on at Ease"
+  },
+  {
+    "id": "thoreau-01",
+    "text": "I went to the woods because I wished to live deliberately, to front only the essential facts of life.",
+    "author": "Henry David Thoreau",
+    "source": "Walden"
+  },
+  {
+    "id": "emerson-01",
+    "text": "Adopt the pace of nature: her secret is patience.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays"
+  },
+  {
+    "id": "rilke-01",
+    "text": "Let everything happen to you: beauty and terror. Just keep going. No feeling is final.",
+    "author": "Rainer Maria Rilke",
+    "source": "Book of Hours"
+  },
+  {
+    "id": "mary-oliver-01",
+    "text": "You do not have to be good. You only have to let the soft animal of your body love what it loves.",
+    "author": "Mary Oliver",
+    "source": "Wild Geese"
+  },
+  {
+    "id": "camus-01",
+    "text": "In the depth of winter, I finally learned that within me there lay an invincible summer.",
+    "author": "Albert Camus",
+    "source": "Return to Tipasa"
+  },
+  {
+    "id": "seneca-02",
+    "text": "We suffer more often in imagination than in reality.",
+    "author": "Seneca",
+    "source": "Letters from a Stoic"
+  },
+  {
+    "id": "marcus-aurelius-02",
+    "text": "Dwell on the beauty of life. Watch the stars, and see yourself running with them.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations"
+  },
+  {
+    "id": "alan-watts-02",
+    "text": "Muddy water is best cleared by leaving it alone.",
+    "author": "Alan Watts",
+    "source": "The Way of Zen"
+  },
+  {
+    "id": "lao-tzu-04",
+    "text": "Silence is a source of great strength.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching"
+  },
+  {
+    "id": "thich-nhat-hanh-02",
+    "text": "Feelings come and go like clouds in a windy sky. Conscious breathing is my anchor.",
+    "author": "Thich Nhat Hanh",
+    "source": "Stepping into Freedom"
+  },
+  {
+    "id": "rumi-02",
+    "text": "The quieter you become, the more you are able to hear.",
+    "author": "Rumi",
+    "source": "Public domain"
+  },
+  {
+    "id": "heraclitus-01",
+    "text": "No man ever steps in the same river twice, for it's not the same river and he's not the same man.",
+    "author": "Heraclitus",
+    "source": "Fragments"
+  },
+  {
+    "id": "montaigne-01",
+    "text": "The greatest thing in the world is to know how to belong to oneself.",
+    "author": "Michel de Montaigne",
+    "source": "Essays"
+  },
+  {
+    "id": "spinoza-01",
+    "text": "Peace is not an absence of war, it is a virtue, a state of mind, a disposition for benevolence, confidence, justice.",
+    "author": "Baruch Spinoza",
+    "source": "Tractatus Politicus"
+  },
+  {
+    "id": "watts-03",
+    "text": "You are an aperture through which the universe is looking at and exploring itself.",
+    "author": "Alan Watts",
+    "source": "The Book"
+  },
+  {
+    "id": "kierkegaard-01",
+    "text": "Life can only be understood backwards; but it must be lived forwards.",
+    "author": "Søren Kierkegaard",
+    "source": "Journals"
+  },
+  {
+    "id": "schopenhauer-01",
+    "text": "Each day is a little life: every waking and rising a little birth, every fresh morning a little youth, every going to rest and sleep a little death.",
+    "author": "Arthur Schopenhauer",
+    "source": "Parerga and Paralipomena"
+  },
+  {
+    "id": "epictetus-02",
+    "text": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
+    "author": "Epictetus",
+    "source": "Enchiridion"
+  },
+  {
+    "id": "pascal-01",
+    "text": "All of humanity's problems stem from man's inability to sit quietly in a room alone.",
+    "author": "Blaise Pascal",
+    "source": "Pensées"
+  },
+  {
+    "id": "nietzsche-01",
+    "text": "He who has a why to live can bear almost any how.",
+    "author": "Friedrich Nietzsche",
+    "source": "Twilight of the Idols"
+  },
+  {
+    "id": "chogyam-trungpa-01",
+    "text": "The bad news is you're falling through the air, nothing to hang on to, no parachute. The good news is, there's no ground.",
+    "author": "Chögyam Trungpa",
+    "source": "Shambhala"
+  },
+  {
+    "id": "socrates-01",
+    "text": "The unexamined life is not worth living.",
+    "author": "Socrates",
+    "source": "Apology"
+  },
+  {
+    "id": "plato-01",
+    "text": "The beginning is the most important part of the work.",
+    "author": "Plato",
+    "source": "The Republic"
+  },
+  {
+    "id": "aristotle-01",
+    "text": "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
+    "author": "Aristotle",
+    "source": "Attributed"
+  },
+  {
+    "id": "heraclitus-02",
+    "text": "Character is destiny.",
+    "author": "Heraclitus",
+    "source": "Fragments"
+  },
+  {
+    "id": "epicurus-01",
+    "text": "Not what we have but what we enjoy constitutes our abundance.",
+    "author": "Epicurus",
+    "source": "Attributed"
+  },
+  {
+    "id": "epictetus-03",
+    "text": "First say to yourself what you would be, and then do what you have to do.",
+    "author": "Epictetus",
+    "source": "Discourses"
+  },
+  {
+    "id": "epictetus-04",
+    "text": "Make the best use of what is in your power, and take the rest as it happens.",
+    "author": "Epictetus",
+    "source": "Enchiridion"
+  },
+  {
+    "id": "seneca-03",
+    "text": "It is not that we have a short time to live, but that we waste a great deal of it.",
+    "author": "Seneca",
+    "source": "On the Shortness of Life"
+  },
+  {
+    "id": "seneca-04",
+    "text": "Luck is what happens when preparation meets opportunity.",
+    "author": "Seneca",
+    "source": "Attributed"
+  },
+  {
+    "id": "seneca-05",
+    "text": "While we wait for life, life passes.",
+    "author": "Seneca",
+    "source": "Letters from a Stoic"
+  },
+  {
+    "id": "marcus-aurelius-03",
+    "text": "The soul is dyed the color of its thoughts.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations"
+  },
+  {
+    "id": "marcus-aurelius-04",
+    "text": "Confine yourself to the present.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations"
+  },
+  {
+    "id": "marcus-aurelius-05",
+    "text": "What stands in the way becomes the way.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations"
+  },
+  {
+    "id": "marcus-aurelius-06",
+    "text": "If it is not right, do not do it. If it is not true, do not say it.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations"
+  },
+  {
+    "id": "pythagoras-01",
+    "text": "Silence is better than unmeaning words.",
+    "author": "Pythagoras",
+    "source": "Public domain"
+  },
+  {
+    "id": "lao-tzu-05",
+    "text": "A journey of a thousand miles begins with a single step.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching"
+  },
+  {
+    "id": "lao-tzu-06",
+    "text": "He who knows others is wise. He who knows himself is enlightened.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching"
+  },
+  {
+    "id": "lao-tzu-07",
+    "text": "To the mind that is still, the whole universe surrenders.",
+    "author": "Lao Tzu",
+    "source": "Attributed"
+  },
+  {
+    "id": "lao-tzu-08",
+    "text": "The softest things in the world overcome the hardest things in the world.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching"
+  },
+  {
+    "id": "zhuangzi-02",
+    "text": "The perfect man uses his mind like a mirror.",
+    "author": "Zhuangzi",
+    "source": "Zhuangzi"
+  },
+  {
+    "id": "zhuangzi-03",
+    "text": "Happiness is the absence of striving for happiness.",
+    "author": "Zhuangzi",
+    "source": "Attributed"
+  },
+  {
+    "id": "confucius-02",
+    "text": "The man who moves a mountain begins by carrying away small stones.",
+    "author": "Confucius",
+    "source": "Attributed"
+  },
+  {
+    "id": "confucius-03",
+    "text": "Our greatest glory is not in never falling, but in rising every time we fall.",
+    "author": "Confucius",
+    "source": "Attributed"
+  },
+  {
+    "id": "confucius-04",
+    "text": "The gem cannot be polished without friction, nor man perfected without trials.",
+    "author": "Confucius",
+    "source": "Analects"
+  },
+  {
+    "id": "mencius-01",
+    "text": "Great is the man who has not lost his childlike heart.",
+    "author": "Mencius",
+    "source": "Attributed"
+  },
+  {
+    "id": "lieh-tzu-01",
+    "text": "Do not listen with your ears but with your mind.",
+    "author": "Liezi",
+    "source": "Public domain"
+  },
+  {
+    "id": "dogen-03",
+    "text": "If you cannot find the truth right where you are, where else do you expect to find it?",
+    "author": "Eihei Dogen",
+    "source": "Attributed"
+  },
+  {
+    "id": "hakuin-01",
+    "text": "Not knowing how near the truth is, people seek it far away.",
+    "author": "Hakuin Ekaku",
+    "source": "Song of Zazen"
+  },
+  {
+    "id": "ryokan-01",
+    "text": "The rain has stopped, the clouds have drifted away, and the weather is clear again.",
+    "author": "Ryokan",
+    "source": "Public domain"
+  },
+  {
+    "id": "basho-02",
+    "text": "Do not seek to follow in the footsteps of the wise. Seek what they sought.",
+    "author": "Matsuo Basho",
+    "source": "Attributed"
+  },
+  {
+    "id": "bankei-01",
+    "text": "Do not get entangled. Just let things be as they are.",
+    "author": "Bankei Yotaku",
+    "source": "Attributed"
+  },
+  {
+    "id": "musashi-01",
+    "text": "Do nothing that is of no use.",
+    "author": "Miyamoto Musashi",
+    "source": "The Book of Five Rings"
+  },
+  {
+    "id": "musashi-02",
+    "text": "Accept everything just the way it is.",
+    "author": "Miyamoto Musashi",
+    "source": "Dokkodo"
+  },
+  {
+    "id": "takuan-01",
+    "text": "When one knows the truth of things, the mind is at peace wherever one is.",
+    "author": "Takuan Soho",
+    "source": "Public domain"
+  },
+  {
+    "id": "buddha-02",
+    "text": "Better than a thousand hollow words is one word that brings peace.",
+    "author": "Buddha",
+    "source": "Dhammapada"
+  },
+  {
+    "id": "buddha-03",
+    "text": "The mind is everything. What you think, you become.",
+    "author": "Buddha",
+    "source": "Attributed"
+  },
+  {
+    "id": "buddha-04",
+    "text": "All that we are arises with our thoughts. With our thoughts we make the world.",
+    "author": "Buddha",
+    "source": "Dhammapada"
+  },
+  {
+    "id": "patanjali-01",
+    "text": "When you are inspired by some great purpose, all your thoughts break their bonds.",
+    "author": "Patanjali",
+    "source": "Yoga Sutras"
+  },
+  {
+    "id": "rumi-03",
+    "text": "Wherever you stand, be the soul of that place.",
+    "author": "Rumi",
+    "source": "Public domain"
+  },
+  {
+    "id": "rumi-04",
+    "text": "Respond to every call that excites your spirit.",
+    "author": "Rumi",
+    "source": "Public domain"
+  },
+  {
+    "id": "hafez-01",
+    "text": "Stay close to anything that makes you glad you are alive.",
+    "author": "Hafez",
+    "source": "Public domain"
+  },
+  {
+    "id": "kabir-01",
+    "text": "Wherever you are is the entry point.",
+    "author": "Kabir",
+    "source": "Public domain"
+  },
+  {
+    "id": "montaigne-02",
+    "text": "My life has been full of terrible misfortunes, most of which never happened.",
+    "author": "Michel de Montaigne",
+    "source": "Essays"
+  },
+  {
+    "id": "pascal-02",
+    "text": "The heart has its reasons which reason knows nothing of.",
+    "author": "Blaise Pascal",
+    "source": "Pensees"
+  },
+  {
+    "id": "spinoza-02",
+    "text": "The more clearly you understand yourself, the more you become a lover of what is.",
+    "author": "Baruch Spinoza",
+    "source": "Ethics"
+  },
+  {
+    "id": "thoreau-02",
+    "text": "An early-morning walk is a blessing for the whole day.",
+    "author": "Henry David Thoreau",
+    "source": "Walden"
+  },
+  {
+    "id": "thoreau-03",
+    "text": "If one advances confidently in the direction of his dreams, he will meet with a success unexpected.",
+    "author": "Henry David Thoreau",
+    "source": "Walden"
+  },
+  {
+    "id": "emerson-02",
+    "text": "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays"
+  },
+  {
+    "id": "whitman-01",
+    "text": "Keep your face always toward the sunshine, and shadows will fall behind you.",
+    "author": "Walt Whitman",
+    "source": "Leaves of Grass"
+  },
+  {
+    "id": "dickinson-01",
+    "text": "Forever is composed of nows.",
+    "author": "Emily Dickinson",
+    "source": "Public domain"
+  },
+  {
+    "id": "muir-01",
+    "text": "In every walk with nature one receives far more than he seeks.",
+    "author": "John Muir",
+    "source": "Public domain"
+  },
+  {
+    "id": "meister-eckhart-02",
+    "text": "Be willing to be a beginner every single morning.",
+    "author": "Meister Eckhart",
+    "source": "Public domain"
+  },
+  {
+    "id": "chinese-proverb-02",
+    "text": "The best time to plant a tree was twenty years ago. The second best time is now.",
+    "author": "Chinese Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "chinese-proverb-03",
+    "text": "A bird does not sing because it has an answer. It sings because it has a song.",
+    "author": "Chinese Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "japanese-proverb-01",
+    "text": "Fall seven times and stand up eight.",
+    "author": "Japanese Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "japanese-proverb-02",
+    "text": "One kind word can warm three winter months.",
+    "author": "Japanese Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "zen-proverb-01",
+    "text": "Before enlightenment, chop wood, carry water. After enlightenment, chop wood, carry water.",
+    "author": "Zen Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "zen-proverb-02",
+    "text": "When walking, walk. When eating, eat.",
+    "author": "Zen Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "zen-proverb-03",
+    "text": "All know the way, but few actually walk it.",
+    "author": "Zen Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "zen-proverb-04",
+    "text": "The obstacle is the path.",
+    "author": "Zen Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "zen-proverb-05",
+    "text": "Sitting quietly, doing nothing, spring comes, and the grass grows by itself.",
+    "author": "Zen Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "zen-proverb-06",
+    "text": "Let go or be dragged.",
+    "author": "Zen Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "tibetan-proverb-01",
+    "text": "Eat half, walk double, laugh triple, and love without measure.",
+    "author": "Tibetan Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "arabic-proverb-01",
+    "text": "He who has health has hope, and he who has hope has everything.",
+    "author": "Arabic Proverb",
+    "source": "Public domain"
+  },
+  {
+    "id": "zen-typer-01",
+    "text": "Type one true word, then another. The page will take care of itself.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-02",
+    "text": "The breath goes in, the breath goes out. The fingers follow.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-03",
+    "text": "Speed is a side effect of attention.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-04",
+    "text": "A quiet keyboard is a quiet mind.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-05",
+    "text": "Do not chase the words. Let them arrive.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-06",
+    "text": "Every keystroke is a small bell ringing in an empty room.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-07",
+    "text": "Still hands, steady breath, clear line.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-08",
+    "text": "The cursor blinks. The world waits. Begin.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-09",
+    "text": "Mistakes are only drafts of mastery.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-10",
+    "text": "Slow is smooth, and smooth becomes fast.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-11",
+    "text": "Listen to the rhythm under your fingers.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-12",
+    "text": "One sentence, fully felt, is a meditation.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-13",
+    "text": "The blank page is not empty. It is patient.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-14",
+    "text": "Breathe between words. Rest between thoughts.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-15",
+    "text": "Attention is the rarest key on the board.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-16",
+    "text": "Type as water flows: without hurry, without pause.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-17",
+    "text": "A calm typist outlasts a frantic one.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-18",
+    "text": "Feel each key land. That landing is the practice.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-19",
+    "text": "The next word is the only word.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-20",
+    "text": "Let the shoulders drop. Let the sentence rise.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-21",
+    "text": "Clarity in, clarity out.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-22",
+    "text": "You do not have to be fast. You only have to be here.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-23",
+    "text": "The rhythm you keep is the mind you build.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-24",
+    "text": "Soft eyes, loose wrists, open mind.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-25",
+    "text": "Each paragraph is a small exhale.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-26",
+    "text": "Begin again. Beginning again is the whole art.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-27",
+    "text": "Noise fades when the fingers find their tempo.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-28",
+    "text": "Write the sentence you are in, not the one ahead.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-29",
+    "text": "Patience types faster than haste.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-30",
+    "text": "The space bar is a breath. Take it.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-31",
+    "text": "Trust the hands. They know the way by now.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-32",
+    "text": "A single line, typed with care, outshines a page of rush.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-33",
+    "text": "Sit down. Settle. The words are already waiting.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-34",
+    "text": "What you practice in typing, you practice in life.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-35",
+    "text": "Gentle pressure, full presence.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-36",
+    "text": "The delete key forgives. The breath restores.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-37",
+    "text": "Keep going. The stillness compounds.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-38",
+    "text": "Finish the line. Then let it go.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-39",
+    "text": "Morning pages, evening calm.",
+    "author": "Zen Typer",
+    "source": "Original"
+  },
+  {
+    "id": "zen-typer-40",
+    "text": "Here, now, this key, this breath.",
+    "author": "Zen Typer",
+    "source": "Original"
   }
 ]

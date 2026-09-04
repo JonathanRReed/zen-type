@@ -7,6 +7,7 @@ import HelpSheet from "../components/HelpSheet";
 import ArchiveOverlay from "../components/ArchiveOverlay";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
+import GlobalShortcuts from "../components/GlobalShortcuts";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
 import SpotlightLayer from "../components/SpotlightLayer";
@@ -71,6 +72,7 @@ const zenUrl = `${siteUrl}/zen/`;
 			</a>
 			<main
 				id="zen-app"
+				tabindex="-1"
 				class="relative w-full h-screen overflow-hidden stats-cq-host"
 			>
 				<h1 class="sr-only">
@@ -116,6 +118,8 @@ const zenUrl = `${siteUrl}/zen/`;
 				<!-- Archive overlay (hidden by default) -->
 				<ArchiveOverlay client:only="react" />
 				<SiteFooter client:only="react" />
+				<!-- Documented Ctrl/Cmd shortcuts (Help: Notes & Drafts, mute) -->
+				<GlobalShortcuts client:only="react" />
 			</main>
 		</ErrorBoundary>
 

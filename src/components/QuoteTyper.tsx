@@ -11,11 +11,14 @@ import {
 import { loadQuotes, getRandomQuote, getFallbackQuotes, type Quote } from '../utils/quotes';
 import { Button } from '@/components/ui/button';
 import AnimatedNumber from './AnimatedNumber';
+import { audioEngine } from '../utils/audioEngine';
+import { ExportManager } from '../utils/exportManager';
+
+const STATIC_FALLBACK_QUOTES = getFallbackQuotes();
 
 interface QuoteTyperProps {
   quote: string;
   author?: string;
-  reducedMotion?: boolean;
   onComplete?: (summary: {
     mode: 'quote';
     startedAt: Date;
@@ -30,7 +33,6 @@ interface QuoteTyperProps {
 const QuoteTyper: React.FC<QuoteTyperProps> = ({
   quote,
   author,
-  reducedMotion: _reducedMotion = false,
   onComplete,
 }) => {
   // Active quote state (for seamless in-app switching)
@@ -39,7 +41,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   const [cursor, setCursor] = useState(0);
   const [typedChars, setTypedChars] = useState<string[]>([]);
   const [errors, setErrors] = useState<Set<number>>(new Set());
-  const [errorTypeAt, setErrorTypeAt] = useState<Map<number, 'slip' | 'skip' | 'extra'>>(new Map());
+  const errorTypeAtRef = useRef<Map<number, 'slip' | 'skip' | 'extra'>>(new Map());
   const [errorCounts, setErrorCounts] = useState({ slip: 0, skip: 0, extra: 0 });
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
@@ -54,19 +56,40 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
   const [autoAdvance, setAutoAdvance] = useState<boolean>(() => {
     try { return !!getSettings().autoAdvanceQuotes; } catch { return false; }
   });
-  const [advanceDelay, setAdvanceDelay] = useState<number>(() => {
-    try { return Math.max(0, (getSettings().autoAdvanceDelayMs ?? 0)); } catch { return 0; }
-  });
+  const advanceDelayRef = useRef<number>(0);
+  useEffect(() => {
+    try {
+      advanceDelayRef.current = Math.max(0, getSettings().autoAdvanceDelayMs ?? 0);
+    } catch {}
+  }, []);
   // Cumulative streak metrics (across consecutive quotes)
   const [streakTimeSec, setStreakTimeSec] = useState(0);
   const [streakCorrect, setStreakCorrect] = useState(0);
   const [streakTotal, setStreakTotal] = useState(0);
   const quotesRef = useRef<Quote[]>([]);
-  const fallbackQuotesRef = useRef<Quote[]>(getFallbackQuotes());
   const activeQuoteRef = useRef(activeQuote);
   const [isPending, startTransition] = useTransition();
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [progressAnnouncement, setProgressAnnouncement] = useState<string | null>(null);
+  const [ghostCursor, setGhostCursor] = useState<number>(-1);
+
+  useEffect(() => {
+    if (!startTime || isComplete) return;
+    const targetWpm = getSettings().targetWpm || 0;
+    if (targetWpm <= 0) return;
+
+    const startMs = startTime.getTime();
+    const interval = window.setInterval(() => {
+      const elapsedSec = (Date.now() - startMs) / 1000;
+      const targetCps = (targetWpm * 5) / 60;
+      const nextIndex = Math.min(activeQuote.length - 1, Math.floor(elapsedSec * targetCps));
+      setGhostCursor(nextIndex);
+    }, 100);
+    return () => {
+      window.clearInterval(interval);
+      setGhostCursor(-1);
+    };
+  }, [startTime, isComplete, activeQuote.length]);
   const progressTimeoutRef = useRef<number | null>(null);
 
   // Chunking
@@ -79,7 +102,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     setCursor(0);
     setTypedChars([]);
     setErrors(new Set());
-    setErrorTypeAt(new Map());
+    errorTypeAtRef.current.clear();
     setErrorCounts({ slip: 0, skip: 0, extra: 0 });
     setStartTime(null);
     setEndTime(null);
@@ -129,7 +152,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         autoAdvanceDelayMs: current.autoAdvanceDelayMs ?? 0,
       };
       saveSettings(next);
-      setAdvanceDelay(Math.max(0, next.autoAdvanceDelayMs ?? 0));
+      advanceDelayRef.current = Math.max(0, next.autoAdvanceDelayMs ?? 0);
       window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
     } catch { }
   }, []);
@@ -203,7 +226,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
       try {
         const s = (e as CustomEvent).detail as Settings;
         setAutoAdvance(!!s.autoAdvanceQuotes);
-        setAdvanceDelay(Math.max(0, Number(s.autoAdvanceDelayMs ?? 0)));
+        advanceDelayRef.current = Math.max(0, Number(s.autoAdvanceDelayMs ?? 0));
       } catch { }
     };
     const onNew = async (e: Event) => {
@@ -223,7 +246,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           }
         }
         if (!pool.length) {
-          pool = fallbackQuotesRef.current;
+          pool = STATIC_FALLBACK_QUOTES;
         }
         if (pool.length) {
           let next = getRandomQuote(pool);
@@ -248,12 +271,27 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         handleReset();
       }
     };
+    const onCustomQuote = (e: Event) => {
+      const d = (e as CustomEvent).detail as { text: string; author?: string } | undefined;
+      if (d?.text?.trim()) {
+        const text = d.text.trim();
+        const author = d.author?.trim() || 'Custom Text';
+        activeQuoteRef.current = text;
+        startTransition(() => {
+          setActiveQuote(text);
+          setActiveAuthor(author);
+          handleReset();
+        });
+      }
+    };
     window.addEventListener('settingsChanged', onSettings as EventListener);
     window.addEventListener('newQuote', onNew as EventListener);
+    window.addEventListener('loadCustomQuote', onCustomQuote as EventListener);
     return () => {
       mounted = false;
       window.removeEventListener('settingsChanged', onSettings as EventListener);
       window.removeEventListener('newQuote', onNew as EventListener);
+      window.removeEventListener('loadCustomQuote', onCustomQuote as EventListener);
     };
   }, [handleReset]);
 
@@ -272,6 +310,47 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
     return () => {
       window.removeEventListener(eventName, handleStorageError as EventListener);
+    };
+  }, []);
+
+  // Live session snapshot for the Share Card exporter. ExportManager asks
+  // for it via `requestCurrentSession` and reads `__currentSessionData`;
+  // without this producer the button silently failed every time.
+  const sessionSnapshotRef = useRef({
+    mode: 'quote' as const,
+    date: new Date().toISOString(),
+    time: 0,
+    words: 0,
+    wpm: 0,
+    accuracy: 100,
+  });
+
+  useEffect(() => {
+    const now = new Date();
+    const elapsedSec = startTime ? Math.max(0, Math.floor((now.getTime() - startTime.getTime()) / 1000)) : 0;
+    const totalSec = streakTimeSec + elapsedSec;
+    const aggCorrect = streakCorrect + correctChars;
+    const aggTyped = streakTotal + totalTyped;
+    const minutes = Math.max(1 / 60, totalSec / 60);
+    sessionSnapshotRef.current = {
+      mode: 'quote',
+      date: now.toISOString(),
+      time: totalSec,
+      words: Math.floor(aggCorrect / 5),
+      wpm: Math.round((aggCorrect / 5) / minutes),
+      accuracy: aggTyped === 0 ? 100 : Math.round((aggCorrect / aggTyped) * 100),
+    };
+  });
+
+  useEffect(() => {
+    const answerSessionRequest = () => {
+      (window as unknown as { __currentSessionData: unknown }).__currentSessionData = {
+        ...sessionSnapshotRef.current,
+      };
+    };
+    window.addEventListener('requestCurrentSession', answerSessionRequest as EventListener);
+    return () => {
+      window.removeEventListener('requestCurrentSession', answerSessionRequest as EventListener);
     };
   }, []);
 
@@ -300,6 +379,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
     if (e.key === 'Backspace') {
       e.preventDefault();
+      audioEngine.playSwitch(getSettings().switchSound || 'none', 'Backspace');
       if (cursor > 0) {
         // Smart rewind: jump to last incorrect index if any
         let target = cursor - 1;
@@ -313,11 +393,9 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         const es = new Set(errors);
         if (es.delete(target)) {
           setErrors(es);
-          const m = new Map(errorTypeAt);
-          if (m.has(target)) {
-            const t = m.get(target)!;
-            m.delete(target);
-            setErrorTypeAt(m);
+          if (errorTypeAtRef.current.has(target)) {
+            const t = errorTypeAtRef.current.get(target)!;
+            errorTypeAtRef.current.delete(target);
             setErrorCounts(prev => {
               const next = { ...prev };
               next[t] = Math.max(0, prev[t] - 1);
@@ -331,6 +409,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
 
     if (e.key.length === 1) {
       e.preventDefault();
+      audioEngine.playSwitch(getSettings().switchSound || 'none', e.key);
 
       if (cursor >= activeQuote.length) return;
       // Optional debounce for ultra-fast duplicate keystrokes
@@ -371,9 +450,9 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         chunkCorrectRef.current.set(currentChunkIndex, (chunkCorrectRef.current.get(currentChunkIndex) || 0) + 1);
         chunkTypedRef.current.set(currentChunkIndex, (chunkTypedRef.current.get(currentChunkIndex) || 0) + 1);
         const es = new Set(errors); es.delete(cursor); setErrors(es);
-        const m = new Map(errorTypeAt);
-        if (m.has(cursor)) {
-          const t = m.get(cursor)!; m.delete(cursor); setErrorTypeAt(m);
+        if (errorTypeAtRef.current.has(cursor)) {
+          const t = errorTypeAtRef.current.get(cursor)!;
+          errorTypeAtRef.current.delete(cursor);
           setErrorCounts(prev => {
             const next = { ...prev };
             next[t] = Math.max(0, prev[t] - 1);
@@ -385,10 +464,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         const es = new Set(errors); es.add(cursor); setErrors(es);
         chunkTypedRef.current.set(currentChunkIndex, (chunkTypedRef.current.get(currentChunkIndex) || 0) + 1);
         if (errType) {
-          const m = new Map(errorTypeAt);
-          if (!m.has(cursor)) {
-            m.set(cursor, errType);
-            setErrorTypeAt(m);
+          if (!errorTypeAtRef.current.has(cursor)) {
+            errorTypeAtRef.current.set(cursor, errType);
             setErrorCounts(prev => {
               const next = { ...prev };
               next[errType] = next[errType] + 1;
@@ -398,7 +475,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
         }
       }
 
-      setCursor(cursor + 1);
+      setCursor(prev => prev + 1);
 
       // Check for completion. The final tallies are passed in because the
       // setCorrectChars/setTotalTyped calls above have not flushed yet, and
@@ -482,7 +559,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           }
           handleReset();
         };
-        const delay = Math.max(0, advanceDelay);
+        const delay = Math.max(0, advanceDelayRef.current);
         if (delay === 0) {
           runNext();
         } else {
@@ -506,35 +583,45 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     }, 1000);
   }, []);
 
-  // Focus input on mount
+  // Focus input on mount, and warm up audio on first gesture for lag-free clicks
   useEffect(() => {
     inputRef.current?.focus();
+    const unlock = () => audioEngine.unlock();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
   }, []);
 
   // Keep focus on hidden input to avoid browser "find" triggering when typing on the page
   useEffect(() => {
     const input = inputRef.current;
     if (!input) return;
+    let blurTimeout: number | null = null;
     const onBlur = () => {
       // If a modal/dialog is open, don't steal focus
       const modalOpen = !!document.querySelector('[role="dialog"][aria-modal="true"]');
       if (modalOpen) return;
-      setTimeout(() => {
-        // Only reclaim focus when nothing else took it. Unconditionally
-        // refocusing here trapped keyboard users: Shift+Tab moved focus to the
-        // header/footer and this handler yanked it straight back, so the theme
-        // toggle, nav and footer links were unreachable without a mouse. The
-        // capture-phase keydown listener below still pulls focus back the
-        // moment a printable key is pressed, which is what actually keeps the
-        // browser's quick-find from opening.
+      if (blurTimeout !== null) {
+        window.clearTimeout(blurTimeout);
+      }
+      blurTimeout = window.setTimeout(() => {
         const active = document.activeElement;
         if (!active || active === document.body || active === document.documentElement) {
           inputRef.current?.focus();
         }
+        blurTimeout = null;
       }, 0);
     };
     input.addEventListener('blur', onBlur);
-    return () => input.removeEventListener('blur', onBlur);
+    return () => {
+      input.removeEventListener('blur', onBlur);
+      if (blurTimeout !== null) {
+        window.clearTimeout(blurTimeout);
+      }
+    };
   }, []);
 
   // Capture printable keys globally to prevent browser quick-find when input isn't focused
@@ -567,11 +654,16 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
     if (isCurrent) state = 'current';
     else if (isTyped) state = hasError ? 'error' : 'correct';
 
+    const isGhostPacer = index === ghostCursor && index >= cursor;
     const displayChar = char === ' ' ? '\u00A0' : char;
     const shown = isTyped && typedChar ? (hasError ? typedChar : displayChar) : displayChar;
 
     return (
-      <span key={index} className={`quote-char font-mono ${state}`} data-state={state}>
+      <span
+        key={`qc_${char}_${index}`}
+        className={`quote-char font-mono ${state} ${isGhostPacer ? 'ghost-pacer' : ''}`}
+        data-state={state}
+      >
         {shown}
       </span>
     );
@@ -628,7 +720,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
           role="alert"
         >
           <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg aria-hidden="true" className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <div className="flex-1">
@@ -641,7 +733,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
               className="flex-shrink-0 h-6 w-6 text-love/70 hover:text-love transition-colors"
               aria-label="Dismiss warning"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </Button>
@@ -723,7 +815,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button
                   onClick={handleReset}
-                  className="bg-tint/90 hover:bg-tint text-base font-semibold text-[color-mix(in_oklab,var(--rp-base)_88%,black_12%)] shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--theme-accent)_60%,transparent)]"
+                  className="px-6 py-2.5 rounded-xl bg-tint/20 hover:bg-tint/35 border border-tint/60 text-tint font-sans font-semibold text-base shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--theme-accent)_50%,transparent)] transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
                 >
                   Type Again
                 </Button>
@@ -733,6 +825,26 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({
                   className="border-tint2/45 text-tint2 hover:bg-tint2/15"
                 >
                   New Quote
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await ExportManager.getInstance().exportData({
+                        format: 'png',
+                      });
+                    } catch (e) {
+                      console.error('Export card failed', e);
+                    }
+                  }}
+                  variant="outline"
+                  className="border-tint/35 text-tint hover:bg-tint/15 flex items-center gap-1.5"
+                >
+                  <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                    <polyline points="16 6 12 2 8 6"/>
+                    <line x1="12" y1="2" x2="12" y2="15"/>
+                  </svg>
+                  <span>Share Card</span>
                 </Button>
                 <Button
                   onClick={() => toggleAutoAdvance(!autoAdvance)}
