@@ -11,20 +11,24 @@ module.exports = {
     },
     extend: {
       colors: {
-        base: "var(--rp-base)",
-        surface: "var(--rp-surface)",
-        overlay: "var(--rp-overlay)",
-        text: "var(--rp-text)",
-        muted: "var(--rp-muted)",
-        love: "var(--rp-love)",
-        gold: "var(--rp-gold)",
-        rose: "var(--rp-rose)",
-        pine: "var(--rp-pine)",
-        foam: "var(--rp-foam)",
-        iris: "var(--rp-iris)",
+        // Every palette color is a CSS variable, so plain `var(--x)` values
+        // silently drop Tailwind opacity modifiers (`bg-surface/40` compiled
+        // to nothing). Routing through color-mix with <alpha-value> makes
+        // `/opacity` work while bare classes resolve identically (alpha 1).
+        base: "color-mix(in oklab, var(--rp-base) calc(<alpha-value> * 100%), transparent)",
+        surface: "color-mix(in oklab, var(--rp-surface) calc(<alpha-value> * 100%), transparent)",
+        overlay: "color-mix(in oklab, var(--rp-overlay) calc(<alpha-value> * 100%), transparent)",
+        text: "color-mix(in oklab, var(--rp-text) calc(<alpha-value> * 100%), transparent)",
+        muted: "color-mix(in oklab, var(--rp-muted) calc(<alpha-value> * 100%), transparent)",
+        love: "color-mix(in oklab, var(--rp-love) calc(<alpha-value> * 100%), transparent)",
+        gold: "color-mix(in oklab, var(--rp-gold) calc(<alpha-value> * 100%), transparent)",
+        rose: "color-mix(in oklab, var(--rp-rose) calc(<alpha-value> * 100%), transparent)",
+        pine: "color-mix(in oklab, var(--rp-pine) calc(<alpha-value> * 100%), transparent)",
+        foam: "color-mix(in oklab, var(--rp-foam) calc(<alpha-value> * 100%), transparent)",
+        iris: "color-mix(in oklab, var(--rp-iris) calc(<alpha-value> * 100%), transparent)",
         // Theme-reactive accents — shift with the active theme so UI never clashes
-        tint: "var(--theme-accent)",
-        tint2: "var(--theme-accent-2)",
+        tint: "color-mix(in oklab, var(--theme-accent) calc(<alpha-value> * 100%), transparent)",
+        tint2: "color-mix(in oklab, var(--theme-accent-2) calc(<alpha-value> * 100%), transparent)",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

@@ -1,6 +1,6 @@
 # Zen Type
 
-Zen Type is a typing app built with Astro 5 and React 19, themed with the Rosé Pine palette. It includes an open-ended Zen mode and a quote practice mode, sharing a consistent UI styled with Tailwind CSS.
+Zen Type is a typing app built with Astro 7 and React 19, themed with the Rosé Pine palette. It includes an open-ended Zen mode and a quote practice mode, sharing a consistent UI styled with Tailwind CSS.
 
 ## Overview
 

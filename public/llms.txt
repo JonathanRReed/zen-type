@@ -1,12 +1,12 @@
 # Zen Typer
 
-> Zen Typer is a mindful typing app built with Astro 5 and React 19. Quote Mode is a typing test on short Zen quotes with live WPM and accuracy. Zen Mode is a free-flow writing canvas. The app uses the Rosé Pine color palette, runs entirely in the browser, and keeps keyboard access and reduced-motion support in the main workflow.
+> Zen Typer is a mindful typing app built with Astro 7 and React 19. Quote Mode is a typing test on short Zen quotes with live WPM and accuracy. Zen Mode is a free-flow writing canvas. The app uses the Rosé Pine color palette, runs entirely in the browser, and keeps keyboard access and reduced-motion support in the main workflow.
 
 Zen Typer is for practicing typing speed and accuracy without a game layer on top. What it does:
 
 - **Quote Mode**: Type short Zen quotes with live accuracy, WPM, and an error breakdown of slips, skips, and extras
 - **Zen Mode**: Free-flow typing where each committed word drifts upward as a token, with session persistence and draft management
-- **Design System**: Built on Rosé Pine palette with theme presets (Void, Forest, Ocean, Cosmic)
+- **Design System**: Built on Rosé Pine palette with 8 theme presets (Void, Cosmic, Aurora, Ocean, Glacier, Forest, Ember, Sakura)
 - **Accessibility First**: Full keyboard navigation, screen reader support, reduced motion options, and high contrast mode
 - **Local Persistence**: All sessions, streaks, and preferences stored locally using IndexedDB via Dexie
 
