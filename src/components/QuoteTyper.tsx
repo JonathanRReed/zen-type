@@ -633,8 +633,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     return nodes;
   };
 
+  // Once the completion card is up the column can be taller than a short
+  // viewport, so it scrolls; the bottom padding clears the fixed stats bar.
   const containerClass = isComplete
-    ? 'quote-stage flex flex-col items-center w-full px-4 sm:px-6 pt-4 pb-24 gap-8'
+    ? 'quote-stage quote-stage-complete flex flex-col items-center w-full px-4 sm:px-6 pt-24 pb-48 gap-8 max-h-[100dvh] overflow-y-auto overscroll-contain'
     : 'quote-stage flex flex-col items-center justify-center w-full px-4 sm:px-6 py-8 pb-24';
 
   const shareCard = () => {

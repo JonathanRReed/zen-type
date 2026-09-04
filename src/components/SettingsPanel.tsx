@@ -1,5 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { updateSettings, resetAllData, FONT_OPTIONS, type FontOption, type Settings } from '../utils/storage';
+import React, { useState, useCallback, useRef } from 'react';
+import { updateSettings, resetAllData, FONT_OPTIONS, type FontOption, type Settings, type QuoteLength } from '../utils/storage';
+import { QUOTE_TAGS } from '../utils/quotes';
+import { downloadBackup, restoreFromFile, clearAllLocalData } from '../utils/backup';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -18,6 +20,8 @@ interface SettingsPanelProps {
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingChange, onClose }) => {
   const [ghostPreview, setGhostPreview] = useState<string>('');
+  const [dataNote, setDataNote] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const applySettingsPatch = useCallback((patch: Partial<Settings>) => {
     const next = updateSettings(patch);
@@ -334,6 +338,64 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 disabled={!settings.autoAdvanceQuotes}
               />
             </div>
+
+            <div className="pt-2">
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="text-text">Length</span>
+                <span className="text-xs text-muted/70">Nothing ticked means any length</span>
+              </div>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Quote length">
+                {(['short', 'medium', 'long'] as QuoteLength[]).map((len) => {
+                  const on = (settings.quoteLengths ?? []).includes(len);
+                  return (
+                    <button
+                      key={len}
+                      type="button"
+                      aria-pressed={on}
+                      className={`chip${on ? ' is-on' : ''}`}
+                      onClick={() => {
+                        const current = settings.quoteLengths ?? [];
+                        const next = on ? current.filter(l => l !== len) : [...current, len];
+                        handleSettingChange('quoteLengths', next);
+                      }}
+                    >
+                      {len === 'short' ? 'Short' : len === 'medium' ? 'Medium' : 'Long'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="text-text">Themes</span>
+                <span className="text-xs text-muted/70">Nothing ticked means everything</span>
+              </div>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Quote themes">
+                {QUOTE_TAGS.map((tag) => {
+                  const on = (settings.quoteTags ?? []).includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      aria-pressed={on}
+                      title={tag.blurb}
+                      className={`chip${on ? ' is-on' : ''}`}
+                      onClick={() => {
+                        const current = settings.quoteTags ?? [];
+                        const next = on ? current.filter(t => t !== tag.id) : [...current, tag.id];
+                        handleSettingChange('quoteTags', next);
+                      }}
+                    >
+                      {tag.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {((settings.quoteTags ?? []).length > 0 || (settings.quoteLengths ?? []).length > 0) && (
+                <p className="text-xs text-muted/70 mt-2">Takes effect on the next quote.</p>
+              )}
+            </div>
           </div>
         </section>
 
@@ -590,13 +652,71 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
         </section>
 
         <section className="settings-footer">
-          <Button
-            onClick={() => resetAllData()}
-            variant="outline"
-            className="w-full bg-love/15 hover:bg-love/25 border-love/30 text-love"
-          >
-            Clear local stats & telemetry
-          </Button>
+          <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Your data</h3>
+          <p className="text-xs text-muted/80 mb-3">
+            Everything lives in this browser. A backup is one file with your settings, history, and drafts. Nothing is uploaded.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button
+              onClick={() => {
+                downloadBackup().then(() => setDataNote('Backup saved.')).catch(() => setDataNote('Could not build the backup.'));
+              }}
+              variant="outline"
+              className="w-full bg-tint/15 hover:bg-tint/25 border-tint/30 text-tint"
+            >
+              Back up everything
+            </Button>
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              variant="outline"
+              className="w-full bg-surface/60 hover:bg-surface/80 border-muted/20 text-text"
+            >
+              Restore from backup
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              aria-label="Choose a backup file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (!file) return;
+                restoreFromFile(file)
+                  .then((summary) => setDataNote(`Restored ${summary.sessions} sessions and ${summary.drafts} drafts.`))
+                  .catch((err: unknown) => setDataNote(err instanceof Error ? err.message : 'Restore failed.'));
+              }}
+            />
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <Button
+              onClick={() => {
+                if (window.confirm('Reset your stats and session history? Settings and drafts stay.')) {
+                  resetAllData();
+                  setDataNote('Stats and history cleared.');
+                }
+              }}
+              variant="outline"
+              className="w-full bg-surface/60 hover:bg-surface/80 border-muted/20 text-text"
+            >
+              Reset stats
+            </Button>
+            <Button
+              onClick={() => {
+                if (window.confirm('Delete everything Zen Typer keeps in this browser, including every draft? This cannot be undone.')) {
+                  clearAllLocalData().finally(() => window.location.reload());
+                }
+              }}
+              variant="outline"
+              className="w-full bg-love/15 hover:bg-love/25 border-love/30 text-love"
+            >
+              Delete all data
+            </Button>
+          </div>
+          {dataNote && (
+            <p className="text-xs text-muted mt-3" role="status" aria-live="polite">{dataNote}</p>
+          )}
         </section>
       </div>
     </>

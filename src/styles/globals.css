@@ -1056,6 +1056,107 @@ html[data-motion="off"] .quote-char.current {
   scroll-snap-align: start;
 }
 
+/* First-run hint: one quiet line under the header */
+.first-run-hint {
+  position: fixed;
+  top: calc(5.4rem + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: min(92vw, 34rem);
+  padding: 0.45rem 0.6rem 0.45rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--rp-subtle);
+  background: color-mix(in oklab, var(--rp-surface) 78%, transparent);
+  border: 1px solid color-mix(in oklab, var(--theme-accent) 22%, transparent);
+  backdrop-filter: blur(10px);
+  animation: fade-slide-in 0.5s var(--ease-smooth) both;
+}
+
+.first-run-hint button {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  color: var(--rp-subtle);
+  line-height: 1;
+}
+
+.first-run-hint button:hover {
+  color: var(--rp-text);
+  background: color-mix(in oklab, var(--rp-text) 10%, transparent);
+}
+
+/* Progress calendar */
+.progress-grid {
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.progress-months {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 3px;
+  font-size: 0.65rem;
+  color: var(--rp-subtle);
+  margin-bottom: 4px;
+  min-width: 18rem;
+}
+
+.progress-weeks {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 3px;
+  min-width: 18rem;
+}
+
+.progress-week {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.progress-cell {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--rp-text) 6%, transparent);
+}
+
+.progress-cell.is-future { opacity: 0.35; }
+.progress-cell.level-1 { background: color-mix(in oklab, var(--theme-accent) 30%, transparent); }
+.progress-cell.level-2 { background: color-mix(in oklab, var(--theme-accent) 50%, transparent); }
+.progress-cell.level-3 { background: color-mix(in oklab, var(--theme-accent) 72%, transparent); }
+.progress-cell.level-4 { background: var(--theme-accent); }
+
+/* Toggle chips (quote filters) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--rp-subtle);
+  background: color-mix(in oklab, var(--rp-surface) 60%, transparent);
+  border: 1px solid color-mix(in oklab, var(--rp-muted) 30%, transparent);
+  transition: color 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), border-color 0.15s var(--ease-smooth);
+}
+
+.chip:hover {
+  color: var(--rp-text);
+  border-color: color-mix(in oklab, var(--theme-accent) 40%, transparent);
+}
+
+.chip.is-on {
+  color: var(--rp-base);
+  background: var(--theme-accent);
+  border-color: var(--theme-accent);
+}
+
 /* With an on-screen keyboard open, everything pinned to the bottom lifts
    above it: the stats bar sits just over the typing field, the footer hides. */
 html[data-kb="open"] .stats-bar {

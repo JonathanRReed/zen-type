@@ -8,6 +8,8 @@ import ArchiveOverlay from "../components/ArchiveOverlay";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
 import GlobalShortcuts from "../components/GlobalShortcuts";
+import ProgressOverlay from "../components/ProgressOverlay";
+import FirstRunHint from "../components/FirstRunHint";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
 import AmbientLayer from "../components/AmbientLayer";
@@ -134,6 +136,8 @@ const quoteUrl = `${siteUrl}/quote/`;
 				<SiteFooter client:only="react" />
 				<!-- Documented Ctrl/Cmd shortcuts (Help: Notes & Drafts, mute) -->
 				<GlobalShortcuts client:only="react" />
+				<ProgressOverlay client:only="react" />
+				<FirstRunHint client:only="react" mode="quote" />
 			</main>
 		</ErrorBoundary>
 

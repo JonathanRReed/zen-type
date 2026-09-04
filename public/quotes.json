@@ -1,938 +1,3221 @@
 [
   {
-    "id": "lao-tzu-01",
-    "text": "Nature does not hurry, yet everything is accomplished.",
-    "author": "Lao Tzu",
-    "source": "Public domain"
-  },
-  {
-    "id": "seneca-01",
-    "text": "Begin at once to live, and count each separate day as a separate life.",
-    "author": "Seneca",
-    "source": "Public domain"
-  },
-  {
-    "id": "basho-01",
-    "text": "Every day is a journey, and the journey itself is home.",
-    "author": "Matsuo Bashō",
-    "source": "Public domain"
-  },
-  {
     "id": "marcus-aurelius-01",
-    "text": "You have power over your mind - not outside events. Realize this, and you will find strength.",
+    "text": "Remember that all is but opinion, and all opinion depends of the mind.",
     "author": "Marcus Aurelius",
-    "source": "Meditations"
-  },
-  {
-    "id": "rumi-01",
-    "text": "Let yourself be silently drawn by the strange pull of what you really love. It will not lead you astray.",
-    "author": "Rumi",
-    "source": "Public domain"
-  },
-  {
-    "id": "thich-nhat-hanh-01",
-    "text": "Smile, breathe, and go slowly.",
-    "author": "Thich Nhat Hanh",
-    "source": "Public domain"
-  },
-  {
-    "id": "alan-watts-01",
-    "text": "The only way to make sense out of change is to plunge into it, move with it, and join the dance.",
-    "author": "Alan Watts",
-    "source": "Public domain"
-  },
-  {
-    "id": "buddha-01",
-    "text": "Do not dwell in the past, do not dream of the future, concentrate the mind on the present moment.",
-    "author": "Buddha",
-    "source": "Public domain"
-  },
-  {
-    "id": "epictetus-01",
-    "text": "It's not what happens to you, but how you react to it that matters.",
-    "author": "Epictetus",
-    "source": "Public domain"
-  },
-  {
-    "id": "lao-tzu-02",
-    "text": "When I let go of what I am, I become what I might be.",
-    "author": "Lao Tzu",
-    "source": "Tao Te Ching"
-  },
-  {
-    "id": "dalai-lama-02",
-    "text": "If you want others to be happy, practice compassion. If you want to be happy, practice compassion.",
-    "author": "Dalai Lama",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "confucius-01",
-    "text": "It doesn't matter how slow you go, as long as you don't stop.",
-    "author": "Confucius",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "morihei-ueshiba-01",
-    "text": "Those who are possessed by nothing possess everything.",
-    "author": "Morihei Ueshiba",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "huang-po-01",
-    "text": "The foolish reject what they see, not what they think; the wise reject what they think, not what they see.",
-    "author": "Huang Po",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "meister-eckhart-01",
-    "text": "Only the hand that erases can write the true thing.",
-    "author": "Meister Eckhart",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "william-james-01",
-    "text": "Our view of the world is truly shaped by what we decide to hear.",
-    "author": "William James",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "charlie-chaplin-01",
-    "text": "Simplicity is a difficult thing to achieve.",
-    "author": "Charlie Chaplin",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "ts-eliot-01",
-    "text": "The journey, not the destination matters.",
-    "author": "T.S. Eliot",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "sigmund-freud-01",
-    "text": "Being entirely honest with oneself is a good exercise.",
-    "author": "Sigmund Freud",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "toni-morrison-01",
-    "text": "Correct what you can. Learn from what you can't.",
-    "author": "Toni Morrison",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "lao-tzu-03",
-    "text": "A leader is best when people barely know he exists, when his work is done, his aim fulfilled, they will say: we did it ourselves.",
-    "author": "Lao Tzu",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "jon-kabat-zinn-01",
-    "text": "It is indeed a radical act of love just to sit down and be quiet for a time by yourself.",
-    "author": "Jon Kabat-Zinn",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "dogen-01",
-    "text": "A zen master's life is one continuous mistake.",
-    "author": "Dogen",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "chinese-proverb-01",
-    "text": "Tension is who you think you should be. Relaxation is who you are.",
-    "author": "Chinese Proverb",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "josh-waitzkin-01",
-    "text": "Still your waters.",
-    "author": "Josh Waitzkin",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "wp-kinsella-01",
-    "text": "You have to make time, even for something as universal as staring at the stars.",
-    "author": "W.P. Kinsella",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "paulo-coelho-01",
-    "text": "Sometimes you have to travel a long way to find what is near.",
-    "author": "Paulo Coelho",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "osho-01",
-    "text": "Love is not about possession. Love is about appreciation.",
-    "author": "Osho",
-    "source": "ZenQuotes.io"
-  },
-  {
-    "id": "dogen-02",
-    "text": "To study the self is to forget the self. To forget the self is to be actualized by myriad things.",
-    "author": "Eihei Dōgen",
-    "source": "Genjōkōan"
-  },
-  {
-    "id": "suzuki-01",
-    "text": "In the beginner's mind there are many possibilities, but in the expert's there are few.",
-    "author": "Shunryu Suzuki",
-    "source": "Zen Mind, Beginner's Mind"
-  },
-  {
-    "id": "zhuangzi-01",
-    "text": "Flow with whatever may happen, and let your mind be free: Stay centered by accepting whatever you are doing.",
-    "author": "Zhuangzi",
-    "source": "Wandering on at Ease"
-  },
-  {
-    "id": "thoreau-01",
-    "text": "I went to the woods because I wished to live deliberately, to front only the essential facts of life.",
-    "author": "Henry David Thoreau",
-    "source": "Walden"
-  },
-  {
-    "id": "emerson-01",
-    "text": "Adopt the pace of nature: her secret is patience.",
-    "author": "Ralph Waldo Emerson",
-    "source": "Essays"
-  },
-  {
-    "id": "rilke-01",
-    "text": "Let everything happen to you: beauty and terror. Just keep going. No feeling is final.",
-    "author": "Rainer Maria Rilke",
-    "source": "Book of Hours"
-  },
-  {
-    "id": "mary-oliver-01",
-    "text": "You do not have to be good. You only have to let the soft animal of your body love what it loves.",
-    "author": "Mary Oliver",
-    "source": "Wild Geese"
-  },
-  {
-    "id": "camus-01",
-    "text": "In the depth of winter, I finally learned that within me there lay an invincible summer.",
-    "author": "Albert Camus",
-    "source": "Return to Tipasa"
-  },
-  {
-    "id": "seneca-02",
-    "text": "We suffer more often in imagination than in reality.",
-    "author": "Seneca",
-    "source": "Letters from a Stoic"
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
   },
   {
     "id": "marcus-aurelius-02",
-    "text": "Dwell on the beauty of life. Watch the stars, and see yourself running with them.",
+    "text": "Let opinion be taken away, and no man will think himself wronged.",
     "author": "Marcus Aurelius",
-    "source": "Meditations"
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
   },
   {
-    "id": "alan-watts-02",
-    "text": "Muddy water is best cleared by leaving it alone.",
-    "author": "Alan Watts",
-    "source": "The Way of Zen"
+    "id": "marcus-aurelius-03",
+    "text": "The effect of true philosophy is unaffected simplicity and modesty.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-04",
+    "text": "Fame after life is no better than oblivion.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-05",
+    "text": "All things that are, are both usual and of little continuance.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-06",
+    "text": "Desire not then that which is impossible.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-07",
+    "text": "Whatsoever is besides either is already past, or uncertain.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-08",
+    "text": "A happy lot and portion is good inclinations of the soul, good desires, good actions.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-09",
+    "text": "Virtue alone is happiness, and vice is unhappiness.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-10",
+    "text": "All things that are in the world are always in the estate of alteration.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-11",
+    "text": "The motion of the mind is not as the motion of a dart.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-12",
+    "text": "There is but one light of the sun, though it be intercepted by walls and mountains, and other thousand objects.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-13",
+    "text": "Give thyself leisure to learn some good thing, and cease roving and wandering to and fro.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-14",
+    "text": "Afford then thyself this retiring continually, and thereby refresh and renew thyself.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-15",
+    "text": "Whatsoever is earthly presseth downwards to the common earth.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-16",
+    "text": "The cause of the universe is as it were a strong torrent, it carrieth all away.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. Meric Casaubon (1634)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-17",
+    "text": "Confine thyself to the present.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. George Long (1862)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-18",
+    "text": "If it is not right, do not do it: if it is not true, do not say it.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. George Long (1862)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "marcus-aurelius-19",
+    "text": "Such as are thy habitual thoughts, such also will be the character of thy mind; for the soul is dyed by the thoughts.",
+    "author": "Marcus Aurelius",
+    "source": "Meditations, trans. George Long (1862)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "lao-tzu-01",
+    "text": "The Tao that can be trodden is not the enduring and unchanging Tao.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-02",
+    "text": "Gentleness is sure to be victorious even in battle, and firmly to maintain its ground.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-03",
+    "text": "Words that are strictly true seem to be paradoxical.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
   },
   {
     "id": "lao-tzu-04",
-    "text": "Silence is a source of great strength.",
+    "text": "A violent wind does not last for a whole morning; a sudden rain does not last for the whole day.",
     "author": "Lao Tzu",
-    "source": "Tao Te Ching"
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
   },
   {
-    "id": "thich-nhat-hanh-02",
-    "text": "Feelings come and go like clouds in a windy sky. Conscious breathing is my anchor.",
-    "author": "Thich Nhat Hanh",
-    "source": "Stepping into Freedom"
+    "id": "lao-tzu-05",
+    "text": "Governing a great state is like cooking small fish.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
   },
   {
-    "id": "rumi-02",
-    "text": "The quieter you become, the more you are able to hear.",
-    "author": "Rumi",
-    "source": "Public domain"
+    "id": "lao-tzu-06",
+    "text": "Purity and stillness give the correct law to all under heaven.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
   },
   {
-    "id": "heraclitus-01",
-    "text": "No man ever steps in the same river twice, for it's not the same river and he's not the same man.",
-    "author": "Heraclitus",
-    "source": "Fragments"
+    "id": "lao-tzu-07",
+    "text": "The meshes of the net of Heaven are large; far apart, but letting nothing escape.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
   },
   {
-    "id": "montaigne-01",
-    "text": "The greatest thing in the world is to know how to belong to oneself.",
-    "author": "Michel de Montaigne",
-    "source": "Essays"
+    "id": "lao-tzu-08",
+    "text": "Let it be still, and it will gradually become clear.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
   },
   {
-    "id": "spinoza-01",
-    "text": "Peace is not an absence of war, it is a virtue, a state of mind, a disposition for benevolence, confidence, justice.",
-    "author": "Baruch Spinoza",
-    "source": "Tractatus Politicus"
+    "id": "lao-tzu-09",
+    "text": "Let movement go on, and the condition of rest will gradually arise.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
   },
   {
-    "id": "watts-03",
-    "text": "You are an aperture through which the universe is looking at and exploring itself.",
-    "author": "Alan Watts",
-    "source": "The Book"
+    "id": "lao-tzu-10",
+    "text": "Sincere words are not fine; fine words are not sincere.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
   },
   {
-    "id": "kierkegaard-01",
-    "text": "Life can only be understood backwards; but it must be lived forwards.",
-    "author": "Søren Kierkegaard",
-    "source": "Journals"
+    "id": "lao-tzu-11",
+    "text": "Gravity is the root of lightness; stillness, the ruler of movement.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
   },
   {
-    "id": "schopenhauer-01",
-    "text": "Each day is a little life: every waking and rising a little birth, every fresh morning a little youth, every going to rest and sleep a little death.",
-    "author": "Arthur Schopenhauer",
-    "source": "Parerga and Paralipomena"
+    "id": "lao-tzu-12",
+    "text": "Constant action overcomes cold; being still overcomes heat.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-13",
+    "text": "The soft overcomes the hard; and the weak the strong.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-14",
+    "text": "Whatever is contrary to the Tao soon ends.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-15",
+    "text": "Action should be taken before a thing has made its appearance; order should be secured before disorder has begun.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-16",
+    "text": "There is no calamity greater than lightly engaging in war.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-17",
+    "text": "The journey of a thousand li commenced with a single step.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-18",
+    "text": "He who knows other men is discerning; he who knows himself is intelligent.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-19",
+    "text": "The softest thing in the world dashes against and overcomes the hardest.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "lao-tzu-20",
+    "text": "Heaven is long-enduring and earth continues long.",
+    "author": "Lao Tzu",
+    "source": "Tao Te Ching, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "zhuangzi-01",
+    "text": "The perfect man employs his mind as a mirror.",
+    "author": "Zhuangzi",
+    "source": "The Writings of Chuang Tzu, trans. James Legge (1891)",
+    "tags": [
+      "tao",
+      "stillness"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-01",
+    "text": "I went to the woods because I wished to live deliberately, to front only the essential facts of life.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-02",
+    "text": "If one advances confidently in the direction of his dreams, and endeavors to live the life which he has imagined, he will meet with a success unexpected in common hours.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-03",
+    "text": "Books are the treasured wealth of the world and the fit inheritance of generations and nations.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-04",
+    "text": "The incessant anxiety and strain of some is a well nigh incurable form of disease.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-05",
+    "text": "The purity men love is like the mists which envelop the earth, and not like the azure ether beyond.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-06",
+    "text": "There is an incessant influx of novelty into the world, and yet we tolerate incredible dulness.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-07",
+    "text": "God himself culminates in the present moment, and will never be more divine in the lapse of all the ages.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-08",
+    "text": "Shall we always study to obtain more of these things, and not sometimes to be content with less?",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-09",
+    "text": "The best books are not read even by those who are called good readers.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-10",
+    "text": "Every nail driven should be as another rivet in the machine of the universe, you carrying on the work.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-11",
+    "text": "Public opinion is a weak tyrant compared with our own private opinion.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-12",
+    "text": "All nature is your congratulation, and you have cause momentarily to bless yourself.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-13",
+    "text": "The life which men praise and regard as successful is but one kind.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-14",
+    "text": "Nature and human life are as various as our several constitutions.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-15",
+    "text": "The greatest gains and values are farthest from being appreciated.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-16",
+    "text": "Shams and delusions are esteemed for soundest truths, while reality is fabulous.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-17",
+    "text": "Could a greater miracle take place than for us to look through each other's eyes for an instant?",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-18",
+    "text": "Follow your genius closely enough, and it will not fail to show you a fresh prospect every hour.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-19",
+    "text": "All change is a miracle to contemplate; but it is a miracle which is taking place every instant.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-20",
+    "text": "Walden is blue at one time and green at another, even from the same point of view.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-21",
+    "text": "The lawyer's truth is not Truth, but consistency or a consistent expediency.",
+    "author": "Henry David Thoreau",
+    "source": "Walden (1854)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-22",
+    "text": "A town is saved, not more by the righteous men in it than by the woods and swamps that surround it.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-23",
+    "text": "Unless our philosophy hears the cock crow in every barn-yard within our horizon, it is belated.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-24",
+    "text": "There is plenty of genial love of Nature, but not so much of Nature herself.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-25",
+    "text": "There is a keen enjoyment in a mere animal existence.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-26",
+    "text": "An absolutely new prospect is a great happiness, and I can still get this any afternoon.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-27",
+    "text": "Nature has a place for the wild clematis as well as for the cabbage.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-28",
+    "text": "Dullness is but another name for tameness.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-29",
+    "text": "Half the walk is but retracing our steps.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-30",
+    "text": "Above all, we cannot afford not to live in the present.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-31",
+    "text": "Eastward I go only by force; but westward I go free.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-32",
+    "text": "Roads are made for horses and men of business.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-33",
+    "text": "Not even does the moon shine every night, but gives place to darkness.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-34",
+    "text": "The spring has come with its green crop.",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "henry-david-thoreau-35",
+    "text": "Give me the ocean, the desert, or the wilderness!",
+    "author": "Henry David Thoreau",
+    "source": "Walking (1862)",
+    "tags": [
+      "nature",
+      "simplicity"
+    ]
+  },
+  {
+    "id": "the-buddha-01",
+    "text": "All that we are is the result of what we have thought: it is founded on our thoughts, it is made up of our thoughts.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-02",
+    "text": "Victory breeds hatred, for the conquered is unhappy.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-03",
+    "text": "Purity and impurity belong to oneself, no one can purify another.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-04",
+    "text": "Good people shine from afar, like the snowy mountains; bad people are not seen, like arrows shot by night.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-05",
+    "text": "Self is the lord of self, who else could be the lord?",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-06",
+    "text": "There is no fire like passion, there is no shark like hatred, there is no snare like folly, there is no torrent like greed.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-07",
+    "text": "Let us live happily then, though we call nothing our own!",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-08",
+    "text": "There never was, there never will be, nor is there now, a man who is always blamed, or a man who is always praised.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-09",
+    "text": "Be not thoughtless, watch your thoughts!",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-10",
+    "text": "Earnest among the thoughtless, awake among the sleepers, the wise man advances like a racer, leaving behind the hack.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-11",
+    "text": "Not a mother, not a father will do so much, nor any other relative; a well-directed mind will do us greater service.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-12",
+    "text": "Bad deeds, and deeds hurtful to ourselves, are easy to do; what is beneficial and good, that is very difficult to do.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-13",
+    "text": "An evil deed is better left undone, for a man repents of it afterwards; a good deed is better done, for having done it, one does not repent.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-14",
+    "text": "Like a well-guarded frontier fort, with defences within and without, so let a man guard himself.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-15",
+    "text": "Death carries off a man who is gathering flowers and whose mind is distracted, as a flood carries off a sleeping village.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-16",
+    "text": "Draw yourself out of the evil way, like an elephant sunk in mud.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-17",
+    "text": "Whatever a hater may do to a hater, or an enemy to an enemy, a wrongly-directed mind will do us greater mischief.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-18",
+    "text": "Let us live happily then, not hating those who hate us! among men who hate us let us dwell free from hatred!",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-19",
+    "text": "People praise earnestness; thoughtlessness is always blamed.",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "the-buddha-20",
+    "text": "Make thyself an island, work hard, be wise!",
+    "author": "The Buddha",
+    "source": "Dhammapada, trans. F. Max Muller (1881)",
+    "tags": [
+      "buddhist",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-01",
+    "text": "A live coal placed next a dead one will either kindle that or be quenched by it.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
   },
   {
     "id": "epictetus-02",
-    "text": "He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",
+    "text": "True instruction is this: to learn to wish that each thing should come to pass as it does.",
     "author": "Epictetus",
-    "source": "Enchiridion"
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
   },
   {
-    "id": "pascal-01",
-    "text": "All of humanity's problems stem from man's inability to sit quietly in a room alone.",
+    "id": "epictetus-03",
+    "text": "The beginning of philosophy is to know the condition of one's own mind.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-04",
+    "text": "The soul that companies with Virtue is like an ever-flowing source.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-05",
+    "text": "Friend, bethink you first what it is you would do, and then what your own nature is able to bear.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-06",
+    "text": "Let silence be your general rule; or say only what is necessary and in few words.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-07",
+    "text": "Not death or pain is to be feared, but the fear of death or pain.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-08",
+    "text": "Fortify thyself with contentment: that is an impregnable stronghold.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-09",
+    "text": "A life entangled with Fortune is like a torrent.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-10",
+    "text": "Exceed due measure, and the most delightful things become the least delightful.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-11",
+    "text": "Care not to be thought to know anything.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-12",
+    "text": "A ship should not ride on a single anchor, nor life on a single hope.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-13",
+    "text": "Above all avoid speaking of persons, either in way of praise or blame, or comparison.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-14",
+    "text": "Every life is a warfare, and that long and various.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-15",
+    "text": "Try to enjoy the great festival of life with other men.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-16",
+    "text": "Reflect that the chief source of all evils to Man, and of baseness and cowardice, is not death, but the fear of death.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-17",
+    "text": "Count the cost, and then, if your desire still holds, try the wrestler's life.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-18",
+    "text": "Habits and faculties are necessarily affected by the corresponding acts.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-19",
+    "text": "Laughter should not be much, nor frequent, nor unrestrained.",
+    "author": "Epictetus",
+    "source": "The Golden Sayings, trans. Hastings Crossley (1903)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-20",
+    "text": "There are things which are within our power, and there are things which are beyond our power.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-21",
+    "text": "The body is to everyone the proper measure of its possessions, as the foot is of the shoe.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-22",
+    "text": "Sickness is an impediment to the body, but not to the will unless itself pleases.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-23",
+    "text": "Let whatever appears to be the best be to you an inviolable law.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-24",
+    "text": "Duties are universally measured by relations.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-25",
+    "text": "Begin by prescribing to yourself some character and demeanor, such as you may preserve both alone and in company.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-26",
+    "text": "Be mostly silent, or speak merely what is needful, and in few words.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-27",
+    "text": "Do not yearn in desire toward it, but wait till it reaches you.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-28",
+    "text": "Try, therefore, in the first place, not to be bewildered by appearances.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-29",
+    "text": "Be not elated at any excellence not your own.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-30",
+    "text": "Lameness is an impediment to the leg, but not to the will; and say this to yourself with regard to everything that happens.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-31",
+    "text": "Remember that you must behave as at a banquet.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-32",
+    "text": "Exercise, therefore, what is in your power.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-33",
+    "text": "Everything has two handles: one by which it may be borne, another by which it cannot.",
+    "author": "Epictetus",
+    "source": "The Enchiridion",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-34",
+    "text": "First say to yourself what you would be; and then do what you have to do.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-35",
+    "text": "Neither to be disappointed in that which you desire, nor to fall into anything which you would avoid.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-36",
+    "text": "Do you seek a reward for a good man greater than doing what is good and just?",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-37",
+    "text": "Disease is an impediment to the body, but not to the will, unless the will itself chooses.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-38",
+    "text": "A tyrant never killed a man in six months: but a fever is often a year about it.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-39",
+    "text": "Do not send your desire forward to it, but wait till it is opposite to you.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-40",
+    "text": "The first then and highest purity is that which is in the soul; and we say the same of impurity.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-41",
+    "text": "Do not admire your clothes, and then you will not be angry with the thief.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-42",
+    "text": "See how tragedy is made when common things happen to silly men.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-43",
+    "text": "Practise sometimes a way of living like a person out of health that you may at some time live like a man in health.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-44",
+    "text": "Always remember what is your own, and what belongs to another; and you will not be disturbed.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-45",
+    "text": "Keep by every means what is your own; do not desire what belongs to others.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-46",
+    "text": "Remembering these rules, rejoice in that which is present, and be content with the things which come in season.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-47",
+    "text": "Make no tragedy show of the thing, but speak of it as it is.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-48",
+    "text": "Does the captain of a ship manage it better by not attending? and are any of the smaller acts done better by inattention?",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-49",
+    "text": "Do you not know that opinion conquers itself, and is not conquered by another?",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "epictetus-50",
+    "text": "Make the best use of what is in our power, and take the rest as it happens.",
+    "author": "Epictetus",
+    "source": "The Discourses, trans. George Long (1877)",
+    "tags": [
+      "stoic",
+      "mind"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-01",
+    "text": "There is no quality so universal in this image of things as diversity and variety.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-02",
+    "text": "There is more understanding required in the teaching of others than in being taught.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-03",
+    "text": "The application of ourselves to light and trivial things diverts us from those that are necessary and just.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-04",
+    "text": "Even constancy itself is no other but a slower and more languishing motion.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-05",
+    "text": "Order a purge for your brain, it will there be much better employed than upon your stomach.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-06",
+    "text": "Have you known how to meditate and manage your life? You have performed the greatest work of all.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-07",
+    "text": "The conscience of having well spent the other hours is the just and savoury sauce of the dinner-table.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-08",
+    "text": "There is no reason that has not its contrary, say the wisest of the philosophers.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-09",
+    "text": "The most simply to commit one's self to nature is to do it most wisely.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-10",
+    "text": "The perpetual work of your life is but to lay the foundation of death.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-11",
+    "text": "Nature is a gentle guide, but not more sweet and gentle than prudent and just.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-12",
+    "text": "A quarter of an ounce of patience will provide sufficiently against such inconveniences.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-13",
+    "text": "A soul clear from prejudice has a marvellous advance towards tranquillity and repose.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-14",
+    "text": "A man cannot reasonably complain of diseases that fairly divide the time with health.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-15",
+    "text": "An infinite number of brave actions must be performed without witness and lost, before one turns to account.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-16",
+    "text": "Resemblance does not so much make one as difference makes another.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-17",
+    "text": "There is no man so great a coward, that had not rather once fall than to be always falling.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "michel-de-montaigne-18",
+    "text": "There is no subject so frivolous that does not merit a place in this rhapsody.",
+    "author": "Michel de Montaigne",
+    "source": "Essays, trans. Charles Cotton",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-01",
+    "text": "The way to speak and write what shall not go out of fashion is to speak and write sincerely.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-02",
+    "text": "The objection to conforming to usages that have become dead to you is that it scatters your force.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-03",
+    "text": "Society everywhere is in conspiracy against the manhood of every one of its members.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-04",
+    "text": "The simplicity of the universe is very different from the simplicity of a machine.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-05",
+    "text": "Prayer is the contemplation of the facts of life from the highest point of view.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-06",
+    "text": "Silence is a solvent that destroys personality, and gives us leave to be great and universal.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-07",
+    "text": "There is more difference in the quality of our pleasures than in the amount.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-08",
+    "text": "The simplicity of nature is not that which may easily be read, but is inexhaustible.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-09",
+    "text": "The length of the discourse indicates the distance of thought betwixt the speaker and the hearer.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-10",
+    "text": "Fear is an instructor of great sagacity and the herald of all revolutions.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-11",
+    "text": "The terrors of the storm are chiefly confined to the parlor and the cabin.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-12",
+    "text": "Heroism is an obedience to a secret impulse of an individual's character.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-13",
+    "text": "The infallible index of true progress is found in the tone the man takes.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-14",
+    "text": "Virtue is the adherence in action to the nature of things, and the nature of things makes it prevalent.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-15",
+    "text": "The laws of friendship are austere and eternal, of one web with the laws of nature and of morals.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-16",
+    "text": "Persons and events may stand for a time between you and justice, but it is only a postponement.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-17",
+    "text": "Never a magnanimity fell to the ground, but there is some heart to greet and accept it unexpectedly.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-18",
+    "text": "The least activity of the intellectual powers redeems us in a degree from the conditions of time.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-19",
+    "text": "Every faculty which is a receiver of pleasure has an equal penalty put on its abuse.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: First Series (1841)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-20",
+    "text": "Life is a series of surprises, and would not be worth taking or keeping if it were not.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-21",
+    "text": "The tempered light of the woods is like a perpetual morning, and is stimulating and heroic.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-22",
+    "text": "Into every intelligence there is a door which is never closed, through which the creator passes.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-23",
+    "text": "A beauty not explicable is dearer than a beauty which we can see to the end of.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-24",
+    "text": "The poorest experience is rich enough for all the purposes of expressing thought.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-25",
+    "text": "Life itself is a mixture of power and form, and will not bear the least excess of either.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-26",
+    "text": "Character is this moral order seen through the medium of an individual nature.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-27",
+    "text": "The whirling bubble on the surface of a brook admits us to the secret of the mechanics of the sky.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-28",
+    "text": "The difference between landscape and landscape is small, but there is great difference in the beholders.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-29",
+    "text": "The secret of success in society is a certain heartiness and sympathy.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-30",
+    "text": "All things show us that on every side we are very near to the best.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-31",
+    "text": "Every natural function can be dignified by deliberation and privacy.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-32",
+    "text": "Surely nobody would be a charlatan who could afford to be sincere.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-33",
+    "text": "The reason of idleness and of crime is the deferring of our hopes.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-34",
+    "text": "New actions are the only apologies and explanations of old ones which the noble can bear to offer or to receive.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-35",
+    "text": "There is nothing so wonderful in any particular landscape as the necessity of being beautiful under which every landscape lies.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "ralph-waldo-emerson-36",
+    "text": "The uprolled clouds and the colors of morning and evening will transfigure maples and alders.",
+    "author": "Ralph Waldo Emerson",
+    "source": "Essays: Second Series (1844)",
+    "tags": [
+      "craft",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-01",
+    "text": "The river and its waves are one surf: where is the difference between the river and its waves?",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-02",
+    "text": "The water-filled pitcher is placed upon water, it has water within and without.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-03",
+    "text": "The musk is in the deer, but it seeks it not within itself: it wanders in quest of grass.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-04",
+    "text": "Look, and see where the root is: happiness shall be yours when you come to the root.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-05",
+    "text": "The flower blooms for the fruit: when the fruit comes, the flower withers.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-06",
+    "text": "Be strong, and enter into your own body: for there your foothold is firm.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-07",
+    "text": "The night is over and gone, would you lose your day also?",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-08",
+    "text": "Sing with gladness, and keep your seat unmoved within your heart.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-09",
+    "text": "The world of man dances in laughter and tears.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-10",
+    "text": "The rising and the setting are one to me; all contradictions are solved.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-11",
+    "text": "The fire is in the wood; but who awakens it suddenly?",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-12",
+    "text": "The swan has taken its flight to the lake beyond the mountains; why should it search for the pools and ditches any more?",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-13",
+    "text": "The hills and the sea and the earth dance.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-14",
+    "text": "Rains pour down without water, and the rivers are streams of light.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-15",
+    "text": "There the light of the sun and the moon is shining: still your mind to silence before that splendour.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "kabir-16",
+    "text": "Do not act the part of a madman, for the night is thickening fast.",
+    "author": "Kabir",
+    "source": "Songs of Kabir, trans. Rabindranath Tagore (1915)",
+    "tags": [
+      "stillness",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-01",
+    "text": "All the unhappiness of men arises from one single fact, that they cannot stay quietly in their own chamber.",
     "author": "Blaise Pascal",
-    "source": "Pensées"
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
   },
   {
-    "id": "nietzsche-01",
-    "text": "He who has a why to live can bear almost any how.",
-    "author": "Friedrich Nietzsche",
-    "source": "Twilight of the Idols"
+    "id": "blaise-pascal-02",
+    "text": "The heart has its reasons, which reason does not know.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
   },
   {
-    "id": "chogyam-trungpa-01",
-    "text": "The bad news is you're falling through the air, nothing to hang on to, no parachute. The good news is, there's no ground.",
-    "author": "Chögyam Trungpa",
-    "source": "Shambhala"
+    "id": "blaise-pascal-03",
+    "text": "The last proceeding of reason is to recognise that there is an infinity of things which are beyond it.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-04",
+    "text": "Custom should be followed only because it is custom, and not because it is reasonable or just.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-05",
+    "text": "The whole visible world is only an imperceptible atom in the ample bosom of nature.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-06",
+    "text": "Men are so necessarily mad, that not to be mad would amount to another form of madness.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-07",
+    "text": "The last thing one settles in writing a book is what one should put in first.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-08",
+    "text": "Contradiction is not a sign of falsity, nor the want of contradiction a sign of truth.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-09",
+    "text": "There is nothing so conformable to reason as this disavowal of reason.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-10",
+    "text": "There is a pleasure in being in a ship beaten about by a storm, when we are sure that it will not founder.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-11",
+    "text": "Discourses on humility are a source of pride in the vain, and of humility in the humble.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-12",
+    "text": "Time heals griefs and quarrels, for we change and are no longer the same persons.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-13",
+    "text": "Tyranny is the wish to have in one way what can only be had in another.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-14",
+    "text": "Thought is therefore by its nature a wonderful and incomparable thing.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-15",
+    "text": "Not only are old impressions capable of misleading us; the charms of novelty have the same power.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "blaise-pascal-16",
+    "text": "The kindness and the malice of the world in general are the same.",
+    "author": "Blaise Pascal",
+    "source": "Pensees, trans. W. F. Trotter (1904)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-01",
+    "text": "Teaism is a cult founded on the adoration of the beautiful among the sordid facts of everyday existence.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-02",
+    "text": "The whole ideal of Teaism is a result of this Zen conception of greatness in the smallest incidents of life.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-03",
+    "text": "True beauty could be discovered only by one who mentally completed the incomplete.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-04",
+    "text": "Dripping water from a flower vase need not be wiped away, for it may be suggestive of dew and coolness.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-05",
+    "text": "Nothing is real except that which concerns the working of our own minds.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-06",
+    "text": "Perhaps we reveal ourselves too much in small things because we have so little of the great to conceal.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-07",
+    "text": "The tea-room is made for the tea master, not the tea-master for the tea-room.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-08",
+    "text": "Truth can be reached only through the comprehension of opposites.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-09",
+    "text": "The masterpiece is a symphony played upon our finest feelings.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-10",
+    "text": "The world is groping in the shadow of egotism and vulgarity.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-11",
+    "text": "Perfection is everywhere if we only choose to recognise it.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-12",
+    "text": "People are not taught to be really virtuous, but to behave properly.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-13",
+    "text": "Uniformity of design was considered fatal to the freshness of imagination.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-14",
+    "text": "Through the disintegration of the old, re-creation becomes possible.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-15",
+    "text": "A master has always something to offer, while we go hungry solely because of our own lack of appreciation.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-16",
+    "text": "Memories long forgotten all come back to us with a new significance.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-17",
+    "text": "The masterpiece is of ourselves, as we are of the masterpiece.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-18",
+    "text": "Let us be less luxurious but more magnificent.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-19",
+    "text": "The old masters are rightly to be honoured for opening the path to future enlightenment.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-20",
+    "text": "Not a particle of dust will be found in the darkest corner, for if any exists the host is not a tea-master.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "kakuzo-okakura-21",
+    "text": "There is a subtle charm in the taste of tea which makes it irresistible and capable of idealisation.",
+    "author": "Kakuzo Okakura",
+    "source": "The Book of Tea (1906)",
+    "tags": [
+      "zen",
+      "craft"
+    ]
+  },
+  {
+    "id": "inazo-nitobe-01",
+    "text": "The spiritual aspect of valor is evidenced by composure, calm presence of mind.",
+    "author": "Inazo Nitobe",
+    "source": "Bushido: The Soul of Japan (1900)",
+    "tags": [
+      "craft",
+      "zen"
+    ]
+  },
+  {
+    "id": "inazo-nitobe-02",
+    "text": "The cultivation of tender feelings breeds considerate regard for the sufferings of others.",
+    "author": "Inazo Nitobe",
+    "source": "Bushido: The Soul of Japan (1900)",
+    "tags": [
+      "craft",
+      "zen"
+    ]
+  },
+  {
+    "id": "inazo-nitobe-03",
+    "text": "Calmness of behavior, composure of mind, should not be disturbed by passion of any kind.",
+    "author": "Inazo Nitobe",
+    "source": "Bushido: The Soul of Japan (1900)",
+    "tags": [
+      "craft",
+      "zen"
+    ]
+  },
+  {
+    "id": "inazo-nitobe-04",
+    "text": "Things which are serious to ordinary people may be but play to the valiant.",
+    "author": "Inazo Nitobe",
+    "source": "Bushido: The Soul of Japan (1900)",
+    "tags": [
+      "craft",
+      "zen"
+    ]
+  },
+  {
+    "id": "inazo-nitobe-05",
+    "text": "There is even a sportive element in a courageous nature.",
+    "author": "Inazo Nitobe",
+    "source": "Bushido: The Soul of Japan (1900)",
+    "tags": [
+      "craft",
+      "zen"
+    ]
+  },
+  {
+    "id": "inazo-nitobe-06",
+    "text": "A self-possessed man knows the right time to use it, and such times come but rarely.",
+    "author": "Inazo Nitobe",
+    "source": "Bushido: The Soul of Japan (1900)",
+    "tags": [
+      "craft",
+      "zen"
+    ]
+  },
+  {
+    "id": "inazo-nitobe-07",
+    "text": "Beneath the instinct to fight there lurks a diviner instinct to love.",
+    "author": "Inazo Nitobe",
+    "source": "Bushido: The Soul of Japan (1900)",
+    "tags": [
+      "craft",
+      "zen"
+    ]
+  },
+  {
+    "id": "inazo-nitobe-08",
+    "text": "Virtues are no less contagious than vices.",
+    "author": "Inazo Nitobe",
+    "source": "Bushido: The Soul of Japan (1900)",
+    "tags": [
+      "craft",
+      "zen"
+    ]
+  },
+  {
+    "id": "inazo-nitobe-09",
+    "text": "Be a virtue never so noble, it has its counterpart and counterfeit.",
+    "author": "Inazo Nitobe",
+    "source": "Bushido: The Soul of Japan (1900)",
+    "tags": [
+      "craft",
+      "zen"
+    ]
+  },
+  {
+    "id": "boethius-01",
+    "text": "Nature is content with few things, and with a very little of these.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-02",
+    "text": "Oh, stupidest of mortals, if it takes to standing still, it ceases to be the wheel of Fortune.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-03",
+    "text": "Verily, every harsh-seeming fortune, unless it either disciplines or amends, is punishment.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-04",
+    "text": "Eternity is more than mere everlasting duration.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-05",
+    "text": "High place without virtue is an evil, not a good.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-06",
+    "text": "Happiness is the one end which all created beings seek.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-07",
+    "text": "Titles command no reverence in distant and barbarous lands.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-08",
+    "text": "Good, then, is the sum and source of all desirable things.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-09",
+    "text": "Nature brooks not the union of contraries.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-10",
+    "text": "The lust thereof is full of uneasiness; the sating, of repentance.",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
+  },
+  {
+    "id": "boethius-11",
+    "text": "Are friends any protection who have been attached by fortune, not by virtue?",
+    "author": "Boethius",
+    "source": "The Consolation of Philosophy, trans. W. V. Cooper (1902)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
   },
   {
     "id": "socrates-01",
     "text": "The unexamined life is not worth living.",
     "author": "Socrates",
-    "source": "Apology"
+    "source": "Apology, trans. Benjamin Jowett (1871)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "socrates-02",
+    "text": "The hour of departure has arrived, and we go our ways, I to die, and you to live.",
+    "author": "Socrates",
+    "source": "Apology, trans. Benjamin Jowett (1871)",
+    "tags": [
+      "mind",
+      "life"
+    ]
+  },
+  {
+    "id": "socrates-03",
+    "text": "The difficulty, my friends, is not to avoid death, but to avoid unrighteousness; for that runs faster than death.",
+    "author": "Socrates",
+    "source": "Apology, trans. Benjamin Jowett (1871)",
+    "tags": [
+      "mind",
+      "life"
+    ]
   },
   {
     "id": "plato-01",
-    "text": "The beginning is the most important part of the work.",
+    "text": "The beginning is the most important part of any work.",
     "author": "Plato",
-    "source": "The Republic"
+    "source": "The Republic, trans. Benjamin Jowett (1871)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "aristotle-01",
-    "text": "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
-    "author": "Aristotle",
-    "source": "Attributed"
+    "id": "walt-whitman-01",
+    "text": "Charity and personal force are the only investments worth anything.",
+    "author": "Walt Whitman",
+    "source": "Leaves of Grass (1892)",
+    "tags": [
+      "nature",
+      "life"
+    ]
   },
   {
-    "id": "heraclitus-02",
-    "text": "Character is destiny.",
-    "author": "Heraclitus",
-    "source": "Fragments"
+    "id": "walt-whitman-02",
+    "text": "All comes by the body, only health puts you rapport with the universe.",
+    "author": "Walt Whitman",
+    "source": "Leaves of Grass (1892)",
+    "tags": [
+      "nature",
+      "life"
+    ]
   },
   {
-    "id": "epicurus-01",
-    "text": "Not what we have but what we enjoy constitutes our abundance.",
-    "author": "Epicurus",
-    "source": "Attributed"
+    "id": "walt-whitman-03",
+    "text": "Ample are time and space, ample the fields of Nature.",
+    "author": "Walt Whitman",
+    "source": "Leaves of Grass (1892)",
+    "tags": [
+      "nature",
+      "life"
+    ]
   },
   {
-    "id": "epictetus-03",
-    "text": "First say to yourself what you would be, and then do what you have to do.",
-    "author": "Epictetus",
-    "source": "Discourses"
+    "id": "walt-whitman-04",
+    "text": "Clear and sweet is my soul, and clear and sweet is all that is not my soul.",
+    "author": "Walt Whitman",
+    "source": "Leaves of Grass (1892)",
+    "tags": [
+      "nature",
+      "life"
+    ]
   },
   {
-    "id": "epictetus-04",
-    "text": "Make the best use of what is in your power, and take the rest as it happens.",
-    "author": "Epictetus",
-    "source": "Enchiridion"
+    "id": "walt-whitman-05",
+    "text": "Whoever you are! claim your own at any hazard!",
+    "author": "Walt Whitman",
+    "source": "Leaves of Grass (1892)",
+    "tags": [
+      "nature",
+      "life"
+    ]
   },
   {
-    "id": "seneca-03",
-    "text": "It is not that we have a short time to live, but that we waste a great deal of it.",
-    "author": "Seneca",
-    "source": "On the Shortness of Life"
+    "id": "walt-whitman-06",
+    "text": "Play the old role, the role that is great or small according as one makes it!",
+    "author": "Walt Whitman",
+    "source": "Leaves of Grass (1892)",
+    "tags": [
+      "nature",
+      "life"
+    ]
   },
   {
-    "id": "seneca-04",
-    "text": "Luck is what happens when preparation meets opportunity.",
-    "author": "Seneca",
-    "source": "Attributed"
-  },
-  {
-    "id": "seneca-05",
-    "text": "While we wait for life, life passes.",
-    "author": "Seneca",
-    "source": "Letters from a Stoic"
-  },
-  {
-    "id": "marcus-aurelius-03",
-    "text": "The soul is dyed the color of its thoughts.",
-    "author": "Marcus Aurelius",
-    "source": "Meditations"
-  },
-  {
-    "id": "marcus-aurelius-04",
-    "text": "Confine yourself to the present.",
-    "author": "Marcus Aurelius",
-    "source": "Meditations"
-  },
-  {
-    "id": "marcus-aurelius-05",
-    "text": "What stands in the way becomes the way.",
-    "author": "Marcus Aurelius",
-    "source": "Meditations"
-  },
-  {
-    "id": "marcus-aurelius-06",
-    "text": "If it is not right, do not do it. If it is not true, do not say it.",
-    "author": "Marcus Aurelius",
-    "source": "Meditations"
-  },
-  {
-    "id": "pythagoras-01",
-    "text": "Silence is better than unmeaning words.",
-    "author": "Pythagoras",
-    "source": "Public domain"
-  },
-  {
-    "id": "lao-tzu-05",
-    "text": "A journey of a thousand miles begins with a single step.",
-    "author": "Lao Tzu",
-    "source": "Tao Te Ching"
-  },
-  {
-    "id": "lao-tzu-06",
-    "text": "He who knows others is wise. He who knows himself is enlightened.",
-    "author": "Lao Tzu",
-    "source": "Tao Te Ching"
-  },
-  {
-    "id": "lao-tzu-07",
-    "text": "To the mind that is still, the whole universe surrenders.",
-    "author": "Lao Tzu",
-    "source": "Attributed"
-  },
-  {
-    "id": "lao-tzu-08",
-    "text": "The softest things in the world overcome the hardest things in the world.",
-    "author": "Lao Tzu",
-    "source": "Tao Te Ching"
-  },
-  {
-    "id": "zhuangzi-02",
-    "text": "The perfect man uses his mind like a mirror.",
-    "author": "Zhuangzi",
-    "source": "Zhuangzi"
-  },
-  {
-    "id": "zhuangzi-03",
-    "text": "Happiness is the absence of striving for happiness.",
-    "author": "Zhuangzi",
-    "source": "Attributed"
+    "id": "confucius-01",
+    "text": "Men of principle are sure to be bold, but those who are bold may not always be men of principle.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
     "id": "confucius-02",
-    "text": "The man who moves a mountain begins by carrying away small stones.",
+    "text": "Let your evinced desires be for what is good, and the people will be good.",
     "author": "Confucius",
-    "source": "Attributed"
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
     "id": "confucius-03",
-    "text": "Our greatest glory is not in never falling, but in rising every time we fall.",
+    "text": "Let relaxation and enjoyment be found in the polite arts.",
     "author": "Confucius",
-    "source": "Attributed"
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
     "id": "confucius-04",
-    "text": "The gem cannot be polished without friction, nor man perfected without trials.",
+    "text": "Looking at small advantages prevents great affairs from being accomplished.",
     "author": "Confucius",
-    "source": "Analects"
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "mencius-01",
-    "text": "Great is the man who has not lost his childlike heart.",
-    "author": "Mencius",
-    "source": "Attributed"
+    "id": "confucius-05",
+    "text": "The ardent will advance and lay hold of truth; the cautiously-decided will keep themselves from what is wrong.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "lieh-tzu-01",
-    "text": "Do not listen with your ears but with your mind.",
-    "author": "Liezi",
-    "source": "Public domain"
+    "id": "confucius-06",
+    "text": "The superior man does not, even for the space of a single meal, act contrary to virtue.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "dogen-03",
-    "text": "If you cannot find the truth right where you are, where else do you expect to find it?",
-    "author": "Eihei Dogen",
-    "source": "Attributed"
+    "id": "confucius-07",
+    "text": "The days and months are passing away; the years do not wait for us.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "hakuin-01",
-    "text": "Not knowing how near the truth is, people seek it far away.",
-    "author": "Hakuin Ekaku",
-    "source": "Song of Zazen"
+    "id": "confucius-08",
+    "text": "Riches and honours acquired by unrighteousness are to me as a floating cloud.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "ryokan-01",
-    "text": "The rain has stopped, the clouds have drifted away, and the weather is clear again.",
-    "author": "Ryokan",
-    "source": "Public domain"
+    "id": "confucius-09",
+    "text": "Want of forbearance in small matters confounds great plans.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "basho-02",
-    "text": "Do not seek to follow in the footsteps of the wise. Seek what they sought.",
-    "author": "Matsuo Basho",
-    "source": "Attributed"
+    "id": "confucius-10",
+    "text": "The superior man honours the talented and virtuous, and bears with all.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "bankei-01",
-    "text": "Do not get entangled. Just let things be as they are.",
-    "author": "Bankei Yotaku",
-    "source": "Attributed"
+    "id": "confucius-11",
+    "text": "Recompense injury with justice, and recompense kindness with kindness.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "musashi-01",
-    "text": "Do nothing that is of no use.",
-    "author": "Miyamoto Musashi",
-    "source": "The Book of Five Rings"
+    "id": "confucius-12",
+    "text": "Ornament is as substance; substance is as ornament.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "musashi-02",
-    "text": "Accept everything just the way it is.",
-    "author": "Miyamoto Musashi",
-    "source": "Dokkodo"
+    "id": "confucius-13",
+    "text": "The wise are joyful; the virtuous are long-lived.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "takuan-01",
-    "text": "When one knows the truth of things, the mind is at peace wherever one is.",
-    "author": "Takuan Soho",
-    "source": "Public domain"
+    "id": "confucius-14",
+    "text": "The wise are active; the virtuous are tranquil.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "buddha-02",
-    "text": "Better than a thousand hollow words is one word that brings peace.",
-    "author": "Buddha",
-    "source": "Dhammapada"
+    "id": "confucius-15",
+    "text": "The grass must bend, when the wind blows across it.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "buddha-03",
-    "text": "The mind is everything. What you think, you become.",
-    "author": "Buddha",
-    "source": "Attributed"
+    "id": "confucius-16",
+    "text": "The virtuous rest in virtue; the wise desire virtue.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "buddha-04",
-    "text": "All that we are arises with our thoughts. With our thoughts we make the world.",
-    "author": "Buddha",
-    "source": "Dhammapada"
+    "id": "confucius-17",
+    "text": "Hearing much and selecting what is good and following it; seeing much and keeping it in memory: this is the second style of knowledge.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "patanjali-01",
-    "text": "When you are inspired by some great purpose, all your thoughts break their bonds.",
-    "author": "Patanjali",
-    "source": "Yoga Sutras"
+    "id": "confucius-18",
+    "text": "The Master angled, but did not use a net.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "rumi-03",
-    "text": "Wherever you stand, be the soul of that place.",
-    "author": "Rumi",
-    "source": "Public domain"
+    "id": "confucius-19",
+    "text": "Are bells and drums all that is meant by music?",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "rumi-04",
-    "text": "Respond to every call that excites your spirit.",
-    "author": "Rumi",
-    "source": "Public domain"
+    "id": "confucius-20",
+    "text": "The mean man is difficult to serve, and easy to please.",
+    "author": "Confucius",
+    "source": "The Analects, trans. James Legge (1861)",
+    "tags": [
+      "craft",
+      "mind"
+    ]
   },
   {
-    "id": "hafez-01",
-    "text": "Stay close to anything that makes you glad you are alive.",
-    "author": "Hafez",
-    "source": "Public domain"
+    "id": "seneca-01",
+    "text": "Begin at once to live, and count each separate day as a separate life.",
+    "author": "Seneca",
+    "source": "Letters to Lucilius, trans. Richard M. Gummere (1917)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
   },
   {
-    "id": "kabir-01",
-    "text": "Wherever you are is the entry point.",
-    "author": "Kabir",
-    "source": "Public domain"
+    "id": "seneca-02",
+    "text": "We are more often frightened than hurt; and we suffer more from imagination than from reality.",
+    "author": "Seneca",
+    "source": "Letters to Lucilius, trans. Richard M. Gummere (1917)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
   },
   {
-    "id": "montaigne-02",
-    "text": "My life has been full of terrible misfortunes, most of which never happened.",
-    "author": "Michel de Montaigne",
-    "source": "Essays"
+    "id": "seneca-03",
+    "text": "While we are postponing, life speeds by.",
+    "author": "Seneca",
+    "source": "Letters to Lucilius, trans. Richard M. Gummere (1917)",
+    "tags": [
+      "stoic",
+      "life"
+    ]
   },
   {
-    "id": "pascal-02",
-    "text": "The heart has its reasons which reason knows nothing of.",
-    "author": "Blaise Pascal",
-    "source": "Pensees"
+    "id": "heraclitus-01",
+    "text": "You cannot step twice into the same rivers; for fresh waters are ever flowing in upon you.",
+    "author": "Heraclitus",
+    "source": "Fragments, trans. John Burnet (1892)",
+    "tags": [
+      "mind",
+      "life"
+    ]
   },
   {
-    "id": "spinoza-02",
-    "text": "The more clearly you understand yourself, the more you become a lover of what is.",
-    "author": "Baruch Spinoza",
-    "source": "Ethics"
+    "id": "heraclitus-02",
+    "text": "Man's character is his fate.",
+    "author": "Heraclitus",
+    "source": "Fragments, trans. John Burnet (1892)",
+    "tags": [
+      "mind",
+      "life"
+    ]
   },
   {
-    "id": "thoreau-02",
-    "text": "An early-morning walk is a blessing for the whole day.",
-    "author": "Henry David Thoreau",
-    "source": "Walden"
+    "id": "heraclitus-03",
+    "text": "The sun is new every day.",
+    "author": "Heraclitus",
+    "source": "Fragments, trans. John Burnet (1892)",
+    "tags": [
+      "mind",
+      "life"
+    ]
   },
   {
-    "id": "thoreau-03",
-    "text": "If one advances confidently in the direction of his dreams, he will meet with a success unexpected.",
-    "author": "Henry David Thoreau",
-    "source": "Walden"
-  },
-  {
-    "id": "emerson-02",
-    "text": "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
-    "author": "Ralph Waldo Emerson",
-    "source": "Essays"
-  },
-  {
-    "id": "whitman-01",
-    "text": "Keep your face always toward the sunshine, and shadows will fall behind you.",
-    "author": "Walt Whitman",
-    "source": "Leaves of Grass"
-  },
-  {
-    "id": "dickinson-01",
+    "id": "emily-dickinson-01",
     "text": "Forever is composed of nows.",
     "author": "Emily Dickinson",
-    "source": "Public domain"
+    "source": "Poems (1890)",
+    "tags": [
+      "life",
+      "stillness"
+    ]
   },
   {
-    "id": "muir-01",
-    "text": "In every walk with nature one receives far more than he seeks.",
-    "author": "John Muir",
-    "source": "Public domain"
+    "id": "arthur-schopenhauer-01",
+    "text": "Each day is a little life: every waking and rising a little birth, every fresh morning a little youth, every going to rest and sleep a little death.",
+    "author": "Arthur Schopenhauer",
+    "source": "Counsels and Maxims, trans. T. Bailey Saunders (1890)",
+    "tags": [
+      "life",
+      "mind"
+    ]
   },
   {
-    "id": "meister-eckhart-02",
-    "text": "Be willing to be a beginner every single morning.",
-    "author": "Meister Eckhart",
-    "source": "Public domain"
+    "id": "chinese-proverb-01",
+    "text": "The best time to plant a tree was twenty years ago. The second best time is now.",
+    "author": "Proverb",
+    "source": "Chinese proverb",
+    "tags": [
+      "simplicity",
+      "life"
+    ]
   },
   {
     "id": "chinese-proverb-02",
-    "text": "The best time to plant a tree was twenty years ago. The second best time is now.",
-    "author": "Chinese Proverb",
-    "source": "Public domain"
-  },
-  {
-    "id": "chinese-proverb-03",
     "text": "A bird does not sing because it has an answer. It sings because it has a song.",
-    "author": "Chinese Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Chinese proverb",
+    "tags": [
+      "simplicity",
+      "life"
+    ]
   },
   {
     "id": "japanese-proverb-01",
     "text": "Fall seven times and stand up eight.",
-    "author": "Japanese Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Japanese proverb",
+    "tags": [
+      "simplicity",
+      "life"
+    ]
   },
   {
     "id": "japanese-proverb-02",
     "text": "One kind word can warm three winter months.",
-    "author": "Japanese Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Japanese proverb",
+    "tags": [
+      "simplicity",
+      "life"
+    ]
   },
   {
     "id": "zen-proverb-01",
     "text": "Before enlightenment, chop wood, carry water. After enlightenment, chop wood, carry water.",
-    "author": "Zen Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Zen saying",
+    "tags": [
+      "zen",
+      "simplicity"
+    ]
   },
   {
     "id": "zen-proverb-02",
     "text": "When walking, walk. When eating, eat.",
-    "author": "Zen Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Zen saying",
+    "tags": [
+      "zen",
+      "simplicity"
+    ]
   },
   {
     "id": "zen-proverb-03",
     "text": "All know the way, but few actually walk it.",
-    "author": "Zen Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Zen saying",
+    "tags": [
+      "zen",
+      "simplicity"
+    ]
   },
   {
     "id": "zen-proverb-04",
     "text": "The obstacle is the path.",
-    "author": "Zen Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Zen saying",
+    "tags": [
+      "zen",
+      "simplicity"
+    ]
   },
   {
     "id": "zen-proverb-05",
     "text": "Sitting quietly, doing nothing, spring comes, and the grass grows by itself.",
-    "author": "Zen Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Zen saying",
+    "tags": [
+      "zen",
+      "simplicity"
+    ]
   },
   {
     "id": "zen-proverb-06",
     "text": "Let go or be dragged.",
-    "author": "Zen Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Zen saying",
+    "tags": [
+      "zen",
+      "simplicity"
+    ]
   },
   {
     "id": "tibetan-proverb-01",
     "text": "Eat half, walk double, laugh triple, and love without measure.",
-    "author": "Tibetan Proverb",
-    "source": "Public domain"
+    "author": "Proverb",
+    "source": "Tibetan proverb",
+    "tags": [
+      "simplicity",
+      "life"
+    ]
   },
   {
     "id": "arabic-proverb-01",
     "text": "He who has health has hope, and he who has hope has everything.",
-    "author": "Arabic Proverb",
-    "source": "Public domain"
-  },
-  {
-    "id": "zen-typer-01",
-    "text": "Type one true word, then another. The page will take care of itself.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-02",
-    "text": "The breath goes in, the breath goes out. The fingers follow.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-03",
-    "text": "Speed is a side effect of attention.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-04",
-    "text": "A quiet keyboard is a quiet mind.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-05",
-    "text": "Do not chase the words. Let them arrive.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-06",
-    "text": "Every keystroke is a small bell ringing in an empty room.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-07",
-    "text": "Still hands, steady breath, clear line.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-08",
-    "text": "The cursor blinks. The world waits. Begin.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-09",
-    "text": "Mistakes are only drafts of mastery.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-10",
-    "text": "Slow is smooth, and smooth becomes fast.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-11",
-    "text": "Listen to the rhythm under your fingers.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-12",
-    "text": "One sentence, fully felt, is a meditation.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-13",
-    "text": "The blank page is not empty. It is patient.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-14",
-    "text": "Breathe between words. Rest between thoughts.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-15",
-    "text": "Attention is the rarest key on the board.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-16",
-    "text": "Type as water flows: without hurry, without pause.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-17",
-    "text": "A calm typist outlasts a frantic one.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-18",
-    "text": "Feel each key land. That landing is the practice.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-19",
-    "text": "The next word is the only word.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-20",
-    "text": "Let the shoulders drop. Let the sentence rise.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-21",
-    "text": "Clarity in, clarity out.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-22",
-    "text": "You do not have to be fast. You only have to be here.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-23",
-    "text": "The rhythm you keep is the mind you build.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-24",
-    "text": "Soft eyes, loose wrists, open mind.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-25",
-    "text": "Each paragraph is a small exhale.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-26",
-    "text": "Begin again. Beginning again is the whole art.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-27",
-    "text": "Noise fades when the fingers find their tempo.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-28",
-    "text": "Write the sentence you are in, not the one ahead.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-29",
-    "text": "Patience types faster than haste.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-30",
-    "text": "The space bar is a breath. Take it.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-31",
-    "text": "Trust the hands. They know the way by now.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-32",
-    "text": "A single line, typed with care, outshines a page of rush.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-33",
-    "text": "Sit down. Settle. The words are already waiting.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-34",
-    "text": "What you practice in typing, you practice in life.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-35",
-    "text": "Gentle pressure, full presence.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-36",
-    "text": "The delete key forgives. The breath restores.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-37",
-    "text": "Keep going. The stillness compounds.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-38",
-    "text": "Finish the line. Then let it go.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-39",
-    "text": "Morning pages, evening calm.",
-    "author": "Zen Typer",
-    "source": "Original"
-  },
-  {
-    "id": "zen-typer-40",
-    "text": "Here, now, this key, this breath.",
-    "author": "Zen Typer",
-    "source": "Original"
+    "author": "Proverb",
+    "source": "Arabic proverb",
+    "tags": [
+      "life"
+    ]
   }
 ]

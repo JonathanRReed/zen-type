@@ -8,6 +8,8 @@ import ArchiveOverlay from "../components/ArchiveOverlay";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
 import GlobalShortcuts from "../components/GlobalShortcuts";
+import ProgressOverlay from "../components/ProgressOverlay";
+import FirstRunHint from "../components/FirstRunHint";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
 import AmbientLayer from "../components/AmbientLayer";
@@ -184,6 +186,8 @@ const webApplicationJsonLd = {
 				<SiteFooter client:only="react" />
 				<!-- Documented Ctrl/Cmd shortcuts (Help: Notes & Drafts, mute) -->
 				<GlobalShortcuts client:only="react" />
+				<ProgressOverlay client:only="react" />
+				<FirstRunHint client:only="react" mode="quote" />
 			</main>
 		</ErrorBoundary>
 
@@ -219,8 +223,8 @@ const webApplicationJsonLd = {
 					</p>
 					<ul class="max-w-2xl space-y-2 text-sm leading-6 seo-body">
 						<li>
-							28 quotes from 26 writers, each one public domain or
-							credited to its source.
+							322 quotes from 22 writers, every one from a public-domain
+							edition with its source named.
 						</li>
 						<li>
 							Two modes: a timed quote test, and a free-flow canvas

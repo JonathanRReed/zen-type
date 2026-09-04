@@ -168,7 +168,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
           <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
-        <span suppressHydrationWarning>{theme}</span>
+        <span className="hidden sm:inline" suppressHydrationWarning>{theme}</span>
       </IconButton>
 
       {isOpen && (

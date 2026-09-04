@@ -148,6 +148,35 @@ export async function restoreSnapshot(draftId: string, snapshotId: string): Prom
   await addSnapshot(draftId, snapshot.body, true);
 }
 
+/** Every draft, for backups. */
+export async function exportDrafts(): Promise<Draft[]> {
+  const drafts = await db.drafts.toArray();
+  return drafts.map(normalizeDraft);
+}
+
+/**
+ * Merge drafts from a backup. A draft that already exists keeps whichever
+ * copy was updated more recently. Returns how many were written.
+ */
+export async function importDrafts(drafts: Draft[]): Promise<number> {
+  let written = 0;
+  await db.transaction('rw', db.drafts, async () => {
+    for (const incoming of drafts) {
+      const draft = normalizeDraft(incoming);
+      const current = await db.drafts.get(draft.id);
+      if (!current || (draft.updatedAt ?? 0) >= (current.updatedAt ?? 0)) {
+        await db.drafts.put(draft);
+        written += 1;
+      }
+    }
+  });
+  return written;
+}
+
+export async function clearDrafts(): Promise<void> {
+  await db.drafts.clear();
+}
+
 // Preferences stored in localStorage for simplicity
 const PREFS_KEY = 'zt.draft.prefs.v1';
 const LEGACY_PREFS_KEY = 'zt.draft.prefs';
@@ -247,70 +276,3 @@ export function applyPreset(preset: DraftPrefs['preset']): Partial<DraftPrefs> {
   }
 }
 
-// Sync from localStorage archive entries (runs each time to catch new zen sessions)
-export async function syncFromArchive(): Promise<void> {
-  try {
-    const archiveKey = 'zt.archive';
-    const lastSyncKey = 'zt.archive.lastSync';
-
-    if (typeof window === 'undefined') return;
-
-    const archiveData = localStorage.getItem(archiveKey);
-    if (!archiveData) return;
-
-    const entries = JSON.parse(archiveData);
-    if (!Array.isArray(entries)) return;
-
-    // Get last sync timestamp
-    const lastSync = parseInt(localStorage.getItem(lastSyncKey) || '0');
-    let newEntriesCount = 0;
-
-    const validEntries = entries.filter((e: any) => e.text && e.text.trim() && new Date(e.startedAt).getTime() > lastSync);
-    const existingDrafts = await Promise.all(validEntries.map((e: any) => db.drafts.get(e.id)));
-    const operations: Promise<unknown>[] = [];
-
-    for (let i = 0; i < validEntries.length; i++) {
-      const entry = validEntries[i];
-      const existingDraft = existingDrafts[i];
-
-      if (!existingDraft) {
-        const draft: Draft = {
-          id: entry.id || `zen_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-          title: `Zen Session: ${new Date(entry.startedAt).toLocaleString()}`,
-          body: entry.text,
-          tags: ['zen-mode'],
-          createdAt: new Date(entry.startedAt).getTime(),
-          updatedAt: entry.endedAt ? new Date(entry.endedAt).getTime() : new Date(entry.startedAt).getTime(),
-          snapshots: [],
-          scratchpad: '',
-        };
-        operations.push(db.drafts.add(draft));
-        newEntriesCount++;
-      } else if (entry.endedAt) {
-        // Update existing draft if it has new content
-        const updatedAt = new Date(entry.endedAt).getTime();
-        if (updatedAt > existingDraft.updatedAt) {
-          operations.push(db.drafts.update(entry.id, {
-            body: entry.text,
-            updatedAt,
-          }));
-        }
-      }
-    }
-    await Promise.all(operations);
-
-    // Update last sync timestamp
-    localStorage.setItem(lastSyncKey, Date.now().toString());
-
-    if (newEntriesCount > 0) {
-      console.log(`Synced ${newEntriesCount} new Zen sessions to drafts`);
-    }
-  } catch (e) {
-    console.error('Sync from archive failed:', e);
-  }
-}
-
-// Legacy migration function (kept for backward compatibility)
-export async function migrateFromArchive(): Promise<void> {
-  await syncFromArchive();
-}

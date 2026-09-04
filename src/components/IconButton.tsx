@@ -20,9 +20,10 @@ const IconButton: React.FC<IconButtonProps> = ({
   ...rest
 }) => {
   const buttonType = type ?? 'button';
+  // 44px hits the touch-target guideline; the pill keeps the same height.
   const shapeClass = shape === 'pill'
-    ? 'h-10 px-4 rounded-2xl gap-2'
-    : 'h-10 w-10 rounded-xl';
+    ? 'h-11 px-3 sm:px-4 rounded-2xl gap-2'
+    : 'h-11 w-11 rounded-xl';
   const palette = variant === 'subtlePill'
     ? 'border-muted/25 text-muted bg-transparent hover:bg-surface/60 hover:text-text hover:border-tint/35 focus-visible:ring-1 focus-visible:ring-tint/45 focus-visible:ring-offset-2 focus-visible:ring-offset-base'
     : active

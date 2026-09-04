@@ -11,7 +11,6 @@ import {
   restoreSnapshot,
   getDraftPrefs,
   saveDraftPrefs,
-  syncFromArchive,
   setActiveDraftId,
   getActiveDraftId,
   type Draft,
@@ -64,9 +63,6 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
   }, []);
 
   const loadDrafts = useCallback(async () => {
-    // Sync from Zen mode archive first
-    await syncFromArchive();
-    
     const allDrafts = await getAllDrafts();
     setDrafts(allDrafts);
     
@@ -155,13 +151,13 @@ export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) =
     };
   }, [isOpen]);
 
-  // Auto-sync from archive and refresh active draft every 2 seconds while open
+  // Refresh the list and the active draft every 2 seconds while open, so a
+  // Zen session autosaving in the background shows up without a reopen.
   useEffect(() => {
     if (!isOpen) return;
 
     const syncInterval = setInterval(() => {
-      syncFromArchive()
-        .then(() => getAllDrafts())
+      getAllDrafts()
         .then(allDrafts => {
           setDrafts(allDrafts);
 

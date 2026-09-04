@@ -30,16 +30,17 @@ export const QUOTE_TAGS: ReadonlyArray<{ id: string; label: string; blurb: strin
   { id: 'simplicity', label: 'Simplicity', blurb: 'Less, plainly' },
 ];
 
+// Bounds chosen so the corpus splits roughly 45 / 50 / 5.
 export const LENGTH_BOUNDS: Readonly<Record<QuoteLength, [number, number]>> = {
-  short: [0, 80],
-  medium: [81, 150],
-  long: [151, Infinity],
+  short: [0, 70],
+  medium: [71, 110],
+  long: [111, Infinity],
 };
 
 export function quoteLength(text: string): QuoteLength {
   const n = text.length;
-  if (n <= 80) return 'short';
-  if (n <= 150) return 'medium';
+  if (n <= 70) return 'short';
+  if (n <= 110) return 'medium';
   return 'long';
 }
 
@@ -109,31 +110,31 @@ export function getFallbackQuotes(): Quote[] {
   return [
     {
       id: 'fallback-01',
-      text: 'Nature does not hurry, yet everything is accomplished.',
+      text: 'Let it be still, and it will gradually become clear.',
       author: 'Lao Tzu',
-      source: 'Tao Te Ching',
-      tags: ['tao', 'nature', 'stillness'],
+      source: 'Tao Te Ching, trans. James Legge (1891)',
+      tags: ['tao', 'stillness'],
     },
     {
       id: 'fallback-02',
-      text: 'You have power over your mind, not outside events. Realize this, and you will find strength.',
+      text: 'Confine thyself to the present.',
       author: 'Marcus Aurelius',
-      source: 'Meditations',
+      source: 'Meditations, trans. George Long (1862)',
       tags: ['stoic', 'mind'],
     },
     {
       id: 'fallback-03',
-      text: 'The mind is everything. What you think you become.',
+      text: 'All that we are is the result of what we have thought: it is founded on our thoughts, it is made up of our thoughts.',
       author: 'The Buddha',
-      source: 'Attributed',
+      source: 'Dhammapada, trans. F. Max Muller (1881)',
       tags: ['buddhist', 'mind'],
     },
     {
       id: 'fallback-04',
-      text: 'Simplicity, patience, compassion. These three are your greatest treasures.',
-      author: 'Lao Tzu',
-      source: 'Tao Te Ching',
-      tags: ['tao', 'simplicity'],
+      text: 'Above all, we cannot afford not to live in the present.',
+      author: 'Henry David Thoreau',
+      source: 'Walking (1862)',
+      tags: ['nature', 'life'],
     },
   ];
 }
