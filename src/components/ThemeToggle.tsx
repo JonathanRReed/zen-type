@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getSettings, saveSettings, type Settings } from '../utils/storage';
+import { getSettings, updateSettings, type Settings } from '../utils/storage';
 import { useMotionPreference } from '../hooks/useMotionPreference';
 import IconButton from './IconButton';
 import { Button } from '@/components/ui/button';
@@ -73,7 +73,8 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
     try { return getSettings().theme; } catch { return 'Void'; }
   });
   const [isOpen, setIsOpen] = useState(false);
-  const { reducedMotion } = useMotionPreference({ syncAttribute: true });
+  // Keeps html[data-motion] in sync with the setting and the OS preference.
+  useMotionPreference({ syncAttribute: true });
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   const focusToggle = () => {
@@ -133,82 +134,10 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
     };
   }, []);
 
-  // Ambient shift every ~90s unless locked (respects reduced motion)
-  useEffect(() => {
-    const root = document.documentElement;
-    let tick = 0;
-    let interval: number | null = null;
-
-    const resetGradientHelpers = () => {
-      root.style.setProperty('--theme-gradient-angle', '180deg');
-      root.style.setProperty('--theme-gradient-center-x', '50%');
-      root.style.setProperty('--theme-gradient-center-y', '50%');
-      root.style.setProperty('--theme-hue-shift', '0deg');
-    };
-
-    const startShift = () => {
-      if (interval !== null || reducedMotion) return;
-      interval = window.setInterval(() => {
-        if (reducedMotion) {
-          stopShift();
-          return;
-        }
-        const s = getSettings();
-        if (s.themeShiftLocked) return;
-        tick = (tick + 1) % 90;
-
-        // Forest: Breathing gradient shift between pine/foam
-        if (theme === 'Forest') {
-          const angle = 180 + Math.sin((tick / 90) * Math.PI * 2) * 4; // ±4deg subtle
-          root.style.setProperty('--theme-gradient-angle', `${angle}deg`);
-        }
-        // Ocean: Gentle wave distortion
-        if (theme === 'Ocean') {
-          const x = 50 + Math.sin((tick / 90) * Math.PI * 2) * 3;
-          const y = 50 + Math.cos((tick / 90) * Math.PI * 2) * 2;
-          root.style.setProperty('--theme-gradient-center-x', `${x}%`);
-          root.style.setProperty('--theme-gradient-center-y', `${y}%`);
-        }
-        // Cosmic: Small hue shift ±2°
-        if (theme === 'Cosmic') {
-          const hue = Math.sin((tick / 90) * Math.PI * 2) * 2; // ±2deg
-          root.style.setProperty('--theme-hue-shift', `${hue}deg`);
-        }
-        // Void: Slow vertical gradient scroll
-        if (theme === 'Void') {
-          const angle = 180 + Math.sin((tick / 90) * Math.PI * 2) * 2; // ±2deg very subtle
-          root.style.setProperty('--theme-gradient-angle', `${angle}deg`);
-        }
-      }, 1000);
-    };
-
-    const stopShift = () => {
-      if (interval !== null) {
-        clearInterval(interval);
-        interval = null;
-      }
-      resetGradientHelpers();
-    };
-
-    if (reducedMotion) {
-      stopShift();
-    } else {
-      startShift();
-    }
-
-    return () => {
-      stopShift();
-    };
-  }, [theme, reducedMotion]);
-
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);
     applyTheme(newTheme);
-    
-    const currentSettings = getSettings();
-    const nextSettings = { ...currentSettings, theme: newTheme } as Settings;
-    saveSettings(nextSettings);
-    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: nextSettings }));
+    updateSettings({ theme: newTheme });
     window.dispatchEvent(new CustomEvent('themeChanged', { detail: newTheme }));
 
     setIsOpen(false);

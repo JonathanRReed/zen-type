@@ -1,6 +1,6 @@
 {
-  "name": "Zen Type",
-  "short_name": "Zen Type",
+  "name": "Zen Typer",
+  "short_name": "Zen Typer",
   "icons": [
     {
       "src": "/favicon-192x192.png",
@@ -13,7 +13,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#1c1b2c",
-  "background_color": "#1c1b2c",
+  "theme_color": "#191724",
+  "background_color": "#191724",
   "display": "standalone"
 }

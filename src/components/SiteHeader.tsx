@@ -1,68 +1,27 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ThemeToggle from './ThemeToggle';
 import IconButton from './IconButton';
-import { getSettings, saveSettings, type Settings, syncTypingFont, applySettingsSideEffects } from '../utils/storage';
-import { debounce } from '../utils/debounce';
+import { getSettings, updateSettings, type Settings, syncTypingFont } from '../utils/storage';
+import { useSettings } from '../hooks/useSettings';
 import { Button } from '@/components/ui/button';
-import { audioEngine } from '../utils/audioEngine';
 
 interface SiteHeaderProps {
   mode: 'landing' | 'zen' | 'quote';
 }
 
 const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
-  const [settings, setSettings] = useState<Settings | null>(() => {
-    try {
-      return getSettings();
-    } catch {
-      return null;
-    }
-  });
-  const [autoNext, setAutoNext] = useState<boolean>(() => {
-    try {
-      return !!getSettings().autoAdvanceQuotes;
-    } catch {
-      return false;
-    }
-  });
+  const settings = useSettings();
+  const autoNext = !!settings.autoAdvanceQuotes;
   const [showQuick, setShowQuick] = useState(false);
   const quickWrapperRef = useRef<HTMLDivElement | null>(null);
-  const persistSettings = useMemo(() => debounce((next: Settings) => {
-    try {
-      saveSettings(next);
-    } catch (error) {
-      console.error('[SiteHeader] Failed to persist settings', error);
-    }
-  }, 250), []);
 
   useEffect(() => {
-    const onSettings = (e: Event) => {
-      try {
-        const s = (e as CustomEvent).detail as Settings;
-        setSettings(s);
-        setAutoNext(!!s.autoAdvanceQuotes);
-        if (s.fontFamily) {
-          syncTypingFont(s.fontFamily);
-        }
-        if (s.caretStyle && typeof document !== 'undefined') {
-          document.documentElement.setAttribute('data-caret', s.caretStyle);
-        }
-      } catch {}
-    };
-    window.addEventListener('settingsChanged', onSettings as EventListener);
-    return () => window.removeEventListener('settingsChanged', onSettings as EventListener);
-  }, []);
-
-  useEffect(() => {
-    const initial = getSettings().fontFamily;
-    if (initial) {
-      syncTypingFont(initial);
-    }
-    // Stored caret choice must apply on first paint too — previously it only
-    // took effect after touching a setting, so reloads silently reset to Line.
-    const caret = getSettings().caretStyle;
-    if (caret && typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-caret', caret);
+    // Stored font and caret choices must apply on first paint, not only after
+    // a setting is touched.
+    const initial = getSettings();
+    if (initial.fontFamily) syncTypingFont(initial.fontFamily);
+    if (initial.caretStyle && typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-caret', initial.caretStyle);
     }
   }, []);
 
@@ -89,41 +48,21 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
     };
   }, []);
 
-  const _updateSetting = (key: keyof Settings, value: any) => {
-    const current = settings || getSettings();
-    const next = { ...current, [key]: value } as Settings;
-    persistSettings(next);
-    applySettingsSideEffects({ [key]: value } as Partial<Settings>, next);
-    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
-    setSettings(next);
+  const _updateSetting = (key: keyof Settings, value: boolean) => {
+    updateSettings({ [key]: value } as Partial<Settings>);
   };
 
   const handleSoundToggle = () => {
-    const current = settings || getSettings();
+    const current = getSettings();
     const nextEnabled = !current.soundEnabled;
-    const next: Settings = {
-      ...current,
+    updateSettings({
       soundEnabled: nextEnabled,
-      switchSound: (nextEnabled && (!current.switchSound || current.switchSound === 'none')) ? 'thock' : (current.switchSound ?? 'none'),
-    };
-    audioEngine.setMuted(!nextEnabled);
-    persistSettings(next);
-    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
-    setSettings(next);
+      switchSound: nextEnabled && current.switchSound === 'none' ? 'thock' : (current.switchSound ?? 'thock'),
+    });
   };
 
   const handleAutoNextToggle = (checked: boolean) => {
-    setAutoNext(checked);
-    const current = settings || getSettings();
-    const patch: Partial<Settings> = {
-      autoAdvanceQuotes: checked,
-      autoAdvanceDelayMs: checked ? 0 : (current.autoAdvanceDelayMs ?? 0),
-    };
-    const next = { ...current, ...patch } as Settings;
-    persistSettings(next);
-    applySettingsSideEffects(patch, next);
-    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
-    setSettings(next);
+    updateSettings({ autoAdvanceQuotes: checked });
   };
 
   const navLinkClass = (active: boolean) =>

@@ -91,8 +91,11 @@ export const Editor: React.FC<EditorProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key !== 'Escape') {
-      audioEngine.playSwitch(undefined, e.key);
+      audioEngine.keyDown(e.key, { repeat: e.repeat });
     }
+  };
+  const handleKeyUp = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    audioEngine.keyUp(e.key);
   };
 
   return (
@@ -102,6 +105,7 @@ export const Editor: React.FC<EditorProps> = ({
         defaultValue={draft.body}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
         className="draft-focusable w-full h-full resize-none bg-transparent px-6 py-4 font-mono text-base text-text leading-relaxed"
         placeholder="Start writing..."
         spellCheck={false}

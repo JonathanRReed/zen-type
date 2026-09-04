@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/package",
-  "name": "zen-type",
+  "name": "zen-typer",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "reactDoctor": {
     "rules": {

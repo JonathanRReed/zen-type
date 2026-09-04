@@ -1,5 +1,6 @@
-// Local storage utilities for Zen Typer
-// Handles settings, stats, streak, telemetry and exports
+// Local persistence for Zen Typer: settings, stats, session history, streak,
+// and the one-time hint flags. Everything lives in localStorage; drafts live
+// in IndexedDB (see lib/draftStore.ts). Nothing here talks to a server.
 
 const STORAGE_PERSISTENCE_ERROR_EVENT = 'zen:storage-persistence-error';
 
@@ -49,7 +50,7 @@ export function getJSON<T>(key: string, fallback: T): T {
   }
 }
 
-export function setJSON(key: string, value: any): void {
+export function setJSON(key: string, value: unknown): void {
   if (!isStorageAccessible() || storagePersistenceDisabled) {
     return;
   }
@@ -78,6 +79,10 @@ export function __resetStoragePersistenceStateForTests(): void {
   lastStorageFailure = null;
   _settingsCache = null;
 }
+
+// ---------------------------------------------------------------------------
+// Fonts
+// ---------------------------------------------------------------------------
 
 export const FONT_OPTIONS = [
   'Nebula Sans',
@@ -116,71 +121,47 @@ export function syncTypingFont(font: FontOption): void {
   document.documentElement.style.setProperty('--typing-font', stack);
   document.documentElement.style.setProperty('--ui-font', stack);
 
-  const fonts = (document as any).fonts;
+  const fonts = (document as Document & { fonts?: { load?: (spec: string) => Promise<unknown> } }).fonts;
   if (fonts?.load) {
     const family = font.replace(/"/g, '\\"');
-    const weights = ['400', '500', '600', '700'];
-    for (const weight of weights) {
+    for (const weight of ['400', '500', '600', '700']) {
       void fonts.load(`${weight} 1rem "${family}"`).catch(() => {});
     }
   }
 }
 
-export type StatsBarMetricKey = 'time' | 'words' | 'wpm' | 'accuracy';
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+
+export type StatsBarMetricKey = 'time' | 'words' | 'wpm' | 'accuracy' | 'streak';
 
 export const DEFAULT_STATS_BAR_METRICS: Readonly<Record<'zen' | 'quote', StatsBarMetricKey[]>> = {
   zen: ['time', 'words', 'wpm'],
   quote: ['time', 'words', 'wpm', 'accuracy'],
 };
 
-const ALLOWED_STATS_BAR_METRICS: readonly StatsBarMetricKey[] = ['time', 'words', 'wpm', 'accuracy'];
+const ALLOWED_STATS_BAR_METRICS: readonly StatsBarMetricKey[] = ['time', 'words', 'wpm', 'accuracy', 'streak'];
 
-export function applySettingsSideEffects(patch: Partial<Settings>, next: Settings, options?: { broadcast?: boolean }): void {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return;
-  const broadcast = options?.broadcast ?? true;
+export type ThemeName = 'Void' | 'Forest' | 'Ocean' | 'Cosmic' | 'Ember' | 'Sakura' | 'Aurora' | 'Glacier';
+export const THEME_NAMES: readonly ThemeName[] = ['Void', 'Cosmic', 'Aurora', 'Ocean', 'Glacier', 'Forest', 'Ember', 'Sakura'];
 
-  if ('fontFamily' in patch && next.fontFamily) {
-    syncTypingFont(next.fontFamily);
-    if (broadcast && patch.fontFamily) {
-      window.dispatchEvent(new CustomEvent('fontChanged', { detail: patch.fontFamily }));
-    }
-  }
+export type CaretStyle = 'line' | 'block' | 'underline' | 'glow';
+export type SwitchSoundProfile = 'none' | 'thock' | 'cream' | 'raindrop' | 'typewriter' | 'holy-panda' | 'clicky';
+export type AmbientSoundscape = 'none' | 'rain' | 'wind' | 'drone' | 'fire';
+export type QuoteLength = 'short' | 'medium' | 'long';
 
-  if ('reducedMotion' in patch) {
-    document.documentElement.classList.toggle('reduce-motion', !!next.reducedMotion);
-  }
-
-  if ('highContrast' in patch) {
-    document.documentElement.classList.toggle('high-contrast', !!next.highContrast);
-  }
-
-  if ('showStats' in patch) {
-    if (broadcast) {
-      window.dispatchEvent(new CustomEvent('toggleStats', { detail: !!next.showStats }));
-    }
-  }
-
-  if ('performanceMode' in patch) {
-    document.documentElement.classList.toggle('perf-mode', !!next.performanceMode);
-  }
-
-  if ('caretStyle' in patch && next.caretStyle) {
-    document.documentElement.setAttribute('data-caret', next.caretStyle);
-  }
-}
-
-// Type definitions
 export interface Settings {
-  theme: 'Void' | 'Forest' | 'Ocean' | 'Cosmic' | 'Ember' | 'Sakura' | 'Aurora' | 'Glacier';
+  theme: ThemeName;
   reducedMotion: boolean;
   showStats: boolean;
   highContrast: boolean;
   fontFamily?: FontOption;
-  caretStyle?: 'line' | 'block' | 'underline' | 'glow';
+  caretStyle?: CaretStyle;
   autoAdvanceQuotes?: boolean;
   autoAdvanceDelayMs?: number; // 0 for immediate; default 1500
   performanceMode?: boolean;
-  // Global profiles
+  // Named presets that set several of the Zen controls at once
   profile?: 'Minimal' | 'Practice' | 'Meditative';
   // Typing feel
   debounceMs?: number; // ignore ultra-fast duplicate keystrokes under this ms (0 = off)
@@ -193,18 +174,19 @@ export interface Settings {
   breath: boolean;          // breathing overlay enabled
   markersEveryMin: number;  // session markers interval minutes
   ghostWindowMin: number;   // rolling ghost buffer window minutes
-  // Theme
-  themeShiftLocked?: boolean; // lock ambient theme shift
   statsBarMetrics?: Partial<Record<'zen' | 'quote', StatsBarMetricKey[]>>;
-  // Procedural Audio Engine
+  // Audio
   soundEnabled?: boolean; // master audio toggle (default false)
-  switchSound?: 'none' | 'thock' | 'cream' | 'raindrop' | 'typewriter' | 'holy-panda' | 'clicky';
-  ambientSound?: 'none' | 'rain' | 'wind' | 'drone';
+  switchSound?: SwitchSoundProfile;
+  ambientSound?: AmbientSoundscape;
   audioVolume?: number; // 0.0 - 1.0, default 0.6
   ambientVolume?: number; // 0.0 - 1.0, default 0.4
   // Paced ghost and meditation flow
   targetWpm?: number; // target WPM ghost pace (0 = off)
   timedFlowMinutes?: number; // 0 = off, 3, 5, 10
+  // Quote pool filters. Empty arrays mean "everything".
+  quoteLengths?: QuoteLength[];
+  quoteTags?: string[];
 }
 
 export interface Stats {
@@ -228,6 +210,8 @@ export interface SessionSummary {
   accuracy?: number;
   quote?: string;
   author?: string;
+  quoteId?: string;
+  errors?: { slip: number; skip: number; extra: number };
 }
 
 export interface SessionCardSummary {
@@ -239,6 +223,21 @@ export interface SessionCardSummary {
   accuracy?: number; // quote mode
 }
 
+/** One finished session, as kept in the local history. */
+export interface SessionRecord {
+  id: string;
+  mode: 'zen' | 'quote';
+  date: string; // ISO, session end
+  timeSec: number;
+  words: number;
+  chars: number;
+  wpm?: number;
+  accuracy?: number;
+  quoteId?: string;
+  errors?: { slip: number; skip: number; extra: number };
+}
+
+/** @deprecated Old 10-entry log shape, kept so older exports still parse. */
 export interface TelemetryEntry {
   date: string; // ISO
   mode: 'zen' | 'quote';
@@ -248,17 +247,24 @@ export interface TelemetryEntry {
   accuracy?: number;
 }
 
-// Storage keys
+export interface Hints {
+  firstRun?: boolean;
+  audio?: boolean;
+  progress?: boolean;
+}
+
 export const STORAGE_KEYS = {
   SETTINGS: 'zt.settings',
   STATS: 'zt.stats',
   STREAK: 'zt.streak',
   LAST_SESSION: 'zt.lastSession',
   TELEMETRY: 'zt.telemetry',
-  ARCHIVE: 'zt.archive'
+  HISTORY: 'zt.history',
+  HINTS: 'zt.hints',
 } as const;
 
-// Defaults
+export const HISTORY_LIMIT = 500;
+
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'Void',
   reducedMotion: false,
@@ -267,7 +273,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fontFamily: FONT_OPTIONS[0],
   caretStyle: 'line',
   autoAdvanceQuotes: false,
-  autoAdvanceDelayMs: 1500,  // 1.5s affirmation delay
+  autoAdvanceDelayMs: 1500,
   performanceMode: false,
   profile: 'Practice',
   debounceMs: 0,
@@ -279,18 +285,19 @@ export const DEFAULT_SETTINGS: Settings = {
   breath: false,
   markersEveryMin: 2,
   ghostWindowMin: 5,
-  themeShiftLocked: false,
   statsBarMetrics: {
     zen: [...DEFAULT_STATS_BAR_METRICS.zen],
     quote: [...DEFAULT_STATS_BAR_METRICS.quote],
   },
   soundEnabled: false,
-  switchSound: 'none',
+  switchSound: 'thock',
   ambientSound: 'none',
   audioVolume: 0.6,
   ambientVolume: 0.4,
   targetWpm: 0,
   timedFlowMinutes: 0,
+  quoteLengths: [],
+  quoteTags: [],
 };
 
 export const DEFAULT_STATS: Stats = {
@@ -304,390 +311,364 @@ export const DEFAULT_STATS: Stats = {
   quoteSessions: 0
 };
 
-// In-memory cache for sub-millisecond synchronous settings lookups on typing keydowns
-let _settingsCache: Settings | null = null;
+const ALLOWED_CARETS: readonly CaretStyle[] = ['line', 'block', 'underline', 'glow'];
+const ALLOWED_SWITCHES: readonly SwitchSoundProfile[] = ['none', 'thock', 'cream', 'raindrop', 'typewriter', 'holy-panda', 'clicky'];
+const ALLOWED_AMBIENT: readonly AmbientSoundscape[] = ['none', 'rain', 'wind', 'drone', 'fire'];
+const ALLOWED_LENGTHS: readonly QuoteLength[] = ['short', 'medium', 'long'];
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_KEYS.SETTINGS) {
-      _settingsCache = null;
-    }
-  });
-}
+const clamp01 = (value: unknown, fallback: number): number => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(1, Math.max(0, n));
+};
 
-// Settings helpers
-export function getSettings(): Settings {
-  if (_settingsCache) return _settingsCache;
+/** Coerce whatever is in storage into a Settings object every caller can trust. */
+export function normalizeSettings(raw: unknown): Settings {
+  const input = (raw && typeof raw === 'object' ? raw : {}) as Partial<Settings> & { theme?: string };
+  const normalized = { ...DEFAULT_SETTINGS, ...input } as Settings;
 
-  const raw = getJSON(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS as Settings);
-  const normalized = { ...DEFAULT_SETTINGS, ...raw } as Settings;
-
-  if ((raw as any).theme === 'Plain') {
-    normalized.theme = 'Void';
-  }
-
-  const allowedThemes: Settings['theme'][] = ['Void', 'Forest', 'Ocean', 'Cosmic', 'Ember', 'Sakura', 'Aurora', 'Glacier'];
-  if (!allowedThemes.includes(normalized.theme)) {
-    normalized.theme = 'Void';
-  }
+  if ((input.theme as string | undefined) === 'Plain') normalized.theme = 'Void';
+  if (!THEME_NAMES.includes(normalized.theme)) normalized.theme = 'Void';
 
   if (!normalized.fontFamily || !FONT_OPTIONS.includes(normalized.fontFamily)) {
     normalized.fontFamily = DEFAULT_SETTINGS.fontFamily!;
   }
-
-  const allowedCarets: NonNullable<Settings['caretStyle']>[] = ['line', 'block', 'underline', 'glow'];
-  if (!normalized.caretStyle || !allowedCarets.includes(normalized.caretStyle)) {
+  if (!normalized.caretStyle || !ALLOWED_CARETS.includes(normalized.caretStyle)) {
     normalized.caretStyle = 'line';
   }
+  if (!normalized.switchSound || !ALLOWED_SWITCHES.includes(normalized.switchSound)) {
+    normalized.switchSound = 'thock';
+  }
+  if (!normalized.ambientSound || !ALLOWED_AMBIENT.includes(normalized.ambientSound)) {
+    normalized.ambientSound = 'none';
+  }
+  normalized.audioVolume = clamp01(normalized.audioVolume, 0.6);
+  normalized.ambientVolume = clamp01(normalized.ambientVolume, 0.4);
+  normalized.soundEnabled = !!normalized.soundEnabled;
+
+  const targetWpm = Number(normalized.targetWpm);
+  normalized.targetWpm = Number.isFinite(targetWpm) && targetWpm > 0 ? Math.min(300, Math.round(targetWpm)) : 0;
+  const flow = Number(normalized.timedFlowMinutes);
+  normalized.timedFlowMinutes = Number.isFinite(flow) && flow > 0 ? Math.min(60, flow) : 0;
+
+  normalized.quoteLengths = Array.isArray(normalized.quoteLengths)
+    ? normalized.quoteLengths.filter((l): l is QuoteLength => ALLOWED_LENGTHS.includes(l))
+    : [];
+  normalized.quoteTags = Array.isArray(normalized.quoteTags)
+    ? normalized.quoteTags.filter((t): t is string => typeof t === 'string' && t.length > 0 && t.length < 40)
+    : [];
 
   const sanitizeMetrics = (mode: 'zen' | 'quote', metrics?: StatsBarMetricKey[]): StatsBarMetricKey[] => {
-    const allowedForMode = new Set(DEFAULT_STATS_BAR_METRICS[mode]);
     const allowedKeys = new Set(ALLOWED_STATS_BAR_METRICS as readonly string[]);
     const list = (metrics && Array.isArray(metrics) ? metrics : []).filter((key): key is StatsBarMetricKey =>
       allowedKeys.has(key)
     );
-    const unique = Array.from(new Set(list.filter(key => allowedForMode.has(key))));
+    // Accuracy is meaningless in Zen mode (there is nothing to be wrong against).
+    const unique = Array.from(new Set(list.filter(key => !(mode === 'zen' && key === 'accuracy'))));
     return unique.length > 0 ? unique : [...DEFAULT_STATS_BAR_METRICS[mode]];
   };
 
-  const rawMetrics = (raw as Settings | undefined)?.statsBarMetrics;
+  const rawMetrics = input.statsBarMetrics;
   normalized.statsBarMetrics = {
     zen: sanitizeMetrics('zen', rawMetrics?.zen),
     quote: sanitizeMetrics('quote', rawMetrics?.quote),
   };
 
-  _settingsCache = normalized;
   return normalized;
 }
 
+// In-memory cache so getSettings() is free on every keydown.
+let _settingsCache: Settings | null = null;
+const settingsListeners = new Set<(settings: Settings) => void>();
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEYS.SETTINGS || e.key === null) {
+      _settingsCache = null;
+      const next = getSettings();
+      for (const listener of settingsListeners) listener(next);
+    }
+  });
+}
+
+export function getSettings(): Settings {
+  if (_settingsCache) return _settingsCache;
+  const raw = getJSON<unknown>(STORAGE_KEYS.SETTINGS, null);
+  _settingsCache = normalizeSettings(raw);
+  return _settingsCache;
+}
+
+/** Persist a whole settings object. Prefer updateSettings() for changes. */
 export function saveSettings(settings: Settings): void {
-  _settingsCache = settings;
-  setJSON(STORAGE_KEYS.SETTINGS, settings);
+  _settingsCache = normalizeSettings(settings);
+  setJSON(STORAGE_KEYS.SETTINGS, _settingsCache);
 }
 
 export function __invalidateSettingsCacheForTests(): void {
   _settingsCache = null;
 }
 
-// Stats
-export function getStats(): Stats {
-  return getJSON(STORAGE_KEYS.STATS, DEFAULT_STATS);
+/**
+ * Apply the document-level side effects of a settings change (theme classes,
+ * font variables, caret attribute). Broadcasting is handled by updateSettings.
+ */
+export function applySettingsSideEffects(patch: Partial<Settings>, next: Settings, options?: { broadcast?: boolean }): void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const broadcast = options?.broadcast ?? true;
+  const root = document.documentElement;
+
+  if ('fontFamily' in patch && next.fontFamily) {
+    syncTypingFont(next.fontFamily);
+    if (broadcast && patch.fontFamily) {
+      window.dispatchEvent(new CustomEvent('fontChanged', { detail: patch.fontFamily }));
+    }
+  }
+  if ('reducedMotion' in patch) {
+    root.classList.toggle('reduce-motion', !!next.reducedMotion);
+  }
+  if ('highContrast' in patch) {
+    root.classList.toggle('high-contrast', !!next.highContrast);
+  }
+  if ('showStats' in patch && broadcast) {
+    window.dispatchEvent(new CustomEvent('toggleStats', { detail: !!next.showStats }));
+  }
+  if ('performanceMode' in patch) {
+    root.classList.toggle('perf-mode', !!next.performanceMode);
+  }
+  if ('caretStyle' in patch && next.caretStyle) {
+    root.setAttribute('data-caret', next.caretStyle);
+  }
 }
 
-export function updateStats(sessionSummary: SessionSummary): void {
-  const stats = getStats();
-
-  stats.totalWords += sessionSummary.wordsTyped;
-  stats.totalChars += sessionSummary.charactersTyped;
-  stats.totalTime += (sessionSummary.endedAt.getTime() - sessionSummary.startedAt.getTime()) / 1000;
-  stats.sessionsCompleted += 1;
-
-  if (sessionSummary.mode === 'zen') {
-    stats.zenSessions += 1;
-  } else {
-    stats.quoteSessions += 1;
+/**
+ * The one way to change settings. Merges the patch, persists, applies the
+ * document side effects, notifies subscribers, and broadcasts the legacy
+ * `settingsChanged` window event for islands that still listen to it.
+ */
+export function updateSettings(patch: Partial<Settings>, options?: { broadcast?: boolean }): Settings {
+  const current = getSettings();
+  const next = normalizeSettings({ ...current, ...patch });
+  _settingsCache = next;
+  setJSON(STORAGE_KEYS.SETTINGS, next);
+  applySettingsSideEffects(patch, next, options);
+  for (const listener of settingsListeners) listener(next);
+  if (options?.broadcast !== false && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
   }
+  return next;
+}
 
-  if (sessionSummary.wpm) {
-    stats.bestWpm = Math.max(stats.bestWpm, sessionSummary.wpm);
+export function subscribeSettings(listener: (settings: Settings) => void): () => void {
+  settingsListeners.add(listener);
+  return () => {
+    settingsListeners.delete(listener);
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Stats, history, streak
+// ---------------------------------------------------------------------------
+
+export function getStats(): Stats {
+  const raw = getJSON<Partial<Stats>>(STORAGE_KEYS.STATS, DEFAULT_STATS);
+  return { ...DEFAULT_STATS, ...raw };
+}
+
+const dayKey = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const dayKeyFromIso = (iso: string): string | null => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : dayKey(d);
+};
+
+const shiftDay = (key: string, delta: number): string => {
+  const [y, m, d] = key.split('-').map(Number);
+  const date = new Date(y ?? 1970, (m ?? 1) - 1, (d ?? 1) + delta);
+  return dayKey(date);
+};
+
+export function getHistory(): SessionRecord[] {
+  const list = getJSON<unknown>(STORAGE_KEYS.HISTORY, null);
+  if (Array.isArray(list) && list.length > 0) {
+    return list.filter((r): r is SessionRecord => !!r && typeof r === 'object' && typeof (r as SessionRecord).date === 'string');
   }
-
-  if (sessionSummary.accuracy !== undefined) {
-    const totalAccuracy = stats.averageAccuracy * (stats.sessionsCompleted - 1);
-    stats.averageAccuracy = (totalAccuracy + sessionSummary.accuracy) / stats.sessionsCompleted;
+  // First read on an existing install: lift the old 10-entry telemetry log
+  // into the history so nothing that was tracked is lost.
+  const legacy = getJSON<TelemetryEntry[]>(STORAGE_KEYS.TELEMETRY, []);
+  if (Array.isArray(legacy) && legacy.length > 0) {
+    const migrated: SessionRecord[] = legacy
+      .filter(e => e && typeof e.date === 'string')
+      .map((e, i) => ({
+        id: `legacy-${i}-${e.date}`,
+        mode: e.mode === 'zen' ? 'zen' : 'quote',
+        date: e.date,
+        timeSec: Math.max(0, Number(e.timeSec) || 0),
+        words: Math.max(0, Number(e.words) || 0),
+        chars: Math.max(0, Math.round((Number(e.words) || 0) * 5)),
+        ...(e.wpm !== undefined ? { wpm: Number(e.wpm) || 0 } : {}),
+        ...(e.accuracy !== undefined ? { accuracy: Number(e.accuracy) || 0 } : {}),
+      }));
+    setJSON(STORAGE_KEYS.HISTORY, migrated);
+    return migrated;
   }
+  return [];
+}
 
-  setJSON(STORAGE_KEYS.STATS, stats);
-  setJSON(STORAGE_KEYS.LAST_SESSION, sessionSummary);
+function saveHistory(list: SessionRecord[]): void {
+  const trimmed = list.length > HISTORY_LIMIT ? list.slice(list.length - HISTORY_LIMIT) : list;
+  setJSON(STORAGE_KEYS.HISTORY, trimmed);
+}
 
-  // Telemetry (rolling last 10 sessions)
-  try {
-    const tel: TelemetryEntry[] = getJSON(STORAGE_KEYS.TELEMETRY, [] as TelemetryEntry[]);
-    const timeSec = Math.max(1, Math.round((sessionSummary.endedAt.getTime() - sessionSummary.startedAt.getTime()) / 1000));
-    const minutes = timeSec / 60;
-    const words = sessionSummary.wordsTyped || Math.round(sessionSummary.charactersTyped / 5);
-    const wpm = sessionSummary.wpm ?? Math.round(words / Math.max(0.01, minutes));
-    const accuracy = sessionSummary.accuracy;
-    const entry = { date: new Date().toISOString(), mode: sessionSummary.mode, timeSec, words, wpm };
-    if (accuracy !== undefined) {
-      (entry as any).accuracy = accuracy;
-    }
-    tel.push(entry as TelemetryEntry);
-    while (tel.length > 10) tel.shift();
-    setJSON(STORAGE_KEYS.TELEMETRY, tel);
-  } catch (e) {
-    console.warn('Telemetry update failed', e);
+/** Distinct calendar days with at least one recorded session, newest last. */
+export function getPracticeDays(): string[] {
+  const days = new Set<string>();
+  for (const r of getHistory()) {
+    const key = dayKeyFromIso(r.date);
+    if (key) days.add(key);
   }
+  return Array.from(days).sort();
+}
+
+/**
+ * Consecutive practice days ending today or yesterday. A streak counts
+ * calendar days, so 9am today and 8am tomorrow are two days, not one.
+ */
+export function computeStreak(days: string[], now: Date = new Date()): number {
+  if (days.length === 0) return 0;
+  const set = new Set(days);
+  const today = dayKey(now);
+  let cursor = set.has(today) ? today : shiftDay(today, -1);
+  if (!set.has(cursor)) return 0;
+  let streak = 0;
+  while (set.has(cursor)) {
+    streak += 1;
+    cursor = shiftDay(cursor, -1);
+  }
+  return streak;
 }
 
 export function getStreak(): number {
-  return getJSON(STORAGE_KEYS.STREAK, 0);
+  const derived = computeStreak(getPracticeDays());
+  if (derived > 0) return derived;
+  // Installs that predate the history: honour the stored count while the
+  // last session is still recent enough for the streak to be alive.
+  const stored = getJSON<number>(STORAGE_KEYS.STREAK, 0);
+  const last = getJSON<{ endedAt?: string } | null>(STORAGE_KEYS.LAST_SESSION, null);
+  if (stored > 0 && last?.endedAt) {
+    const lastDay = dayKeyFromIso(last.endedAt);
+    const today = dayKey(new Date());
+    if (lastDay === today || lastDay === shiftDay(today, -1)) return stored;
+  }
+  return 0;
 }
 
-// Call this BEFORE updateStats for the session that just ended: it compares
-// today against the previously stored session, and updateStats overwrites
-// LAST_SESSION.
+/** True when a session has already been recorded today. */
+export function practicedToday(): boolean {
+  return getPracticeDays().includes(dayKey(new Date()));
+}
+
+/**
+ * Record a finished session. Updates the lifetime stats, appends to the
+ * history, and refreshes the streak. This is the only write path for stats.
+ */
+export function recordSession(summary: SessionSummary): SessionRecord {
+  const startedMs = summary.startedAt.getTime();
+  const endedMs = summary.endedAt.getTime();
+  const timeSec = Math.max(1, Math.round((endedMs - startedMs) / 1000));
+  const words = Math.max(0, Math.round(summary.wordsTyped || Math.round(summary.charactersTyped / 5)));
+  const chars = Math.max(0, Math.round(summary.charactersTyped || 0));
+  const minutes = timeSec / 60;
+  const wpm = summary.wpm !== undefined ? Math.max(0, Math.round(summary.wpm)) : Math.round((chars / 5) / Math.max(0.01, minutes));
+
+  const stats = getStats();
+  stats.totalWords += words;
+  stats.totalChars += chars;
+  stats.totalTime += timeSec;
+  stats.sessionsCompleted += 1;
+  if (summary.mode === 'zen') stats.zenSessions += 1; else stats.quoteSessions += 1;
+  if (summary.mode === 'quote' && wpm > 0) stats.bestWpm = Math.max(stats.bestWpm, wpm);
+  if (summary.accuracy !== undefined) {
+    const priorCount = Math.max(0, stats.quoteSessions - 1);
+    const totalAccuracy = stats.averageAccuracy * priorCount;
+    stats.averageAccuracy = (totalAccuracy + summary.accuracy) / Math.max(1, priorCount + 1);
+  }
+  setJSON(STORAGE_KEYS.STATS, stats);
+  setJSON(STORAGE_KEYS.LAST_SESSION, summary);
+
+  const record: SessionRecord = {
+    id: `${endedMs.toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    mode: summary.mode,
+    date: summary.endedAt.toISOString(),
+    timeSec,
+    words,
+    chars,
+    ...(summary.mode === 'quote' ? { wpm } : {}),
+    ...(summary.accuracy !== undefined ? { accuracy: Math.round(summary.accuracy) } : {}),
+    ...(summary.quoteId ? { quoteId: summary.quoteId } : {}),
+    ...(summary.errors ? { errors: summary.errors } : {}),
+  };
+  const history = getHistory();
+  history.push(record);
+  saveHistory(history);
+
+  setJSON(STORAGE_KEYS.STREAK, computeStreak(getPracticeDays()));
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('sessionRecorded', { detail: record }));
+  }
+  return record;
+}
+
+/** @deprecated use recordSession */
+export function updateStats(summary: SessionSummary): void {
+  recordSession(summary);
+}
+
+/** @deprecated recordSession keeps the streak current */
 export function updateStreak(): void {
-  const lastSession = getJSON<SessionSummary | null>(STORAGE_KEYS.LAST_SESSION, null);
-  const currentStreak = getStreak();
-
-  if (!lastSession) {
-    setJSON(STORAGE_KEYS.STREAK, 1);
-    return;
-  }
-
-  // Calendar days apart, not elapsed 24h windows. Typing at 9am today and 8am
-  // tomorrow is a two-day streak; counting whole 24h blocks would score it 0
-  // and the streak would never move.
-  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const lastDay = startOfDay(new Date(lastSession.endedAt));
-  const today = startOfDay(new Date());
-  const dayDiff = Math.round((today - lastDay) / (1000 * 60 * 60 * 24));
-
-  if (dayDiff === 0) {
-    // Already counted today. Seed it if the streak was never written.
-    if (currentStreak < 1) setJSON(STORAGE_KEYS.STREAK, 1);
-  } else if (dayDiff === 1) {
-    setJSON(STORAGE_KEYS.STREAK, currentStreak + 1);
-  } else {
-    setJSON(STORAGE_KEYS.STREAK, 1);
-  }
+  setJSON(STORAGE_KEYS.STREAK, computeStreak(getPracticeDays()));
 }
 
-// PNG export card
-export async function exportSessionCard(summary: SessionCardSummary) {
-  try {
-    const width = 1200;
-    const height = 628;
-    const dpi = 2;
-    const canvas = document.createElement('canvas');
-    canvas.width = width * dpi;
-    canvas.height = height * dpi;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.scale(dpi, dpi);
-
-    const css = getComputedStyle(document.documentElement);
-    const base = (css.getPropertyValue('--rp-base') || '#191724').trim();
-    const overlay = (css.getPropertyValue('--rp-overlay') || '#26233a').trim();
-    const text = (css.getPropertyValue('--rp-text') || '#e0def4').trim();
-    const foam = (css.getPropertyValue('--rp-foam') || '#9ccfd8').trim();
-    const gold = (css.getPropertyValue('--rp-gold') || '#f6c177').trim();
-    const rose = (css.getPropertyValue('--rp-rose') || '#ea9a97').trim();
-    const iris = (css.getPropertyValue('--rp-iris') || '#c4a7e7').trim();
-
-    const grad = ctx.createLinearGradient(0, 0, 0, height);
-    grad.addColorStop(0, base);
-    grad.addColorStop(1, overlay);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.globalAlpha = 0.08;
-    for (let y = 0; y < height; y += 2) {
-      for (let x = 0; x < width; x += 2) {
-        if (Math.random() < 0.05) {
-          ctx.fillStyle = '#000';
-          ctx.fillRect(x, y, 1, 1);
-        }
-      }
-    }
-    ctx.globalAlpha = 1;
-
-    ctx.fillStyle = foam;
-    ctx.font = '700 40px Inter, system-ui, sans-serif';
-    ctx.fillText('Zen Typer Session', 60, 100);
-    ctx.fillStyle = text;
-    ctx.font = '400 20px Inter, system-ui, sans-serif';
-
-    const toMMSS = (sec: number) => {
-      const total = Math.max(0, Math.floor(Number(sec) || 0));
-      const m = Math.floor(total / 60);
-      const s = total % 60;
-      return `${m}:${s.toString().padStart(2, '0')}`;
-    };
-    const safeInt = (value: unknown): string => {
-      const n = Math.round(Number(value));
-      return String(Number.isFinite(n) ? n : 0);
-    };
-    const safeMode = summary.mode === 'quote' ? 'QUOTE' : 'ZEN';
-    const parsedDate = new Date(summary.date);
-    const d = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
-    ctx.fillText(d.toLocaleString(), 60, 130);
-
-    let y = 210;
-    const line = (label: string, value: string, color: string) => {
-      ctx.fillStyle = color;
-      ctx.font = '600 28px JetBrains Mono, ui-monospace, SFMono-Regular, monospace';
-      ctx.fillText(label, 60, y);
-      ctx.fillStyle = text;
-      ctx.font = '600 28px JetBrains Mono, ui-monospace, SFMono-Regular, monospace';
-      ctx.fillText(value, 260, y);
-      y += 48;
-    };
-
-    line('Mode', safeMode, iris);
-    line('Time', toMMSS(summary.time), foam);
-    line('Words', safeInt(summary.words), gold);
-    if (summary.wpm !== undefined) line('WPM', safeInt(summary.wpm), rose);
-    if (summary.accuracy !== undefined) line('Accuracy', `${safeInt(summary.accuracy)}%`, iris);
-
-    ctx.fillStyle = text;
-    ctx.font = '400 16px Inter, system-ui, sans-serif';
-    ctx.fillText('Built with Rosé Pine', 60, height - 40);
-
-    const png = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    a.href = png;
-    a.download = `zen-typer-session-${ts}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  } catch (err) {
-    console.error('exportSessionCard failed', err);
-  }
-}
-
-// SVG export
-export async function exportSessionCardSVG(summary: SessionCardSummary) {
-  try {
-    const css = getComputedStyle(document.documentElement);
-    const base = (css.getPropertyValue('--rp-base') || '#191724').trim();
-    const overlay = (css.getPropertyValue('--rp-overlay') || '#26233a').trim();
-    const text = (css.getPropertyValue('--rp-text') || '#e0def4').trim();
-    const foam = (css.getPropertyValue('--rp-foam') || '#9ccfd8').trim();
-    const gold = (css.getPropertyValue('--rp-gold') || '#f6c177').trim();
-    const rose = (css.getPropertyValue('--rp-rose') || '#ea9a97').trim();
-    const iris = (css.getPropertyValue('--rp-iris') || '#c4a7e7').trim();
-
-    const toMMSS = (sec: number) => {
-      const total = Math.max(0, Math.floor(Number(sec) || 0));
-      const m = Math.floor(total / 60);
-      const s = total % 60;
-      return `${m}:${s.toString().padStart(2, '0')}`;
-    };
-    // An exported .svg opened in a browser is a live document, so coerce
-    // every interpolated value even though callers pass app-shaped data.
-    const safeInt = (value: unknown): number => {
-      const n = Math.round(Number(value));
-      return Number.isFinite(n) ? n : 0;
-    };
-    const safeMode = summary.mode === 'quote' ? 'QUOTE' : 'ZEN';
-    const parsedDate = new Date(summary.date);
-    const dateStr = Number.isNaN(parsedDate.getTime()) ? '' : parsedDate.toLocaleString();
-
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="628" viewBox="0 0 1200 628">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${base}"/>
-      <stop offset="100%" stop-color="${overlay}"/>
-    </linearGradient>
-  </defs>
-  <rect width="1200" height="628" fill="url(#g)"/>
-  <g font-family="Inter, system-ui, sans-serif" fill="${text}">
-    <text x="60" y="100" font-size="40" font-weight="700" fill="${foam}">Zen Typer Session</text>
-    <text x="60" y="130" font-size="20">${dateStr}</text>
-    <g font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, monospace" font-size="28" font-weight="600">
-      <text x="60" y="210" fill="${iris}">Mode</text><text x="260" y="210">${safeMode}</text>
-      <text x="60" y="258" fill="${foam}">Time</text><text x="260" y="258">${toMMSS(summary.time)}</text>
-      <text x="60" y="306" fill="${gold}">Words</text><text x="260" y="306">${safeInt(summary.words)}</text>
-      ${summary.wpm !== undefined ? `<text x="60" y="354" fill="${rose}">WPM</text><text x="260" y="354">${safeInt(summary.wpm)}</text>` : ''}
-      ${summary.accuracy !== undefined ? `<text x="60" y="402" fill="${iris}">Accuracy</text><text x="260" y="402">${safeInt(summary.accuracy)}%</text>` : ''}
-    </g>
-    <text x="60" y="588" font-size="16">Built with Rosé Pine</text>
-  </g>
-</svg>`;
-
-    const blob = new Blob([svg], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    a.href = url;
-    a.download = `zen-typer-session-${ts}.svg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('exportSessionCardSVG failed', err);
-  }
-}
-
+/** @deprecated read getHistory() instead */
 export function getTelemetry(): TelemetryEntry[] {
-  return getJSON(STORAGE_KEYS.TELEMETRY, [] as TelemetryEntry[]);
+  return getHistory().slice(-10).map(r => ({
+    date: r.date,
+    mode: r.mode,
+    timeSec: r.timeSec,
+    words: r.words,
+    ...(r.wpm !== undefined ? { wpm: r.wpm } : {}),
+    ...(r.accuracy !== undefined ? { accuracy: r.accuracy } : {}),
+  }));
 }
 
 export function resetAllData(): void {
   setJSON(STORAGE_KEYS.STATS, DEFAULT_STATS);
   setJSON(STORAGE_KEYS.TELEMETRY, []);
+  setJSON(STORAGE_KEYS.HISTORY, []);
   setJSON(STORAGE_KEYS.STREAK, 0);
-}
-
-// ==========================
-// Archive (Zen Mode) storage
-// ==========================
-
-export interface ArchiveEntry {
-  id: string;
-  startedAt: string; // ISO
-  endedAt?: string; // ISO
-  text: string;
-  wordCount: number;
-  charCount: number;
-}
-
-export function getArchive(): ArchiveEntry[] {
-  return getJSON<ArchiveEntry[]>(STORAGE_KEYS.ARCHIVE, []);
-}
-
-export function saveArchive(entries: ArchiveEntry[]): void {
-  setJSON(STORAGE_KEYS.ARCHIVE, entries);
-}
-
-export function createArchiveEntry(init?: Partial<ArchiveEntry>): ArchiveEntry {
-  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const entry: ArchiveEntry = {
-    id,
-    startedAt: init?.startedAt ?? new Date().toISOString(),
-    text: init?.text ?? '',
-    wordCount: init?.wordCount ?? 0,
-    charCount: init?.charCount ?? 0,
-  };
-  if (init?.endedAt) {
-    entry.endedAt = init.endedAt;
+  if (isStorageAccessible()) {
+    try { localStorage.removeItem(STORAGE_KEYS.LAST_SESSION); } catch { /* ignore */ }
   }
-  const list = getArchive();
-  list.push(entry);
-  saveArchive(list);
-  return entry;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('sessionRecorded', { detail: null }));
+  }
 }
 
-export function upsertArchiveEntry(entry: ArchiveEntry): void {
-  const list = getArchive();
-  const idx = list.findIndex(e => e.id === entry.id);
-  if (idx >= 0) list[idx] = entry; else list.push(entry);
-  saveArchive(list);
+// ---------------------------------------------------------------------------
+// Hints: one-time nudges that must never show twice
+// ---------------------------------------------------------------------------
+
+export function getHints(): Hints {
+  const raw = getJSON<Hints>(STORAGE_KEYS.HINTS, {});
+  return raw && typeof raw === 'object' ? raw : {};
 }
 
-export function updateArchiveEntry(id: string, patch: Partial<ArchiveEntry>): ArchiveEntry | null {
-  const list = getArchive();
-  const idx = list.findIndex(e => e.id === id);
-  if (idx === -1) return null;
-  const next = { ...list[idx], ...patch } as ArchiveEntry;
-  list[idx] = next;
-  saveArchive(list);
-  return next;
-}
-
-export function getArchiveEntry(id: string): ArchiveEntry | null {
-  const list = getArchive();
-  return list.find(e => e.id === id) ?? null;
-}
-
-export function deleteArchiveEntry(id: string): void {
-  const list = getArchive().filter(e => e.id !== id);
-  saveArchive(list);
+export function markHint(key: keyof Hints): void {
+  const next = { ...getHints(), [key]: true };
+  setJSON(STORAGE_KEYS.HINTS, next);
 }

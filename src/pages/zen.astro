@@ -95,12 +95,12 @@ const zenUrl = `${siteUrl}/zen/`;
 
 				<ZenCanvas
 					client:only="react"
-					fontFamily="JetBrains Mono"
+					
 					maxTokens={160}
 				/>
 
 				<!-- Stats bar -->
-				<StatsBar client:only="react" mode="zen" visible={true} metrics={{}} />
+				<StatsBar client:only="react" mode="zen" />
 
 				<!-- Pause menu -->
 				<PauseMenu

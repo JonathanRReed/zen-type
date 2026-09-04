@@ -4,11 +4,10 @@
 // them reach the browser until the menu is primed or opened.
 import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { getSettings, saveSettings, getStats, updateStats, updateStreak, type Settings, FONT_OPTIONS, applySettingsSideEffects, DEFAULT_STATS_BAR_METRICS, type StatsBarMetricKey, type FontOption } from '../utils/storage';
+import { getSettings, updateSettings, getStats, getStreak, recordSession, type Settings, DEFAULT_STATS_BAR_METRICS, type StatsBarMetricKey } from '../utils/storage';
+import { getLiveStats } from '../utils/liveStats';
 // Both panels are one click deep inside a menu that is closed at first paint,
 // so they load on demand instead of shipping with the initial bundle.
 const SettingsPanel = lazy(() =>
@@ -42,6 +41,7 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
   const [showAbout, setShowAbout] = useState(false);
   const [settings, setSettings] = useState<Settings>(getSettings);
   const [stats, setStats] = useState(getStats);
+  const [streak, setStreak] = useState<number>(0);
   const [markers, setMarkers] = useState<number[]>([]);
   const [statsMetricMode, setStatsMetricMode] = useState<'zen' | 'quote'>('zen');
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -55,6 +55,7 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettings(getSettings());
     setStats(getStats());
+    setStreak(getStreak());
     setStatsMetricMode(_mode);
   }, [open, _mode]);
 
@@ -142,15 +143,8 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
     return () => window.removeEventListener('markersUpdated', handler as EventListener);
   }, []);
 
-  const applySettingsPatch = useCallback((patch: Partial<Settings>, broadcast = true) => {
-    const current = getSettings();
-    const next = { ...current, ...patch } as Settings;
-    saveSettings(next);
-    if (broadcast) {
-      window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
-    }
-    applySettingsSideEffects(patch, next, { broadcast });
-    setSettings(next);
+  const applySettingsPatch = useCallback((patch: Partial<Settings>) => {
+    setSettings(updateSettings(patch));
   }, []);
 
   // The reduce-motion / high-contrast / perf-mode class hydration that used to
@@ -206,24 +200,25 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
               {onReset && (
                 <Button
                   onClick={() => {
-                    try {
-                      const z = (window as any).__zenStats || { time: 0, words: 0, chars: 0 };
-                      const endedAt = new Date();
-                      const startedAt = new Date(endedAt.getTime() - (z.time || 0) * 1000);
-                      // Streak first: it reads the previous session's date,
-                      // which updateStats is about to overwrite.
-                      updateStreak();
-                      updateStats({
-                        mode: 'zen',
-                        startedAt,
-                        endedAt,
-                        wordsTyped: z.words || 0,
-                        charactersTyped: z.chars || 0,
-                      });
-                      // Finalize archive entry for this session
-                      window.dispatchEvent(new CustomEvent('finalizeArchive'));
-                    } catch (e) {
-                      console.error('Failed to persist zen session', e);
+                    if (_mode === 'zen') {
+                      try {
+                        const z = getLiveStats('zen');
+                        if (z.words > 0) {
+                          const endedAt = new Date();
+                          const startedAt = new Date(endedAt.getTime() - (z.time || 0) * 1000);
+                          recordSession({
+                            mode: 'zen',
+                            startedAt,
+                            endedAt,
+                            wordsTyped: z.words,
+                            charactersTyped: z.chars,
+                          });
+                        }
+                        // Tell the canvas this session is accounted for.
+                        window.dispatchEvent(new CustomEvent('zenSessionRecorded'));
+                      } catch (e) {
+                        console.error('Failed to persist zen session', e);
+                      }
                     }
                     onReset?.();
                     closeMenu();
@@ -261,31 +256,23 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
                 </Button>
 
                 <Button
+                  onClick={() => {
+                    closeMenu();
+                    window.dispatchEvent(new CustomEvent('toggleProgress', { detail: true }));
+                  }}
+                  variant="outline"
+                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-muted/40 focus-visible:ring-2 focus-visible:ring-muted/40 active:scale-[0.98]"
+                >
+                  Progress
+                </Button>
+
+                <Button
                   onClick={() => setShowAbout(true)}
                   variant="outline"
                   className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-muted/40 focus-visible:ring-2 focus-visible:ring-muted/40 active:scale-[0.98]"
                 >
                   About
                 </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pause-font-select" className="text-sm text-muted/80 font-sans">
-                  Typing font
-                </Label>
-                <Select
-                  value={settings.fontFamily ?? FONT_OPTIONS[0]}
-                  onValueChange={(value) => applySettingsPatch({ fontFamily: value as FontOption })}
-                >
-                  <SelectTrigger id="pause-font-select" className="w-full bg-surface/60 border-muted/20 text-text">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FONT_OPTIONS.map(font => (
-                      <SelectItem key={font} value={font}>{font}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-3">
@@ -332,7 +319,7 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
                   </div>
                 </div>
                 <div className="space-y-2 rounded-xl border border-muted/20 bg-surface/60 p-3">
-                  {DEFAULT_STATS_BAR_METRICS[statsMetricMode].map(metric => {
+                  {([...DEFAULT_STATS_BAR_METRICS[statsMetricMode], 'streak'] as StatsBarMetricKey[]).map(metric => {
                     const metricsForMode = settings.statsBarMetrics?.[statsMetricMode] ?? DEFAULT_STATS_BAR_METRICS[statsMetricMode];
                     const checked = metricsForMode.includes(metric);
                     const disabled = checked && metricsForMode.length === 1;
@@ -341,6 +328,7 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
                       words: 'Words typed',
                       wpm: 'Words per minute',
                       accuracy: 'Accuracy',
+                      streak: 'Day streak',
                     };
                       return (
                       <div key={metric} className="flex items-center justify-between text-sm text-text gap-3">
@@ -355,7 +343,7 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
                             if (hasMetric && base.length === 1) {
                               return;
                             }
-                            const baseOrder = DEFAULT_STATS_BAR_METRICS[statsMetricMode];
+                            const baseOrder: StatsBarMetricKey[] = [...DEFAULT_STATS_BAR_METRICS[statsMetricMode], 'streak'];
                             const nextMetrics = !checked
                               ? [...base, metric].sort((a, b) => baseOrder.indexOf(a) - baseOrder.indexOf(b))
                               : base.filter(item => item !== metric);
@@ -378,15 +366,19 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
 
             {/* Quick stats */}
             <div className="mt-6 pt-6 border-t border-muted/20">
-              <h3 className="text-sm font-sans text-muted mb-3">Session Stats</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <h3 className="text-sm font-sans text-muted mb-3">So far</h3>
+              <div className="grid grid-cols-3 gap-3 text-sm">
                 <div>
-                  <span className="text-muted">Total Words:</span>
+                  <span className="text-muted">Words</span>
                   <span className="ml-2 text-foam font-mono">{stats.totalWords}</span>
                 </div>
                 <div>
-                  <span className="text-muted">Best WPM:</span>
+                  <span className="text-muted">Best WPM</span>
                   <span className="ml-2 text-gold font-mono">{stats.bestWpm}</span>
+                </div>
+                <div>
+                  <span className="text-muted">Day streak</span>
+                  <span className="ml-2 text-rose font-mono">{streak}</span>
                 </div>
               </div>
               {/* Session markers */}

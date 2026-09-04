@@ -11,11 +11,11 @@ import GlobalShortcuts from "../components/GlobalShortcuts";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
 import SpotlightLayer from "../components/SpotlightLayer";
-import { loadQuotes, getRandomQuote } from "../utils/quotes";
+import { loadQuotes, pickQuote } from "../utils/quotes";
 
 // Load a random quote at build time
 const quotes = await loadQuotes();
-const randomQuote = getRandomQuote(quotes);
+const randomQuote = pickQuote(quotes);
 const siteUrl = "https://zentype.jonathanrreed.com";
 const homeUrl = `${siteUrl}/`;
 const quoteUrl = `${siteUrl}/quote/`;
@@ -78,6 +78,7 @@ const quoteUrl = `${siteUrl}/quote/`;
 							client:only="react"
 							quote={randomQuote.text}
 							author={randomQuote.author}
+							quoteId={randomQuote.id}
 							onComplete={(summary) => {
 								// Handle completion
 								const completeEvent = new CustomEvent(
@@ -124,12 +125,7 @@ const quoteUrl = `${siteUrl}/quote/`;
 					</div>
 				</div>
 
-				<StatsBar
-					client:only="react"
-					mode="quote"
-					visible={true}
-					metrics={{}}
-				/>
+				<StatsBar client:only="react" mode="quote" />
 
 				<PauseMenu
 					client:only="react"

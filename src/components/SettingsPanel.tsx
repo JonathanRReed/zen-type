@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { saveSettings, resetAllData, FONT_OPTIONS, type FontOption, type Settings, applySettingsSideEffects } from '../utils/storage';
+import { updateSettings, resetAllData, FONT_OPTIONS, type FontOption, type Settings } from '../utils/storage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -8,32 +8,26 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { audioEngine, type SwitchSoundProfile, type AmbientSoundscape } from '../utils/audioEngine';
+import { getLiveStats } from '../utils/liveStats';
 
 interface SettingsPanelProps {
   settings: Settings;
-  onSettingChange: (key: keyof Settings, value: any) => void;
+  onSettingChange: (key: keyof Settings, value: unknown) => void;
   onClose: () => void;
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettingChange, onClose }) => {
   const [ghostPreview, setGhostPreview] = useState<string>('');
 
-  const applySettingsPatch = useCallback((patch: Partial<Settings>, broadcast = true) => {
-    const next = { ...settings, ...patch } as Settings;
-    saveSettings(next);
+  const applySettingsPatch = useCallback((patch: Partial<Settings>) => {
+    const next = updateSettings(patch);
     Object.entries(patch).forEach(([key, value]) => {
       onSettingChange(key as keyof Settings, value);
     });
-    if (broadcast) {
-      window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
-    }
-
-    applySettingsSideEffects(patch, next, { broadcast });
-
     return next;
-  }, [settings, onSettingChange]);
+  }, [onSettingChange]);
 
-  const handleSettingChange = (key: keyof Settings, value: any) => {
+  const handleSettingChange = (key: keyof Settings, value: unknown) => {
     applySettingsPatch({ [key]: value } as Partial<Settings>);
   };
 
@@ -249,14 +243,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <Label htmlFor="themeShiftLocked" className="text-text">Lock theme shift</Label>
-              <Checkbox
-                id="themeShiftLocked"
-                checked={settings.themeShiftLocked || false}
-                onCheckedChange={(checked) => handleSettingChange('themeShiftLocked', checked)}
-              />
-            </div>
           </div>
         </section>
 
@@ -356,20 +342,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="soundEnabled" className="text-text font-medium">Master Sound</Label>
-                <p className="text-xs text-muted/80">Procedural audio synthesis (zero external files)</p>
+                <Label htmlFor="soundEnabled" className="text-text font-medium">Sound</Label>
+                <p className="text-xs text-muted/80">Synthesized in the browser. Nothing is downloaded. Ctrl+M toggles it.</p>
               </div>
               <Checkbox
                 id="soundEnabled"
                 checked={!!settings.soundEnabled}
                 onCheckedChange={(checked) => {
                   const enabled = !!checked;
-                  audioEngine.setMuted(!enabled);
-                  handleSettingChange('soundEnabled', enabled);
-                  if (enabled && (!settings.switchSound || settings.switchSound === 'none')) {
-                    handleSettingChange('switchSound', 'thock');
-                    audioEngine.playSwitch('thock');
-                  }
+                  const profile = settings.switchSound === 'none' ? 'thock' : (settings.switchSound ?? 'thock');
+                  applySettingsPatch({ soundEnabled: enabled, switchSound: profile });
+                  if (enabled) window.setTimeout(() => audioEngine.preview(profile), 50);
                 }}
               />
             </div>
@@ -380,9 +363,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 value={settings.switchSound || 'none'}
                 onValueChange={(value: SwitchSoundProfile) => {
                   handleSettingChange('switchSound', value);
-                  if (value !== 'none') {
-                    audioEngine.playSwitch(value);
-                  }
+                  if (value !== 'none') window.setTimeout(() => audioEngine.preview(value), 50);
                 }}
                 disabled={!settings.soundEnabled}
               >
@@ -390,25 +371,22 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                   <SelectValue placeholder="Select switch sound" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None (Silent)</SelectItem>
-                  <SelectItem value="thock">Thock (Lubed Tactile)</SelectItem>
-                  <SelectItem value="holy-panda">Holy Panda (Pronounced Tactile)</SelectItem>
-                  <SelectItem value="clicky">Clicky (Crisp Clickbar)</SelectItem>
-                  <SelectItem value="cream">Cream (Smooth POM Linear)</SelectItem>
-                  <SelectItem value="raindrop">Raindrop (Resonant Clack)</SelectItem>
-                  <SelectItem value="typewriter">Typewriter (Crisp Striker)</SelectItem>
+                  <SelectItem value="none">Silent</SelectItem>
+                  <SelectItem value="thock">Thock, deep and lubed</SelectItem>
+                  <SelectItem value="cream">Cream, soft linear</SelectItem>
+                  <SelectItem value="holy-panda">Holy Panda, tactile bump</SelectItem>
+                  <SelectItem value="clicky">Clicky, box white</SelectItem>
+                  <SelectItem value="typewriter">Typewriter, with a bell on Enter</SelectItem>
+                  <SelectItem value="raindrop">Raindrop, water on glass</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ambientSound" className="text-text">Meditation Soundscape</Label>
+              <Label htmlFor="ambientSound" className="text-text">Background sound</Label>
               <Select
                 value={settings.ambientSound || 'none'}
-                onValueChange={(value: AmbientSoundscape) => {
-                  handleSettingChange('ambientSound', value);
-                  audioEngine.setAmbient(value);
-                }}
+                onValueChange={(value: AmbientSoundscape) => handleSettingChange('ambientSound', value)}
                 disabled={!settings.soundEnabled}
               >
                 <SelectTrigger id="ambientSound" className="bg-surface border-muted/20">
@@ -416,9 +394,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="rain">Gentle Rain</SelectItem>
-                  <SelectItem value="wind">Mountain Wind</SelectItem>
-                  <SelectItem value="drone">Cosmic Drone (432Hz Harmonic)</SelectItem>
+                  <SelectItem value="rain">Rain</SelectItem>
+                  <SelectItem value="wind">Wind</SelectItem>
+                  <SelectItem value="fire">Fire</SelectItem>
+                  <SelectItem value="drone">Low drone</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -432,11 +411,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 aria-label="Typing volume"
                 value={[settings.audioVolume ?? 0.6]}
                 onValueChange={([val]) => {
-                  if (val !== undefined) {
-                    handleSettingChange('audioVolume', val);
-                    audioEngine.setMasterVolume(val);
-                  }
+                  if (val !== undefined) handleSettingChange('audioVolume', val);
                 }}
+                onValueCommit={() => window.setTimeout(() => audioEngine.preview(), 30)}
                 min={0}
                 max={1}
                 step={0.05}
@@ -453,10 +430,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 aria-label="Ambient volume"
                 value={[settings.ambientVolume ?? 0.4]}
                 onValueChange={([val]) => {
-                  if (val !== undefined) {
-                    handleSettingChange('ambientVolume', val);
-                    audioEngine.setAmbientVolume(val);
-                  }
+                  if (val !== undefined) handleSettingChange('ambientVolume', val);
                 }}
                 min={0}
                 max={1}
@@ -571,7 +545,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
             <div>
               <Button
                 onClick={() => {
-                  const now = (window as any).__zenStats?.time || 0;
+                  const now = getLiveStats('zen').time || 0;
                   const end = now;
                   const start = Math.max(0, end - settings.ghostWindowMin * 60);
                   const handler = (e: Event) => {
