@@ -76,6 +76,7 @@ export function getStoragePersistenceErrorEvent(): string {
 export function __resetStoragePersistenceStateForTests(): void {
   storagePersistenceDisabled = false;
   lastStorageFailure = null;
+  _settingsCache = null;
 }
 
 export const FONT_OPTIONS = [
@@ -162,6 +163,10 @@ export function applySettingsSideEffects(patch: Partial<Settings>, next: Setting
   if ('performanceMode' in patch) {
     document.documentElement.classList.toggle('perf-mode', !!next.performanceMode);
   }
+
+  if ('caretStyle' in patch && next.caretStyle) {
+    document.documentElement.setAttribute('data-caret', next.caretStyle);
+  }
 }
 
 // Type definitions
@@ -171,6 +176,7 @@ export interface Settings {
   showStats: boolean;
   highContrast: boolean;
   fontFamily?: FontOption;
+  caretStyle?: 'line' | 'block' | 'underline' | 'glow';
   autoAdvanceQuotes?: boolean;
   autoAdvanceDelayMs?: number; // 0 for immediate; default 1500
   performanceMode?: boolean;
@@ -190,6 +196,15 @@ export interface Settings {
   // Theme
   themeShiftLocked?: boolean; // lock ambient theme shift
   statsBarMetrics?: Partial<Record<'zen' | 'quote', StatsBarMetricKey[]>>;
+  // Procedural Audio Engine
+  soundEnabled?: boolean; // master audio toggle (default false)
+  switchSound?: 'none' | 'thock' | 'cream' | 'raindrop' | 'typewriter' | 'holy-panda' | 'clicky';
+  ambientSound?: 'none' | 'rain' | 'wind' | 'drone';
+  audioVolume?: number; // 0.0 - 1.0, default 0.6
+  ambientVolume?: number; // 0.0 - 1.0, default 0.4
+  // Paced ghost and meditation flow
+  targetWpm?: number; // target WPM ghost pace (0 = off)
+  timedFlowMinutes?: number; // 0 = off, 3, 5, 10
 }
 
 export interface Stats {
@@ -250,6 +265,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showStats: true,
   highContrast: false,
   fontFamily: FONT_OPTIONS[0],
+  caretStyle: 'line',
   autoAdvanceQuotes: false,
   autoAdvanceDelayMs: 1500,  // 1.5s affirmation delay
   performanceMode: false,
@@ -268,6 +284,13 @@ export const DEFAULT_SETTINGS: Settings = {
     zen: [...DEFAULT_STATS_BAR_METRICS.zen],
     quote: [...DEFAULT_STATS_BAR_METRICS.quote],
   },
+  soundEnabled: false,
+  switchSound: 'none',
+  ambientSound: 'none',
+  audioVolume: 0.6,
+  ambientVolume: 0.4,
+  targetWpm: 0,
+  timedFlowMinutes: 0,
 };
 
 export const DEFAULT_STATS: Stats = {
@@ -281,8 +304,21 @@ export const DEFAULT_STATS: Stats = {
   quoteSessions: 0
 };
 
+// In-memory cache for sub-millisecond synchronous settings lookups on typing keydowns
+let _settingsCache: Settings | null = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEYS.SETTINGS) {
+      _settingsCache = null;
+    }
+  });
+}
+
 // Settings helpers
 export function getSettings(): Settings {
+  if (_settingsCache) return _settingsCache;
+
   const raw = getJSON(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS as Settings);
   const normalized = { ...DEFAULT_SETTINGS, ...raw } as Settings;
 
@@ -299,12 +335,18 @@ export function getSettings(): Settings {
     normalized.fontFamily = DEFAULT_SETTINGS.fontFamily!;
   }
 
+  const allowedCarets: NonNullable<Settings['caretStyle']>[] = ['line', 'block', 'underline', 'glow'];
+  if (!normalized.caretStyle || !allowedCarets.includes(normalized.caretStyle)) {
+    normalized.caretStyle = 'line';
+  }
+
   const sanitizeMetrics = (mode: 'zen' | 'quote', metrics?: StatsBarMetricKey[]): StatsBarMetricKey[] => {
-    const allowedForMode = DEFAULT_STATS_BAR_METRICS[mode];
+    const allowedForMode = new Set(DEFAULT_STATS_BAR_METRICS[mode]);
+    const allowedKeys = new Set(ALLOWED_STATS_BAR_METRICS as readonly string[]);
     const list = (metrics && Array.isArray(metrics) ? metrics : []).filter((key): key is StatsBarMetricKey =>
-      (ALLOWED_STATS_BAR_METRICS as readonly string[]).includes(key)
+      allowedKeys.has(key)
     );
-    const unique = Array.from(new Set(list.filter(key => allowedForMode.includes(key))));
+    const unique = Array.from(new Set(list.filter(key => allowedForMode.has(key))));
     return unique.length > 0 ? unique : [...DEFAULT_STATS_BAR_METRICS[mode]];
   };
 
@@ -314,11 +356,17 @@ export function getSettings(): Settings {
     quote: sanitizeMetrics('quote', rawMetrics?.quote),
   };
 
+  _settingsCache = normalized;
   return normalized;
 }
 
 export function saveSettings(settings: Settings): void {
+  _settingsCache = settings;
   setJSON(STORAGE_KEYS.SETTINGS, settings);
+}
+
+export function __invalidateSettingsCacheForTests(): void {
+  _settingsCache = null;
 }
 
 // Stats
@@ -450,16 +498,23 @@ export async function exportSessionCard(summary: SessionCardSummary) {
     ctx.fillStyle = foam;
     ctx.font = '700 40px Inter, system-ui, sans-serif';
     ctx.fillText('Zen Typer Session', 60, 100);
-    const d = new Date(summary.date);
     ctx.fillStyle = text;
     ctx.font = '400 20px Inter, system-ui, sans-serif';
-    ctx.fillText(d.toLocaleString(), 60, 130);
 
     const toMMSS = (sec: number) => {
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
+      const total = Math.max(0, Math.floor(Number(sec) || 0));
+      const m = Math.floor(total / 60);
+      const s = total % 60;
       return `${m}:${s.toString().padStart(2, '0')}`;
     };
+    const safeInt = (value: unknown): string => {
+      const n = Math.round(Number(value));
+      return String(Number.isFinite(n) ? n : 0);
+    };
+    const safeMode = summary.mode === 'quote' ? 'QUOTE' : 'ZEN';
+    const parsedDate = new Date(summary.date);
+    const d = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+    ctx.fillText(d.toLocaleString(), 60, 130);
 
     let y = 210;
     const line = (label: string, value: string, color: string) => {
@@ -472,11 +527,11 @@ export async function exportSessionCard(summary: SessionCardSummary) {
       y += 48;
     };
 
-    line('Mode', summary.mode.toUpperCase(), iris);
+    line('Mode', safeMode, iris);
     line('Time', toMMSS(summary.time), foam);
-    line('Words', String(summary.words), gold);
-    if (summary.wpm !== undefined) line('WPM', String(summary.wpm), rose);
-    if (summary.accuracy !== undefined) line('Accuracy', `${Math.round(summary.accuracy)}%`, iris);
+    line('Words', safeInt(summary.words), gold);
+    if (summary.wpm !== undefined) line('WPM', safeInt(summary.wpm), rose);
+    if (summary.accuracy !== undefined) line('Accuracy', `${safeInt(summary.accuracy)}%`, iris);
 
     ctx.fillStyle = text;
     ctx.font = '400 16px Inter, system-ui, sans-serif';
@@ -508,11 +563,20 @@ export async function exportSessionCardSVG(summary: SessionCardSummary) {
     const iris = (css.getPropertyValue('--rp-iris') || '#c4a7e7').trim();
 
     const toMMSS = (sec: number) => {
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
+      const total = Math.max(0, Math.floor(Number(sec) || 0));
+      const m = Math.floor(total / 60);
+      const s = total % 60;
       return `${m}:${s.toString().padStart(2, '0')}`;
     };
-    const dateStr = new Date(summary.date).toLocaleString();
+    // An exported .svg opened in a browser is a live document, so coerce
+    // every interpolated value even though callers pass app-shaped data.
+    const safeInt = (value: unknown): number => {
+      const n = Math.round(Number(value));
+      return Number.isFinite(n) ? n : 0;
+    };
+    const safeMode = summary.mode === 'quote' ? 'QUOTE' : 'ZEN';
+    const parsedDate = new Date(summary.date);
+    const dateStr = Number.isNaN(parsedDate.getTime()) ? '' : parsedDate.toLocaleString();
 
     const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="628" viewBox="0 0 1200 628">
@@ -527,11 +591,11 @@ export async function exportSessionCardSVG(summary: SessionCardSummary) {
     <text x="60" y="100" font-size="40" font-weight="700" fill="${foam}">Zen Typer Session</text>
     <text x="60" y="130" font-size="20">${dateStr}</text>
     <g font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, monospace" font-size="28" font-weight="600">
-      <text x="60" y="210" fill="${iris}">Mode</text><text x="260" y="210">${summary.mode.toUpperCase()}</text>
+      <text x="60" y="210" fill="${iris}">Mode</text><text x="260" y="210">${safeMode}</text>
       <text x="60" y="258" fill="${foam}">Time</text><text x="260" y="258">${toMMSS(summary.time)}</text>
-      <text x="60" y="306" fill="${gold}">Words</text><text x="260" y="306">${summary.words}</text>
-      ${summary.wpm !== undefined ? `<text x="60" y="354" fill="${rose}">WPM</text><text x="260" y="354">${summary.wpm}</text>` : ''}
-      ${summary.accuracy !== undefined ? `<text x="60" y="402" fill="${iris}">Accuracy</text><text x="260" y="402">${Math.round(summary.accuracy)}%</text>` : ''}
+      <text x="60" y="306" fill="${gold}">Words</text><text x="260" y="306">${safeInt(summary.words)}</text>
+      ${summary.wpm !== undefined ? `<text x="60" y="354" fill="${rose}">WPM</text><text x="260" y="354">${safeInt(summary.wpm)}</text>` : ''}
+      ${summary.accuracy !== undefined ? `<text x="60" y="402" fill="${iris}">Accuracy</text><text x="260" y="402">${safeInt(summary.accuracy)}%</text>` : ''}
     </g>
     <text x="60" y="588" font-size="16">Built with Rosé Pine</text>
   </g>

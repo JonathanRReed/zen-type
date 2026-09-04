@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getSettings, saveSettings, type Settings } from '../utils/storage';
 import { useMotionPreference } from '../hooks/useMotionPreference';
 import IconButton from './IconButton';
@@ -74,6 +74,36 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
   });
   const [isOpen, setIsOpen] = useState(false);
   const { reducedMotion } = useMotionPreference({ syncAttribute: true });
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const focusToggle = () => {
+    wrapperRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+  };
+
+  // Dismiss the popup on Escape / click-away and hand focus back to the
+  // toggle, so keyboard users are never stranded on an unmounted node.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(false);
+        focusToggle();
+      }
+    };
+    window.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      window.removeEventListener('mousedown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     const settings = getSettings();
@@ -180,19 +210,21 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
     saveSettings(nextSettings);
     window.dispatchEvent(new CustomEvent('settingsChanged', { detail: nextSettings }));
     window.dispatchEvent(new CustomEvent('themeChanged', { detail: newTheme }));
-    
+
     setIsOpen(false);
+    focusToggle();
   };
 
   const themes: Theme[] = ['Void', 'Cosmic', 'Aurora', 'Ocean', 'Glacier', 'Forest', 'Ember', 'Sakura'];
 
   return (
-    <div className={`relative ${className}`.trim()}>
+    <div ref={wrapperRef} className={`relative ${className}`.trim()}>
       <IconButton
         shape="pill"
         subtle
         className="px-4 gap-2 text-sm font-semibold tracking-[0.08em]"
         aria-label={`${theme} theme, toggle theme`}
+        aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -211,7 +243,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
       </IconButton>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 right-0 z-50">
+        <div className="absolute top-full mt-2 right-0 z-50" role="menu" aria-label="Color themes">
           <div className="glass rounded-lg p-2 min-w-[140px]">
             {themes.map((t) => (
               <Button

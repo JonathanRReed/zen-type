@@ -4,6 +4,7 @@ import IconButton from './IconButton';
 import { getSettings, saveSettings, type Settings, syncTypingFont, applySettingsSideEffects } from '../utils/storage';
 import { debounce } from '../utils/debounce';
 import { Button } from '@/components/ui/button';
+import { audioEngine } from '../utils/audioEngine';
 
 interface SiteHeaderProps {
   mode: 'landing' | 'zen' | 'quote';
@@ -43,6 +44,9 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
         if (s.fontFamily) {
           syncTypingFont(s.fontFamily);
         }
+        if (s.caretStyle && typeof document !== 'undefined') {
+          document.documentElement.setAttribute('data-caret', s.caretStyle);
+        }
       } catch {}
     };
     window.addEventListener('settingsChanged', onSettings as EventListener);
@@ -53,6 +57,12 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
     const initial = getSettings().fontFamily;
     if (initial) {
       syncTypingFont(initial);
+    }
+    // Stored caret choice must apply on first paint too — previously it only
+    // took effect after touching a setting, so reloads silently reset to Line.
+    const caret = getSettings().caretStyle;
+    if (caret && typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-caret', caret);
     }
   }, []);
 
@@ -80,31 +90,40 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   }, []);
 
   const _updateSetting = (key: keyof Settings, value: any) => {
-    setSettings(prev => {
-      if (!prev) return prev;
-      const next = { ...prev, [key]: value } as Settings;
-      persistSettings(next);
-      applySettingsSideEffects({ [key]: value } as Partial<Settings>, next);
-      window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
-      return next;
-    });
+    const current = settings || getSettings();
+    const next = { ...current, [key]: value } as Settings;
+    persistSettings(next);
+    applySettingsSideEffects({ [key]: value } as Partial<Settings>, next);
+    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+    setSettings(next);
+  };
+
+  const handleSoundToggle = () => {
+    const current = settings || getSettings();
+    const nextEnabled = !current.soundEnabled;
+    const next: Settings = {
+      ...current,
+      soundEnabled: nextEnabled,
+      switchSound: (nextEnabled && (!current.switchSound || current.switchSound === 'none')) ? 'thock' : (current.switchSound ?? 'none'),
+    };
+    audioEngine.setMuted(!nextEnabled);
+    persistSettings(next);
+    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+    setSettings(next);
   };
 
   const handleAutoNextToggle = (checked: boolean) => {
     setAutoNext(checked);
-    // Ensure immediate advance by default when toggled on
-    setSettings(prev => {
-      if (!prev) return prev;
-      const patch: Partial<Settings> = {
-        autoAdvanceQuotes: checked,
-        autoAdvanceDelayMs: checked ? 0 : (prev.autoAdvanceDelayMs ?? 0),
-      };
-      const next = { ...prev, ...patch } as Settings;
-      persistSettings(next);
-      applySettingsSideEffects(patch, next);
-      window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
-      return next;
-    });
+    const current = settings || getSettings();
+    const patch: Partial<Settings> = {
+      autoAdvanceQuotes: checked,
+      autoAdvanceDelayMs: checked ? 0 : (current.autoAdvanceDelayMs ?? 0),
+    };
+    const next = { ...current, ...patch } as Settings;
+    persistSettings(next);
+    applySettingsSideEffects(patch, next);
+    window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+    setSettings(next);
   };
 
   const navLinkClass = (active: boolean) =>
@@ -321,6 +340,34 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
               </span>
             </Button>
           )}
+
+          {mode === 'quote' && (
+            <Button
+              id="header-custom-quote"
+              type="button"
+              className={primaryButtonClass}
+              variant="outline"
+              aria-label="Practice custom text"
+              onClick={() => {
+                const text = window.prompt("Enter or paste custom text to practice:");
+                if (text && text.trim()) {
+                  // Cap length: QuoteTyper renders one span per character, so
+                  // an unbounded paste would hang the tab building DOM nodes.
+                  const MAX_CUSTOM_QUOTE_CHARS = 1200;
+                  const trimmed = text.trim().slice(0, MAX_CUSTOM_QUOTE_CHARS);
+                  window.dispatchEvent(new CustomEvent('loadCustomQuote', { detail: { text: trimmed } }));
+                }
+              }}
+            >
+              <span className="relative z-10 flex items-center gap-1.5 text-sm tracking-wide">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                <span className="font-medium">Custom</span>
+              </span>
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-2.5 justify-end md:justify-end">
@@ -347,6 +394,29 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
               <span className="sr-only">Auto next</span>
             </IconButton>
           )}
+
+          <IconButton
+            subtle
+            active={!!settings?.soundEnabled}
+            aria-pressed={!!settings?.soundEnabled}
+            aria-label={settings?.soundEnabled ? 'Mute sound effects' : 'Enable sound effects'}
+            title={settings?.soundEnabled ? 'Sound: On' : 'Sound: Off'}
+            onClick={() => handleSoundToggle()}
+          >
+            {settings?.soundEnabled ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            )}
+            <span className="sr-only">Toggle sound</span>
+          </IconButton>
 
           <Button
             type="button"

@@ -93,7 +93,7 @@ const HelpSheetBody = React.memo((props: HelpSheetBodyProps) => {
             className="text-muted hover:text-text transition-colors"
             aria-label="Close help"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -115,6 +115,18 @@ const HelpSheetBody = React.memo((props: HelpSheetBodyProps) => {
               <div className="flex items-center justify-between">
                 <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Esc</kbd>
                 <span className="text-text">Open pause menu</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Ctrl / Cmd + D</kbd>
+                <span className="text-text">Open Notes & Drafts</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Ctrl / Cmd + M</kbd>
+                <span className="text-text">Toggle audio sound effects</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Ctrl + H</kbd>
+                <span className="text-text">Toggle this help sheet</span>
               </div>
             </div>
           </div>

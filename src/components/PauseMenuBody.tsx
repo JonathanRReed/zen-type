@@ -143,17 +143,14 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
   }, []);
 
   const applySettingsPatch = useCallback((patch: Partial<Settings>, broadcast = true) => {
-    setSettings(prev => {
-      const next = { ...prev, ...patch } as Settings;
-      saveSettings(next);
-      if (broadcast) {
-        window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
-      }
-
-      applySettingsSideEffects(patch, next, { broadcast });
-
-      return next;
-    });
+    const current = getSettings();
+    const next = { ...current, ...patch } as Settings;
+    saveSettings(next);
+    if (broadcast) {
+      window.dispatchEvent(new CustomEvent('settingsChanged', { detail: next }));
+    }
+    applySettingsSideEffects(patch, next, { broadcast });
+    setSettings(next);
   }, []);
 
   // The reduce-motion / high-contrast / perf-mode class hydration that used to
@@ -164,23 +161,30 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
     return null;
   }
 
+  // The dialog's accessible name must track the sub-view: the root "Paused"
+  // heading unmounts when Settings/About open, which used to leave
+  // aria-labelledby pointing at a node that no longer exists.
+  const dialogLabelId = showSettings
+    ? 'pause-settings-title'
+    : showAbout
+      ? 'pause-about-title'
+      : 'pause-title';
+
   return (
     <div
       ref={backdropRef}
       className="overlay-backdrop fixed inset-0 z-[2000] flex items-center justify-center bg-base/80 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="pause-title"
+      aria-labelledby={dialogLabelId}
     >
-      <Button
-        type="button"
-        variant="ghost"
-        className="absolute inset-0 bg-transparent p-0 hover:bg-transparent"
+      {/* Backdrop dismiss is a plain layer, not a tab stop: a focusable
+          fullscreen control put an invisible element in the tab order. */}
+      <div
+        className="absolute inset-0 bg-transparent"
+        aria-hidden="true"
         onClick={closeMenu}
-        aria-label="Close pause menu"
-      >
-        <span className="sr-only">Dismiss pause menu</span>
-      </Button>
+      />
       <div
         ref={cardRef}
         className={`overlay-card glass rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto overscroll-contain relative z-10 ${showSettings ? 'settings-shell settings-scroll' : ''}`}
@@ -194,7 +198,7 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
               <Button
                 onClick={closeMenu}
                 variant="outline"
-                className="w-full px-6 py-3 bg-tint/20 hover:bg-tint/30 border-tint/45 text-tint font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--theme-accent)_55%,transparent)] focus-visible:ring-2 focus-visible:ring-tint/50 active:scale-[0.98]"
+                className="w-full px-6 py-3 bg-tint/20 hover:bg-tint/30 border-tint/45 text-tint font-sans transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--theme-accent)_55%,transparent)] focus-visible:ring-2 focus-visible:ring-tint/50 active:scale-[0.98]"
               >
                 Resume
               </Button>
@@ -225,7 +229,7 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
                     closeMenu();
                   }}
                   variant="outline"
-                  className="w-full px-6 py-3 bg-love/20 hover:bg-love/30 border-love/40 text-love font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-love/50 focus-visible:ring-2 focus-visible:ring-love/50 active:scale-[0.98]"
+                  className="w-full px-6 py-3 bg-love/20 hover:bg-love/30 border-love/40 text-love font-sans transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-love/50 focus-visible:ring-2 focus-visible:ring-love/50 active:scale-[0.98]"
                 >
                   Reset Session
                 </Button>
@@ -235,15 +239,31 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
                 <Button
                   onClick={() => setShowSettings(true)}
                   variant="outline"
-                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-muted/40 focus-visible:ring-2 focus-visible:ring-muted/40 active:scale-[0.98]"
+                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-muted/40 focus-visible:ring-2 focus-visible:ring-muted/40 active:scale-[0.98]"
                 >
                   Settings
                 </Button>
 
                 <Button
+                  onClick={() => {
+                    closeMenu();
+                    const opener = (window as any).openLibraryOverlay as undefined | (() => void);
+                    if (typeof opener === 'function') {
+                      opener();
+                    } else {
+                      window.dispatchEvent(new CustomEvent('toggleArchive', { detail: { force: true } }));
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-muted/40 focus-visible:ring-2 focus-visible:ring-muted/40 active:scale-[0.98]"
+                >
+                  Notes & Drafts
+                </Button>
+
+                <Button
                   onClick={() => setShowAbout(true)}
                   variant="outline"
-                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-muted/40 focus-visible:ring-2 focus-visible:ring-muted/40 active:scale-[0.98]"
+                  className="w-full px-6 py-3 bg-surface/60 hover:bg-surface/80 border-muted/20 text-text font-sans transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-muted/40 focus-visible:ring-2 focus-visible:ring-muted/40 active:scale-[0.98]"
                 >
                   About
                 </Button>
@@ -270,15 +290,17 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3 text-text">
-                  <span>Reduced motion</span>
+                  <span id="pause-reduced-motion-label">Reduced motion</span>
                   <Switch
+                    aria-labelledby="pause-reduced-motion-label"
                     checked={!!settings?.reducedMotion}
                     onCheckedChange={(checked) => applySettingsPatch({ reducedMotion: !!checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3 text-text">
-                  <span>High contrast</span>
+                  <span id="pause-high-contrast-label">High contrast</span>
                   <Switch
+                    aria-labelledby="pause-high-contrast-label"
                     checked={!!settings?.highContrast}
                     onCheckedChange={(checked) => applySettingsPatch({ highContrast: !!checked })}
                   />
@@ -320,34 +342,29 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
                       wpm: 'Words per minute',
                       accuracy: 'Accuracy',
                     };
-                    return (
+                      return (
                       <div key={metric} className="flex items-center justify-between text-sm text-text gap-3">
-                        <span>{labelMap[metric]}</span>
+                        <span id={`pause-metric-${statsMetricMode}-${metric}`}>{labelMap[metric]}</span>
                         <Checkbox
+                          aria-labelledby={`pause-metric-${statsMetricMode}-${metric}`}
                           checked={checked}
                           disabled={disabled || (statsMetricMode === 'zen' && metric === 'accuracy')}
                           onCheckedChange={() => {
-                            setSettings(prev => {
-                              const base = prev.statsBarMetrics?.[statsMetricMode] ?? DEFAULT_STATS_BAR_METRICS[statsMetricMode];
-                              const hasMetric = base.includes(metric);
-                              if (hasMetric && base.length === 1) {
-                                return prev;
-                              }
-                              const baseOrder = DEFAULT_STATS_BAR_METRICS[statsMetricMode];
-                              const nextMetrics = hasMetric
-                                ? base.filter(item => item !== metric)
-                                : [...base, metric].sort((a, b) => baseOrder.indexOf(a) - baseOrder.indexOf(b));
-                              const nextSettings = {
-                                ...prev,
-                                statsBarMetrics: {
-                                  zen: [...(prev.statsBarMetrics?.zen ?? DEFAULT_STATS_BAR_METRICS.zen)],
-                                  quote: [...(prev.statsBarMetrics?.quote ?? DEFAULT_STATS_BAR_METRICS.quote)],
-                                  [statsMetricMode]: nextMetrics,
-                                },
-                              } as Settings;
-                              saveSettings(nextSettings);
-                              window.dispatchEvent(new CustomEvent('settingsChanged', { detail: nextSettings }));
-                              return nextSettings;
+                            const base = settings.statsBarMetrics?.[statsMetricMode] ?? DEFAULT_STATS_BAR_METRICS[statsMetricMode];
+                            const hasMetric = base.includes(metric);
+                            if (hasMetric && base.length === 1) {
+                              return;
+                            }
+                            const baseOrder = DEFAULT_STATS_BAR_METRICS[statsMetricMode];
+                            const nextMetrics = !checked
+                              ? [...base, metric].sort((a, b) => baseOrder.indexOf(a) - baseOrder.indexOf(b))
+                              : base.filter(item => item !== metric);
+                            applySettingsPatch({
+                              statsBarMetrics: {
+                                zen: [...(settings.statsBarMetrics?.zen ?? DEFAULT_STATS_BAR_METRICS.zen)],
+                                quote: [...(settings.statsBarMetrics?.quote ?? DEFAULT_STATS_BAR_METRICS.quote)],
+                                [statsMetricMode]: nextMetrics,
+                              },
                             });
                           }}
                           className="border-muted/30"
@@ -407,11 +424,7 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
             <SettingsPanel
               settings={settings}
               onSettingChange={(key, value) => {
-                setSettings(prev => {
-                  const next = { ...prev, [key]: value } as Settings;
-                  saveSettings(next);
-                  return next;
-                });
+                applySettingsPatch({ [key]: value });
               }}
               onClose={() => setShowSettings(false)}
             />

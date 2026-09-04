@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { saveSettings, resetAllData, type Settings, applySettingsSideEffects } from '../utils/storage';
+import { saveSettings, resetAllData, FONT_OPTIONS, type FontOption, type Settings, applySettingsSideEffects } from '../utils/storage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { audioEngine, type SwitchSoundProfile, type AmbientSoundscape } from '../utils/audioEngine';
 
 interface SettingsPanelProps {
   settings: Settings;
@@ -39,11 +40,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-sans text-foam">Settings</h2>
+        <h2 id="pause-settings-title" className="text-2xl font-sans text-foam">Settings</h2>
         <Button
           onClick={onClose}
           variant="ghost"
           size="icon"
+          aria-label="Close settings"
           className="text-muted hover:text-text transition-colors"
         >
           <X className="h-6 w-6" />
@@ -174,6 +176,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 <span className="text-muted">{(settings.fadeSec ?? 4).toFixed(1)}</span>
               </div>
               <Slider
+                aria-label="Fade duration in seconds"
                 min={2}
                 max={8}
                 step={0.5}
@@ -189,6 +192,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 <span className="text-muted">{(settings.driftAmp ?? 6).toFixed(1)} px</span>
               </div>
               <Slider
+                aria-label="Drift amplitude in pixels"
                 min={2}
                 max={12}
                 step={0.5}
@@ -204,6 +208,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 <span className="text-muted">{(settings.spawnDensity ?? 1.0).toFixed(2)}</span>
               </div>
               <Slider
+                aria-label="Spawn density"
                 min={0.5}
                 max={1.5}
                 step={0.05}
@@ -256,6 +261,70 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
         </section>
 
         <section>
+          <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Typing & Caret</h3>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 items-center">
+              <Label htmlFor="caretStyle" className="text-text">Caret style</Label>
+              <Select
+                value={settings.caretStyle ?? 'line'}
+                onValueChange={(value: NonNullable<Settings['caretStyle']>) => handleSettingChange('caretStyle', value)}
+              >
+                <SelectTrigger id="caretStyle" className="bg-surface border-muted/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="line">Line (Sleek Bar)</SelectItem>
+                  <SelectItem value="block">Block (Luminous)</SelectItem>
+                  <SelectItem value="underline">Underline (Laser)</SelectItem>
+                  <SelectItem value="glow">Glow (Ambient Halo)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-4 rounded-xl border border-muted/20 bg-surface/50 px-4 py-3">
+              <span className="text-xs uppercase tracking-widest text-muted">Preview</span>
+              <span className="font-mono text-xl leading-none" aria-hidden="true">
+                <span className="quote-char correct">A</span><span className="quote-char current">b</span><span className="quote-char">c</span>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 items-center">
+              <Label htmlFor="fontFamily" className="text-text">Typing font</Label>
+              <Select
+                value={settings.fontFamily ?? FONT_OPTIONS[0]}
+                onValueChange={(value: FontOption) => handleSettingChange('fontFamily', value)}
+              >
+                <SelectTrigger id="fontFamily" className="bg-surface border-muted/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONT_OPTIONS.map((font) => (
+                    <SelectItem key={font} value={font}>{font}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <Label className="text-text">Key debounce</Label>
+                <span className="text-muted">{settings.debounceMs ?? 0} ms</span>
+              </div>
+              <Slider
+                aria-label="Key debounce in milliseconds"
+                min={0}
+                max={50}
+                step={5}
+                value={[settings.debounceMs ?? 0]}
+                onValueChange={([value]) => handleSettingChange('debounceMs', value)}
+                className="w-full"
+              />
+              <p className="text-xs text-muted/70 mt-1">Ignores ultra-fast duplicate keystrokes in Quote mode (0 = off). Helps bouncy keyboards.</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
           <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Quote Mode</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -278,6 +347,165 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
                 className="bg-surface border-muted/20"
                 disabled={!settings.autoAdvanceQuotes}
               />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Audio & Ambience</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="soundEnabled" className="text-text font-medium">Master Sound</Label>
+                <p className="text-xs text-muted/80">Procedural audio synthesis (zero external files)</p>
+              </div>
+              <Checkbox
+                id="soundEnabled"
+                checked={!!settings.soundEnabled}
+                onCheckedChange={(checked) => {
+                  const enabled = !!checked;
+                  audioEngine.setMuted(!enabled);
+                  handleSettingChange('soundEnabled', enabled);
+                  if (enabled && (!settings.switchSound || settings.switchSound === 'none')) {
+                    handleSettingChange('switchSound', 'thock');
+                    audioEngine.playSwitch('thock');
+                  }
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="switchSound" className="text-text">Mechanical Switch Profile</Label>
+              <Select
+                value={settings.switchSound || 'none'}
+                onValueChange={(value: SwitchSoundProfile) => {
+                  handleSettingChange('switchSound', value);
+                  if (value !== 'none') {
+                    audioEngine.playSwitch(value);
+                  }
+                }}
+                disabled={!settings.soundEnabled}
+              >
+                <SelectTrigger id="switchSound" className="bg-surface border-muted/20">
+                  <SelectValue placeholder="Select switch sound" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (Silent)</SelectItem>
+                  <SelectItem value="thock">Thock (Lubed Tactile)</SelectItem>
+                  <SelectItem value="holy-panda">Holy Panda (Pronounced Tactile)</SelectItem>
+                  <SelectItem value="clicky">Clicky (Crisp Clickbar)</SelectItem>
+                  <SelectItem value="cream">Cream (Smooth POM Linear)</SelectItem>
+                  <SelectItem value="raindrop">Raindrop (Resonant Clack)</SelectItem>
+                  <SelectItem value="typewriter">Typewriter (Crisp Striker)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ambientSound" className="text-text">Meditation Soundscape</Label>
+              <Select
+                value={settings.ambientSound || 'none'}
+                onValueChange={(value: AmbientSoundscape) => {
+                  handleSettingChange('ambientSound', value);
+                  audioEngine.setAmbient(value);
+                }}
+                disabled={!settings.soundEnabled}
+              >
+                <SelectTrigger id="ambientSound" className="bg-surface border-muted/20">
+                  <SelectValue placeholder="Select ambient sound" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="rain">Gentle Rain</SelectItem>
+                  <SelectItem value="wind">Mountain Wind</SelectItem>
+                  <SelectItem value="drone">Cosmic Drone (432Hz Harmonic)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-muted">
+                <span>Typing Volume</span>
+                <span>{Math.round((settings.audioVolume ?? 0.6) * 100)}%</span>
+              </div>
+              <Slider
+                aria-label="Typing volume"
+                value={[settings.audioVolume ?? 0.6]}
+                onValueChange={([val]) => {
+                  if (val !== undefined) {
+                    handleSettingChange('audioVolume', val);
+                    audioEngine.setMasterVolume(val);
+                  }
+                }}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={!settings.soundEnabled}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-muted">
+                <span>Ambient Volume</span>
+                <span>{Math.round((settings.ambientVolume ?? 0.4) * 100)}%</span>
+              </div>
+              <Slider
+                aria-label="Ambient volume"
+                value={[settings.ambientVolume ?? 0.4]}
+                onValueChange={([val]) => {
+                  if (val !== undefined) {
+                    handleSettingChange('ambientVolume', val);
+                    audioEngine.setAmbientVolume(val);
+                  }
+                }}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={!settings.soundEnabled}
+              />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-sm uppercase tracking-[0.25em] text-muted/80 mb-3">Pacing & Flow</h3>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="targetWpm" className="text-text">Paced Ghost Pace (Target WPM)</Label>
+              <Select
+                value={String(settings.targetWpm ?? 0)}
+                onValueChange={(val) => handleSettingChange('targetWpm', Number(val))}
+              >
+                <SelectTrigger id="targetWpm" className="bg-surface border-muted/20">
+                  <SelectValue placeholder="Select target pace" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Off (Free Pace)</SelectItem>
+                  <SelectItem value="40">40 WPM (Gentle Warmup)</SelectItem>
+                  <SelectItem value="60">60 WPM (Steady Flow)</SelectItem>
+                  <SelectItem value="80">80 WPM (Brisk Focus)</SelectItem>
+                  <SelectItem value="100">100 WPM (Rapid Precision)</SelectItem>
+                  <SelectItem value="120">120 WPM (Mastery)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="timedFlowMinutes" className="text-text">Timed Meditation Flow</Label>
+              <Select
+                value={String(settings.timedFlowMinutes ?? 0)}
+                onValueChange={(val) => handleSettingChange('timedFlowMinutes', Number(val))}
+              >
+                <SelectTrigger id="timedFlowMinutes" className="bg-surface border-muted/20">
+                  <SelectValue placeholder="Select session length" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Endless (Free Form)</SelectItem>
+                  <SelectItem value="3">3 Minutes (Quick Clarity)</SelectItem>
+                  <SelectItem value="5">5 Minutes (Deep Breath)</SelectItem>
+                  <SelectItem value="10">10 Minutes (Full Flow)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </section>
@@ -361,7 +589,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSettin
               </Button>
               {ghostPreview && (
                 <div className="mt-3">
-                  <textarea className="w-full bg-surface/70 border border-muted/20 rounded p-3 text-sm" rows={4} value={ghostPreview} readOnly></textarea>
+                  <textarea aria-label="Ghost text preview" className="w-full bg-surface/70 border border-muted/20 rounded p-3 text-sm" rows={4} value={ghostPreview} readOnly></textarea>
                   <div className="mt-2 flex gap-2">
                     <Button
                       variant="outline"
