@@ -1189,30 +1189,26 @@ html[data-kb="open"] footer.fixed {
   }
 }
 
+/* Phones: the stats bar stays pinned above the footer, just tighter. */
 @container (max-width: 720px) {
   .stats-bar {
-    position: static;
-    transform: none;
-    margin: 1rem auto 0;
-    left: auto;
-    right: auto;
-    bottom: auto;
+    bottom: calc(4.75rem + env(safe-area-inset-bottom));
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
-  .stats-bar .glass {
-    justify-content: space-between;
-    width: min(100% - 1.5rem, 28rem);
-  }
-}
-
-@container (max-width: 560px) {
-  .stats-bar {
-    margin-bottom: 0.5rem;
+  .stats-bar > div {
+    padding: 0.6rem 1rem;
+    gap: 1.1rem;
+    justify-content: space-around;
   }
 
-  .stats-bar .glass {
-    padding: .5rem .75rem;
-    gap: 1.25rem;
+  .stats-bar > div > div {
+    gap: 0.4rem;
+  }
+
+  .stats-bar .text-xl {
+    font-size: 1rem;
   }
 }
 

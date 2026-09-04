@@ -1,0 +1,111 @@
+---
+import "../styles/globals.css";
+import SEO from "../components/SEO.astro";
+
+const siteUrl = "https://zentype.jonathanrreed.com";
+const pageUrl = `${siteUrl}/whats-new/`;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<SEO
+			title="What's New in Zen Typer"
+			description="Release notes for Zen Typer: the 1.0 update brings a living background for every theme, real keyboard sounds, 322 sourced quotes, a progress view, backups, and a Quote mode that works on phones."
+			canonical={pageUrl}
+			keywords={[
+				"Zen Typer changelog",
+				"Zen Typer release notes",
+				"typing app update",
+			]}
+			breadcrumbItems={[
+				{ name: "Mindful typing test", url: `${siteUrl}/` },
+				{ name: "What's new", url: pageUrl },
+			]}
+		/>
+	</head>
+	<body>
+		<main class="content-page px-6 pb-32 pt-16 text-text">
+			<div class="mx-auto max-w-3xl space-y-8">
+				<nav aria-label="Primary" class="content-nav">
+					<a href="/">Home</a>
+					<a href="/quote/">Quote mode</a>
+					<a href="/zen/">Zen mode</a>
+					<a href="/about/">About</a>
+					<a href="/privacy/">Privacy</a>
+				</nav>
+
+				<article class="glass content-prose rounded-2xl p-8 md:p-10 space-y-8 stagger-fade-in">
+					<header class="space-y-4 border-b border-iris/15 pb-7">
+						<p class="eyebrow text-sm font-medium uppercase tracking-[0.28em]">What's new</p>
+						<h1>Zen Typer 1.0</h1>
+						<p class="!text-lg !leading-8">
+							September 2026. The biggest update since the site went up. Everything below still runs entirely in your browser: no account, no server, nothing uploaded.
+						</p>
+					</header>
+
+					<section class="space-y-4">
+						<h2>A background that is alive</h2>
+						<p>
+							Every theme is now drawn on the fly by a small program on your graphics card: Void's aurora ribbon and stars, Cosmic's nebula with a shooting star every so often, Aurora's curtains, Ocean's light through water, Glacier's sheen and snow, Forest's light shafts and fireflies, Ember's rising sparks, Sakura's petals. The scene leans toward your cursor and brightens a little while you type. It uses a fraction of the power the old animated layers did, freezes to a single frame when you ask for reduced motion, and falls back to a still gradient where the graphics card is not available.
+						</p>
+					</section>
+
+					<section class="space-y-4">
+						<h2>Sound that feels like a keyboard</h2>
+						<p>
+							Six switch profiles, each with a separate press and release, a body that depends on where the key sits on the board, and a room around it. Thock, cream, holy panda, clicky, typewriter (with a bell on Enter), and a raindrop for the quiet days. Four background sounds that move instead of looping: rain with real drops, wind with gusts, fire with crackles, and a low drone. Off by default. Ctrl+M or the speaker button turns it on, and it stays how you left it.
+						</p>
+					</section>
+
+					<section class="space-y-4">
+						<h2>322 quotes, every one with its source</h2>
+						<p>
+							Marcus Aurelius, Epictetus, Seneca, Lao Tzu, Zhuangzi, Confucius, the Dhammapada, Kabir, Thoreau, Emerson, Whitman, Montaigne, Pascal, Boethius, Socrates, Okakura's Book of Tea, Nitobe's Bushido, and a handful of old proverbs. All from public-domain editions, translator and year named. Filter the pool by length or by theme in Settings. The made-up lines and the internet misattributions are gone.
+						</p>
+					</section>
+
+					<section class="space-y-4">
+						<h2>Progress</h2>
+						<p>
+							Press Ctrl+P, or open it from the pause menu or the end of a quote. Days practiced, your current run of days, words written, time spent, a sixteen-week calendar, and a line of your recent speeds. If you keep the stats bar hidden, the view goes quiet too: days and words, no speeds.
+						</p>
+					</section>
+
+					<section class="space-y-4">
+						<h2>Take it with you</h2>
+						<p>
+							Settings now has a backup button. One file holds your settings, history, and every draft with its versions. Restore it in another browser and everything merges in. There is also a plain delete-everything button, because your data should be as easy to remove as it is to keep.
+						</p>
+					</section>
+
+					<section class="space-y-4">
+						<h2>Phones</h2>
+						<p>
+							Quote mode works on a phone now. Tap the quote and the keyboard opens; typing through an on-screen keyboard is handled properly, including autocorrect and suggestions. The header fits on one row, the stats bar stays in view, and everything pinned to the bottom lifts above the keyboard.
+						</p>
+					</section>
+
+					<section class="space-y-4">
+						<h2>Smaller things</h2>
+						<ul class="list-disc space-y-2 pl-6">
+							<li>The target-pace marker in Quote mode is visible, and Timed Flow responds to its setting without a reload.</li>
+							<li>Zen sessions count toward your history when you close the tab, not only when you reset from the pause menu.</li>
+							<li>The clock in Zen mode starts on your first keystroke, so the words-per-minute figure is honest.</li>
+							<li>Finishing a quote at any accuracy keeps your streak. The old 95 percent gate was invisible and confusing.</li>
+							<li>A one-line hint on the first visit, then never again.</li>
+							<li>A share card that looks like the app, with the quote on it.</li>
+						</ul>
+					</section>
+
+					<section class="space-y-4">
+						<h2>Under the hood</h2>
+						<p>
+							About 2,000 lines of CSS animation left. One settings store replaces the ad hoc event wiring between islands. The test suite was replaced with one that checks the flows people actually use, in a real browser, including the reload paths that used to break silently. Source is on <a href="https://github.com/JonathanRReed/zen-typer" rel="noopener noreferrer">GitHub</a>.
+						</p>
+					</section>
+				</article>
+			</div>
+		</main>
+	</body>
+</html>
