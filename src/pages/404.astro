@@ -1,0 +1,58 @@
+---
+import "../styles/globals.css";
+import SEO from "../components/SEO.astro";
+
+const siteUrl = "https://zentype.jonathanrreed.com";
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<SEO
+			title="Page Not Found | Zen Typer"
+			description="That Zen Typer page does not exist. Return to the mindful typing test or the free-flow writing mode."
+			canonical={`${siteUrl}/404/`}
+			noindex={true}
+			breadcrumbItems={[
+				{ name: "Mindful typing test", url: `${siteUrl}/` },
+			]}
+		/>
+	</head>
+	<body>
+		<main class="content-page px-6 pb-32 pt-16 text-text">
+			<div class="mx-auto max-w-3xl space-y-8">
+				<nav aria-label="Primary" class="content-nav">
+					<a href="/">Home</a>
+					<a href="/quote/">Quote mode</a>
+					<a href="/zen/">Zen mode</a>
+					<a href="/contact/">Contact</a>
+					<a href="/privacy/">Privacy</a>
+					<a href="/subprocessors/">Subprocessors</a>
+				</nav>
+
+				<article class="glass content-prose rounded-2xl p-8 md:p-10 space-y-6 stagger-fade-in">
+					<header class="space-y-4 border-b border-iris/15 pb-7">
+						<p class="eyebrow text-sm font-medium uppercase tracking-[0.28em]">404</p>
+						<h1>This page wandered off</h1>
+						<p class="!text-lg !leading-8">
+							There is nothing to type here. The quote test and the
+							free-flow canvas are both one step away.
+						</p>
+					</header>
+
+					<div class="flex flex-wrap gap-4">
+						<a class="text-foam transition-colors hover:text-text" href="/">
+							Mindful typing test
+						</a>
+						<a class="text-foam transition-colors hover:text-text" href="/quote/">
+							Quote typing test
+						</a>
+						<a class="text-foam transition-colors hover:text-text" href="/zen/">
+							Free-flow typing practice
+						</a>
+					</div>
+				</article>
+			</div>
+		</main>
+	</body>
+</html>

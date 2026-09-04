@@ -19,6 +19,7 @@
  */
 export const PAGE_MODIFIED_DATES: Record<string, string> = {
   "/": "2026-08-06",
+  "/404/": "2026-09-03",
   "/about/": "2026-08-04",
   "/contact/": "2026-08-04",
   "/privacy/": "2026-08-04",

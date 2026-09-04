@@ -7,6 +7,7 @@ import HelpSheet from "../components/HelpSheet";
 import ArchiveOverlay from "../components/ArchiveOverlay";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
+import GlobalShortcuts from "../components/GlobalShortcuts";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
 import SpotlightLayer from "../components/SpotlightLayer";
@@ -104,6 +105,7 @@ const webApplicationJsonLd = {
 			</a>
 			<main
 				id="quote-app"
+				tabindex="-1"
 				class="relative w-full h-screen overflow-hidden stats-cq-host"
 			>
 				<h1 class="sr-only">Mindful Typing Test and Practice</h1>
@@ -192,6 +194,8 @@ const webApplicationJsonLd = {
 				<HelpSheet client:only="react" isOpen={false} onClose={() => {}} />
 				<ArchiveOverlay client:only="react" />
 				<SiteFooter client:only="react" />
+				<!-- Documented Ctrl/Cmd shortcuts (Help: Notes & Drafts, mute) -->
+				<GlobalShortcuts client:only="react" />
 			</main>
 		</ErrorBoundary>
 
@@ -302,75 +306,15 @@ const webApplicationJsonLd = {
 		</section>
 
 		<script>
-			import { navigate } from "astro:transitions/client";
-
-			let isPaused = false;
-
-			/** @param {KeyboardEvent} e */
-			const handleKeys = (e) => {
-				const ae = document.activeElement;
-				// Tab switches mode only from the typing surface itself. The old
-				// check was "not in any input", which never matched (the hidden
-				// typing input always holds focus) so the documented shortcut
-				// never fired, and it would have hijacked Tab everywhere else on
-				// the page. Shift+Tab is deliberately left alone so keyboard
-				// users can always step back out to the header.
-				const onTypingSurface = !!(
-					ae && ae.hasAttribute && ae.hasAttribute("data-typing-surface")
-				);
-				// The typing surface keeps focus while an overlay is open, so
-				// without this guard Tab would navigate away from a paused
-				// session instead of moving into the pause menu.
-				const overlayOpen = !!document.querySelector(
-					'[role="dialog"], .overlay-backdrop',
-				);
-
-				if (
-					onTypingSurface &&
-					!overlayOpen &&
-					e.key === "Tab" &&
-					!e.ctrlKey &&
-					!e.metaKey &&
-					!e.shiftKey
-				) {
-					e.preventDefault();
-					navigate("/zen/");
-				}
-
-				if (e.key === "Escape") {
-					e.preventDefault();
-					isPaused = !isPaused;
-					window.dispatchEvent(
-						new CustomEvent("togglePause", { detail: isPaused }),
-					);
-				}
-			};
-
-			// Track the menu's real state. The header button and the Resume
-			// button both dispatch `togglePause` on their own, so without this
-			// `isPaused` drifted and the next Escape spent itself undoing the
-			// drift instead of opening the menu. zen.astro already does this.
-			window.addEventListener("togglePause", function (event) {
-				let detail;
-				if (
-					typeof event === "object" &&
-					event !== null &&
-					"detail" in event
-				) {
-					detail = /** @type {CustomEvent<boolean | undefined>} */ (
-						event
-					).detail;
-				}
-				isPaused = typeof detail === "boolean" ? detail : !isPaused;
-			});
+			import { registerHomeShortcuts } from "../utils/home-shortcuts";
 
 			// Attach once; ClientRouter preserves listeners via persist markers.
-			document.addEventListener("keydown", handleKeys);
+			const unregisterHomeShortcuts = registerHomeShortcuts();
 			document.addEventListener("astro:before-swap", () => {
-				document.removeEventListener("keydown", handleKeys);
+				unregisterHomeShortcuts();
 			});
 			document.addEventListener("astro:after-swap", () => {
-				document.addEventListener("keydown", handleKeys);
+				registerHomeShortcuts();
 			});
 		</script>
 	</body>
