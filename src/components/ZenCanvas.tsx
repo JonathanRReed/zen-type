@@ -693,7 +693,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
 
   // -- render -------------------------------------------------------------------
 
-  const inputBottom = keyboardInset > 0 ? `${keyboardInset + 16}px` : undefined;
+  const inputBottom = keyboardInset > 0 ? `${keyboardInset + 12}px` : undefined;
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden">
@@ -791,7 +791,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
         data-typing-surface="zen"
         data-typing={isCommitting ? 'true' : undefined}
         style={{ position: 'absolute', ...(inputBottom ? { bottom: inputBottom } : {}) }}
-        className="zen-input bottom-[18vh] left-1/2 -translate-x-1/2
+        className="zen-input bottom-[12.5rem] md:bottom-[11.5rem] left-1/2 -translate-x-1/2
                    w-[92vw] max-w-xl px-5 py-3.5 sm:px-6 sm:py-4 text-lg font-mono caret-accent
                    backdrop-blur-soft
                    border border-tint/30 rounded-2xl

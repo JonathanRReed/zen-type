@@ -17,6 +17,7 @@ export function useKeyboardInset(): number {
       const value = next > 80 ? next : 0;
       setInset(value);
       document.documentElement.style.setProperty('--kb-inset', `${value}px`);
+      document.documentElement.setAttribute('data-kb', value > 0 ? 'open' : 'closed');
     };
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
@@ -25,6 +26,7 @@ export function useKeyboardInset(): number {
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
       document.documentElement.style.removeProperty('--kb-inset');
+      document.documentElement.removeAttribute('data-kb');
     };
   }, []);
   return inset;

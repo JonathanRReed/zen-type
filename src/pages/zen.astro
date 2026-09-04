@@ -10,7 +10,7 @@ import SiteHeader from "../components/SiteHeader";
 import GlobalShortcuts from "../components/GlobalShortcuts";
 import ErrorBoundary from "../components/ErrorBoundary";
 import SEO from "../components/SEO.astro";
-import SpotlightLayer from "../components/SpotlightLayer";
+import AmbientLayer from "../components/AmbientLayer";
 
 const siteUrl = "https://zentype.jonathanrreed.com";
 const homeUrl = `${siteUrl}/`;
@@ -82,16 +82,8 @@ const zenUrl = `${siteUrl}/zen/`;
 
 				<!-- Main canvas -->
 				<!-- Theme background layers (behind tokens) -->
-				<div
-					class="pointer-events-none fixed inset-0 z-0 theme-layer"
-				>
-					<div class="forest-rays" aria-hidden="true"></div>
-					<div class="ocean-lights" aria-hidden="true">
-						<div class="stars-near" aria-hidden="true"></div>
-						<div class="stars-far" aria-hidden="true"></div>
-					</div>
-				</div>
-				<SpotlightLayer client:only="react" transition:persist="spotlight" />
+				<div class="pointer-events-none fixed inset-0 z-0 theme-layer" aria-hidden="true"></div>
+				<AmbientLayer client:only="react" transition:persist="ambient" />
 
 				<ZenCanvas
 					client:only="react"
