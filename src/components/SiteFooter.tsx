@@ -14,14 +14,19 @@ const SiteFooter: React.FC = React.memo(() => {
 
         {/* Attribution row */}
         <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted">
-          <img
-            src="/zen_type_assets/zen-type-logo-footer-512w.png"
-            alt="Zen Typer"
-            width={73}
-            height={20}
-            className="h-5 w-auto object-contain opacity-80 hidden sm:inline-block"
-            loading="lazy"
-          />
+          {/* The mark is the old wordmark with its "Zen Type" text cropped
+              off; the name is set as text so the brand reads Zen Typer. */}
+          <span className="hidden sm:inline-flex items-center gap-1.5">
+            <img
+              src="/zen_type_assets/zen-typer-mark.png"
+              alt=""
+              width={25}
+              height={20}
+              className="h-5 w-auto object-contain opacity-80"
+              loading="lazy"
+            />
+            <span className="font-serif text-[0.8rem] tracking-wide text-text/80">Zen Typer</span>
+          </span>
           <span className="text-muted/50 hidden sm:inline">/</span>
           <span className="font-semibold text-text">Made by Jonathan R. Reed</span>
           <span className="text-muted/50">•</span>

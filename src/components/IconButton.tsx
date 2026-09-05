@@ -21,9 +21,10 @@ const IconButton: React.FC<IconButtonProps> = ({
 }) => {
   const buttonType = type ?? 'button';
   // 44px hits the touch-target guideline; the pill keeps the same height.
+  // Phones get 40px so seven of these fit a 390px header row.
   const shapeClass = shape === 'pill'
-    ? 'h-11 px-3 sm:px-4 rounded-2xl gap-2'
-    : 'h-11 w-11 rounded-xl';
+    ? 'h-10 sm:h-11 px-3 sm:px-4 rounded-2xl gap-2'
+    : 'h-10 w-10 sm:h-11 sm:w-11 rounded-xl';
   const palette = variant === 'subtlePill'
     ? 'border-muted/25 text-muted bg-transparent hover:bg-surface/60 hover:text-text hover:border-tint/35 focus-visible:ring-1 focus-visible:ring-tint/45 focus-visible:ring-offset-2 focus-visible:ring-offset-base'
     : active

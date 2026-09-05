@@ -70,6 +70,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
   const tokensRef = useRef<Token[]>([]);
   const burstsRef = useRef<Burst[]>([]);
   const tokenIdRef = useRef(0);
+  const lastLaneRef = useRef(-1);
+  const lastFrameMsRef = useRef(0);
   const frameRef = useRef<number | null>(null);
   const animateRef = useRef<((nowMs: number) => void) | null>(null);
   const paletteRef = useRef<Palette>(FALLBACK_PALETTE);
@@ -376,8 +378,13 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
     const laneStyle = s.laneStyle ?? 'soft';
     if (laneStyle !== 'none') {
       const lanes = [width * 0.25, width * 0.5, width * 0.75];
-      const lane = lanes[Math.floor(Math.random() * lanes.length)] ?? width * 0.5;
-      const jitter = laneStyle === 'tight' ? 18 : 40;
+      // Never the lane the previous word took: two words typed a beat apart
+      // used to land on top of each other before either had drifted.
+      let laneIndex = Math.floor(Math.random() * lanes.length);
+      if (laneIndex === lastLaneRef.current) laneIndex = (laneIndex + 1 + Math.floor(Math.random() * 2)) % lanes.length;
+      lastLaneRef.current = laneIndex;
+      const lane = lanes[laneIndex] ?? width * 0.5;
+      const jitter = laneStyle === 'tight' ? 18 : 48;
       x = lane + (Math.random() * 2 - 1) * jitter;
     }
     const pad = Math.min(48, width / 6);
@@ -471,6 +478,12 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
+    // Motion is scaled by real elapsed time, so a 30 Hz laptop on battery and
+    // a 120 Hz display drift the same words the same distance. Long gaps
+    // (a hidden tab, a stalled frame) are clamped rather than replayed.
+    const dt = lastFrameMsRef.current > 0 ? Math.min(0.1, (nowMs - lastFrameMsRef.current) / 1000) : 1 / 60;
+    lastFrameMsRef.current = nowMs;
+    const f = dt * 60; // 1 at 60 fps; per-frame constants below were tuned there
     const { width, height, dpr } = sizeRef.current;
     const palette = paletteRef.current;
     const s = settingsRef.current;
@@ -492,10 +505,10 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
       ctx.globalCompositeOperation = 'lighter';
       const kept: Burst[] = [];
       for (const b of burstsRef.current) {
-        b.x += b.vx;
-        b.y += b.vy;
-        b.vy += 0.04;
-        b.alpha -= b.decay;
+        b.x += b.vx * f;
+        b.y += b.vy * f;
+        b.vy += 0.04 * f;
+        b.alpha -= b.decay * f;
         if (b.alpha > 0.01) {
           ctx.globalAlpha = b.alpha;
           ctx.fillStyle = palette.accent;
@@ -517,11 +530,11 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
       if (age >= threshold) continue;
       const progress = Math.min(1, age / threshold);
       const easeOut = 1 - Math.pow(1 - progress, 2);
-      token.y -= (token.vy / 60) * (1 - easeOut * 0.3);
+      token.y -= token.vy * dt * (1 - easeOut * 0.3);
       if (!reduced && token.swayAmp > 0 && !perf) {
         const primary = Math.sin(age * token.swayFreq * 2 * Math.PI + token.swayPhase) * token.swayAmp;
         const secondary = Math.sin(age * token.swayFreq * 0.55 * Math.PI + token.swayPhase * 1.7) * token.swayAmp * 0.4;
-        token.x += (primary + secondary) / 60;
+        token.x += (primary + secondary) * dt;
       }
       if (token.y < -50 || token.x < -50 || token.x > width + 50) continue;
 

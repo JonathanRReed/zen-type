@@ -627,15 +627,14 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
         word = [];
       }
     };
+    // A space rides along with the word before it, so the unit that wraps is
+    // "word " and a trailing space can never sit alone on a line of its own
+    // (which read as a blank line between chunks).
     for (let i = start; i < end; i++) {
       const ch = activeQuote[i] ?? '';
-      if (ch === ' ') {
-        flush();
-        nodes.push(renderChar(' ', i));
-      } else {
-        if (word.length === 0) wordKey = i;
-        word.push(renderChar(ch, i));
-      }
+      if (word.length === 0) wordKey = i;
+      word.push(renderChar(ch === ' ' ? ' ' : ch, i));
+      if (ch === ' ') flush();
     }
     flush();
     return nodes;

@@ -285,7 +285,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
             <Button
               id="header-custom-quote"
               type="button"
-              className={primaryButtonClass}
+              className={`${primaryButtonClass} hidden min-[400px]:inline-flex`}
               variant="outline"
               aria-label="Practice custom text"
               onClick={() => {
@@ -311,7 +311,10 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
         </div>
 
         <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
+          {/* Auto next lives on the completion card too, so on a phone the
+              header pill can go; eight pills do not fit a 390px row. */}
           {mode === 'quote' && (
+            <span className="hidden sm:contents">
             <IconButton
               subtle
               active={autoNext}
@@ -333,6 +336,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
               </svg>
               <span className="sr-only">Auto next</span>
             </IconButton>
+            </span>
           )}
 
           <IconButton
