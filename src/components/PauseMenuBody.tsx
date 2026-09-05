@@ -6,8 +6,7 @@ import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { getSettings, updateSettings, getStats, getStreak, recordSession, type Settings, DEFAULT_STATS_BAR_METRICS, type StatsBarMetricKey } from '../utils/storage';
-import { getLiveStats } from '../utils/liveStats';
+import { getSettings, updateSettings, getStats, getStreak, type Settings, DEFAULT_STATS_BAR_METRICS, type StatsBarMetricKey } from '../utils/storage';
 // Both panels are one click deep inside a menu that is closed at first paint,
 // so they load on demand instead of shipping with the initial bundle.
 const SettingsPanel = lazy(() =>
@@ -24,7 +23,6 @@ const PanelFallback = () => (
 );
 
 export interface PauseMenuBodyProps {
-  onReset?: (() => void) | undefined;
   mode: 'zen' | 'quote';
   /**
    * Owned by the shell so the `togglePause` listener can stay eager. The body
@@ -36,7 +34,7 @@ export interface PauseMenuBodyProps {
   onClose: () => void;
 }
 
-const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, open, onClose: closeMenu }) => {
+const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ mode: _mode, open, onClose: closeMenu }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [settings, setSettings] = useState<Settings>(getSettings);
@@ -197,38 +195,22 @@ const PauseMenuBody: React.FC<PauseMenuBodyProps> = ({ onReset, mode: _mode, ope
                 Resume
               </Button>
               
-              {onReset && (
-                <Button
+              {/* A function prop cannot cross the island boundary (Astro
+                  serialises props to JSON), so the menu asks the typing
+                  surface to reset itself. The canvas records what was typed
+                  and reloads; the quote page draws a fresh quote. Live stats
+                  are only published once a second, so the surface, not the
+                  menu, is the one with accurate numbers. */}
+              <Button
                   onClick={() => {
-                    if (_mode === 'zen') {
-                      try {
-                        const z = getLiveStats('zen');
-                        if (z.words > 0) {
-                          const endedAt = new Date();
-                          const startedAt = new Date(endedAt.getTime() - (z.time || 0) * 1000);
-                          recordSession({
-                            mode: 'zen',
-                            startedAt,
-                            endedAt,
-                            wordsTyped: z.words,
-                            charactersTyped: z.chars,
-                          });
-                        }
-                        // Tell the canvas this session is accounted for.
-                        window.dispatchEvent(new CustomEvent('zenSessionRecorded'));
-                      } catch (e) {
-                        console.error('Failed to persist zen session', e);
-                      }
-                    }
-                    onReset?.();
                     closeMenu();
+                    window.dispatchEvent(new CustomEvent('resetSession'));
                   }}
                   variant="outline"
                   className="w-full px-6 py-3 bg-love/20 hover:bg-love/30 border-love/40 text-love font-sans transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px] hover:shadow-love/50 focus-visible:ring-2 focus-visible:ring-love/50 active:scale-[0.98]"
                 >
                   Reset Session
                 </Button>
-              )}
 
               <div className="grid gap-3">
                 <Button

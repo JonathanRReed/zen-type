@@ -124,10 +124,6 @@ const quoteUrl = `${siteUrl}/quote/`;
 				<PauseMenu
 					client:only="react"
 					mode="quote"
-					onReset={() => {
-						// Smoothly load a new quote without reload
-						window.dispatchEvent(new CustomEvent("newQuote"));
-					}}
 					data-pause-menu
 				/>
 
@@ -230,6 +226,7 @@ const quoteUrl = `${siteUrl}/quote/`;
 				if (e.key === "Escape") {
 					e.preventDefault();
 					isPaused = !isPaused;
+					document.documentElement.dataset.paused = String(isPaused);
 					const pauseEvent = new CustomEvent("togglePause", {
 						detail: isPaused,
 					});
@@ -253,6 +250,7 @@ const quoteUrl = `${siteUrl}/quote/`;
 					).detail;
 				}
 				isPaused = typeof detail === "boolean" ? detail : !isPaused;
+				document.documentElement.dataset.paused = String(isPaused);
 			});
 
 			// Quote completion is handled within QuoteTyper (stats persisted + event dispatched)

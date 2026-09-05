@@ -9,6 +9,9 @@ import { armAudio } from '../utils/audioBridge';
 const GlobalShortcuts: FC = () => {
   useEffect(() => {
     armAudio();
+    // This island renders last on each page, so its mount is a fair "the app
+    // is listening" signal for tooling and tests.
+    document.documentElement.setAttribute('data-app-ready', '1');
     const onKeyDown = (e: KeyboardEvent) => {
       if ((!e.ctrlKey && !e.metaKey) || e.altKey || e.shiftKey) return;
       const key = e.key.toLowerCase();
@@ -28,7 +31,10 @@ const GlobalShortcuts: FC = () => {
       updateSettings({ soundEnabled: !getSettings().soundEnabled });
     };
     window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      document.documentElement.removeAttribute('data-app-ready');
+    };
   }, []);
   return null;
 };

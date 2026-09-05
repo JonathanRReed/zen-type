@@ -42,3 +42,7 @@ squirrel-audits/
 
 # Claude Code local tooling / session artifacts (preview launch config, locks)
 .claude/
+
+# Playwright output
+test-results/
+playwright-report/

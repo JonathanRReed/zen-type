@@ -100,9 +100,6 @@ const zenUrl = `${siteUrl}/zen/`;
 				<PauseMenu
 					client:only="react"
 					mode="zen"
-					onReset={() => {
-						window.location.reload();
-					}}
 					data-pause-menu
 				/>
 
@@ -228,6 +225,7 @@ const zenUrl = `${siteUrl}/zen/`;
 					).detail;
 				}
 				isPaused = typeof detail === "boolean" ? detail : !isPaused;
+				document.documentElement.dataset.paused = String(isPaused);
 				// Update the pause menu component
 				const pauseMenu = document.querySelector("[data-pause-menu]");
 				if (pauseMenu) {

@@ -30,7 +30,7 @@ const SiteFooter: React.FC = React.memo(() => {
           </a>
           <span className="text-muted/50">•</span>
           <a className="text-iris hover:text-foam transition-colors" href="/whats-new/">
-            What's new
+            What&apos;s new
           </a>
           <span className="text-muted/50 hidden sm:inline">•</span>
           <a className="text-iris hover:text-foam transition-colors hidden sm:inline" href="/contact/">

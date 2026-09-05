@@ -12,7 +12,6 @@ import { deferModule, useDeferredModule, primeOnFirstInteraction } from '../util
 const bodyModule = deferModule(() => import('./PauseMenuBody'));
 
 interface PauseMenuProps {
-  onReset?: () => void;
   mode: 'zen' | 'quote';
 }
 
@@ -33,7 +32,7 @@ const MenuFallback = () => (
   </div>
 );
 
-const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode }) => {
+const PauseMenu: React.FC<PauseMenuProps> = ({ mode }) => {
   const [open, setOpen] = useState(false);
   // Latches on the first open and never clears. Keeping the body mounted while
   // closed is what preserves the old behaviour of reopening onto the sub-view
@@ -79,8 +78,17 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode }) => {
     );
   }, []);
 
-  // Respond to global toggle events
+  // Respond to global toggle events. The page-level Escape handler runs from
+  // the first byte of the page, before this island exists; it leaves the
+  // wanted state on <html data-paused>, so an early Escape still opens.
   useEffect(() => {
+    if (document.documentElement.dataset.paused === 'true') {
+      openRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOpen(true);
+      setEverOpened(true);
+      void bodyModule.load();
+    }
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       // Accept boolean or undefined (toggle)
@@ -107,7 +115,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ onReset, mode }) => {
   const PauseMenuBody = loaded?.default;
   if (!PauseMenuBody) return open ? <MenuFallback /> : null;
 
-  return <PauseMenuBody open={open} onClose={closeMenu} onReset={onReset} mode={mode} />;
+  return <PauseMenuBody open={open} onClose={closeMenu} mode={mode} />;
 };
 
 export default PauseMenu;

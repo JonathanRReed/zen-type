@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
 import {
   recordSession,
   getSettings,
@@ -43,6 +43,107 @@ interface ActiveQuote {
   author?: string;
 }
 
+// ---------------------------------------------------------------------------
+// The typing engine is a reducer. Every keystroke dispatches an action that
+// is applied against the latest state, so a burst of keydown events (key
+// repeat, a composed word from a phone keyboard, a very fast typist) can never
+// read a stale cursor and land on the same character.
+// ---------------------------------------------------------------------------
+
+interface TypingState {
+  cursor: number;
+  typed: string[];
+  errors: ReadonlySet<number>;
+  correct: number;
+  total: number;
+  counts: { slip: number; skip: number; extra: number };
+  startedAt: number | null;
+  endedAt: number | null;
+  complete: boolean;
+  lastChar: string;
+  lastTs: number;
+}
+
+type TypingAction =
+  | { type: 'type'; ch: string; ts: number; quote: string; debounceMs: number }
+  | { type: 'backspace' }
+  | { type: 'reset' };
+
+const INITIAL_TYPING: TypingState = {
+  cursor: 0,
+  typed: [],
+  errors: new Set<number>(),
+  correct: 0,
+  total: 0,
+  counts: { slip: 0, skip: 0, extra: 0 },
+  startedAt: null,
+  endedAt: null,
+  complete: false,
+  lastChar: '',
+  lastTs: 0,
+};
+
+function typingReducer(state: TypingState, action: TypingAction): TypingState {
+  switch (action.type) {
+    case 'reset':
+      return { ...INITIAL_TYPING, errors: new Set<number>() };
+    case 'backspace': {
+      if (state.complete || state.cursor === 0) return state;
+      // Smart rewind: jump back to the earliest uncorrected mistake.
+      let target = state.cursor - 1;
+      for (let i = state.cursor - 1; i >= 0; i--) {
+        if (state.errors.has(i)) { target = i; break; }
+      }
+      const typed = state.typed.slice(0, target);
+      const errors = new Set(state.errors);
+      errors.delete(target);
+      return { ...state, cursor: target, typed, errors };
+    }
+    case 'type': {
+      const { ch, ts, quote, debounceMs } = action;
+      if (state.complete || ch.length !== 1 || state.cursor >= quote.length) return state;
+      if (debounceMs > 0 && ch === state.lastChar && ts - state.lastTs < debounceMs) return state;
+      const index = state.cursor;
+      const expected = quote[index];
+      const isCorrect = ch === expected;
+      const typed = state.typed.slice();
+      typed[index] = ch;
+      const errors = new Set(state.errors);
+      const counts = { ...state.counts };
+      if (isCorrect) {
+        errors.delete(index);
+      } else {
+        // Mistake counts are cumulative for the quote. Backspace rewinds to
+        // the mistake so it can be fixed, but the fact that it happened stays
+        // counted; otherwise every finished quote would report no mistakes.
+        errors.add(index);
+        const typedIsWs = /\s/.test(ch);
+        const expectedIsWs = expected ? /\s/.test(expected) : false;
+        const kind: ErrorKind = typedIsWs && !expectedIsWs ? 'skip' : !typedIsWs && expectedIsWs ? 'extra' : 'slip';
+        counts[kind] += 1;
+      }
+      const cursor = index + 1;
+      const complete = cursor === quote.length && isCorrect;
+      return {
+        ...state,
+        cursor,
+        typed,
+        errors,
+        counts,
+        correct: state.correct + (isCorrect ? 1 : 0),
+        total: state.total + 1,
+        startedAt: state.startedAt ?? Date.now(),
+        endedAt: complete ? Date.now() : state.endedAt,
+        complete,
+        lastChar: ch,
+        lastTs: ts,
+      };
+    }
+    default:
+      return state;
+  }
+}
+
 const isTouchDevice = (): boolean =>
   typeof window !== 'undefined' && (('ontouchstart' in window) || navigator.maxTouchPoints > 0);
 
@@ -50,26 +151,20 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
   const settings = useSettings();
   const [active, setActive] = useState<ActiveQuote>({ text: quote, ...(author ? { author } : {}), ...(quoteId ? { id: quoteId } : {}) });
   const activeQuote = active.text;
-  const [cursor, setCursor] = useState(0);
-  const [typedChars, setTypedChars] = useState<string[]>([]);
-  const [errors, setErrors] = useState<Set<number>>(new Set());
-  const errorTypeAtRef = useRef<Map<number, ErrorKind>>(new Map());
-  const [errorCounts, setErrorCounts] = useState({ slip: 0, skip: 0, extra: 0 });
-  const [startTime, setStartTime] = useState<Date | null>(null);
-  const [endTime, setEndTime] = useState<Date | null>(null);
-  const [isComplete, setIsComplete] = useState(false);
-  const [totalTyped, setTotalTyped] = useState(0);
-  const [correctChars, setCorrectChars] = useState(0);
+  const [ts, dispatch] = useReducer(typingReducer, INITIAL_TYPING);
+  const { cursor, typed: typedChars, errors, correct: correctChars, total: totalTyped, counts: errorCounts, complete: isComplete } = ts;
+  const startTime = useMemo(() => (ts.startedAt ? new Date(ts.startedAt) : null), [ts.startedAt]);
+  const endTime = useMemo(() => (ts.endedAt ? new Date(ts.endedAt) : null), [ts.endedAt]);
+
   const [completion, setCompletion] = useState<{ streak: number; personalBest: boolean } | null>(null);
   const [showAudioHint, setShowAudioHint] = useState(false);
   const [touchIdle, setTouchIdle] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const lastAnnouncedProgress = useRef(0);
-  const lastTypedCharRef = useRef<string>('');
-  const lastPressTsRef = useRef<number>(0);
   const composingRef = useRef(false);
   const handledKeydownAtRef = useRef(0);
+  const completedAtRef = useRef<number | null>(null);
   // Cumulative metrics across consecutive quotes in one sitting
   const [sittingTimeSec, setSittingTimeSec] = useState(0);
   const [sittingCorrect, setSittingCorrect] = useState(0);
@@ -102,17 +197,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
   }, [startTime, isComplete, activeQuote.length, settings.targetWpm]);
 
   const handleReset = useCallback(() => {
-    setCursor(0);
-    setTypedChars([]);
-    setErrors(new Set());
-    errorTypeAtRef.current.clear();
-    setErrorCounts({ slip: 0, skip: 0, extra: 0 });
-    setStartTime(null);
-    setEndTime(null);
-    setIsComplete(false);
+    dispatch({ type: 'reset' });
+    completedAtRef.current = null;
     setCompletion(null);
-    setTotalTyped(0);
-    setCorrectChars(0);
+    setShowAudioHint(false);
     if (progressTimeoutRef.current !== null) {
       window.clearTimeout(progressTimeoutRef.current);
       progressTimeoutRef.current = null;
@@ -134,10 +222,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     return Math.round((correctChars / totalTyped) * 100);
   }, [correctChars, totalTyped]);
 
-  const progressPct = useMemo(
-    () => Math.max(0, Math.min(100, Math.round((cursor / Math.max(1, activeQuote.length)) * 100))),
-    [cursor, activeQuote.length],
-  );
+  const progressPct = Math.max(0, Math.min(100, Math.round((cursor / Math.max(1, activeQuote.length)) * 100)));
 
   const toggleAutoAdvance = useCallback((enabled: boolean) => {
     updateSettings({ autoAdvanceQuotes: enabled });
@@ -215,12 +300,16 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
         loadNext({ id: `custom-${Date.now()}`, text, author: d?.author?.trim() || 'Custom text' });
       }
     };
+    // Reset Session from the pause menu means "give me a fresh quote".
+    const onReset = () => { void onNew(new CustomEvent('newQuote')); };
     window.addEventListener('newQuote', onNew as EventListener);
     window.addEventListener('loadCustomQuote', onCustomQuote as EventListener);
+    window.addEventListener('resetSession', onReset);
     return () => {
       mounted = false;
       window.removeEventListener('newQuote', onNew as EventListener);
       window.removeEventListener('loadCustomQuote', onCustomQuote as EventListener);
+      window.removeEventListener('resetSession', onReset);
     };
   }, [loadNext, nextQuote]);
 
@@ -272,16 +361,30 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     }, 1000);
   }, []);
 
-  const handleComplete = useCallback((finalCorrect: number, finalTyped: number, start: Date) => {
-    const end = new Date();
-    setEndTime(end);
-    setIsComplete(true);
+  // Progress milestones for screen readers.
+  useEffect(() => {
+    if (cursor === 0) return;
+    const progress = Math.floor((cursor / Math.max(1, activeQuote.length)) * 100);
+    for (const milestone of [25, 50, 75]) {
+      if (progress >= milestone && lastAnnouncedProgress.current < milestone) {
+        announceProgress(milestone);
+        lastAnnouncedProgress.current = milestone;
+      }
+    }
+  }, [cursor, activeQuote.length, announceProgress]);
 
+  // Completion side effects, once per finished quote.
+  useEffect(() => {
+    if (!isComplete || !ts.startedAt || !ts.endedAt) return;
+    if (completedAtRef.current === ts.endedAt) return;
+    completedAtRef.current = ts.endedAt;
+
+    const start = new Date(ts.startedAt);
+    const end = new Date(ts.endedAt);
     const words = activeRef.current.text.split(/\s+/).filter(Boolean).length;
     const minutes = (end.getTime() - start.getTime()) / 1000 / 60;
-    const wpm = minutes > 0 ? Math.round((finalCorrect / 5) / minutes) : 0;
-    const accuracy = finalTyped === 0 ? 100 : Math.round((finalCorrect / finalTyped) * 100);
-    const errorsNow = { ...errorCounts };
+    const wpm = minutes > 0 ? Math.round((ts.correct / 5) / minutes) : 0;
+    const accuracy = ts.total === 0 ? 100 : Math.round((ts.correct / ts.total) * 100);
     const previousBest = (() => { try { return getStats().bestWpm; } catch { return 0; } })();
 
     const summary = {
@@ -293,7 +396,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
       wpm,
       accuracy,
       ...(activeRef.current.id ? { quoteId: activeRef.current.id } : {}),
-      errors: errorsNow,
+      errors: { ...ts.counts },
     };
     try {
       recordSession(summary);
@@ -309,121 +412,40 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
     const elapsed = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 1000));
     setSittingTimeSec(prev => prev + elapsed);
-    setSittingCorrect(prev => prev + finalCorrect);
-    setSittingTotal(prev => prev + finalTyped);
+    setSittingCorrect(prev => prev + ts.correct);
+    setSittingTotal(prev => prev + ts.total);
 
     // The one-time nudge toward sound, after the first finished quote.
     try {
       const hints = getHints();
-      const s = getSettings();
-      if (!hints.audio && !s.soundEnabled) {
+      if (!hints.audio && !getSettings().soundEnabled) {
         setShowAudioHint(true);
         markHint('audio');
       }
     } catch { /* storage blocked */ }
 
+    announceProgress(100);
+
     if (getSettings().autoAdvanceQuotes) {
       const delay = Math.max(0, getSettings().autoAdvanceDelayMs ?? 1500);
-      window.setTimeout(() => {
+      const timer = window.setTimeout(() => {
         const pool = quotesRef.current.length ? quotesRef.current : STATIC_FALLBACK_QUOTES;
         loadNext(nextQuote(pool));
       }, delay);
+      return () => window.clearTimeout(timer);
     }
-    announceProgress(100);
-  }, [errorCounts, onComplete, announceProgress, loadNext, nextQuote]);
+    return undefined;
+  }, [isComplete, ts.startedAt, ts.endedAt, ts.correct, ts.total, ts.counts, onComplete, announceProgress, loadNext, nextQuote]);
 
-  // -- character processing --------------------------------------------------
+  // -- input ----------------------------------------------------------------
 
-  const typeCharacter = useCallback((ch: string, ts: number) => {
-    if (isComplete) return;
-    if (ch.length !== 1) return;
-    let start = startTime;
-    if (!start) {
-      start = new Date();
-      setStartTime(start);
-    }
-    if (cursor >= activeQuote.length) return;
-
-    const thr = Math.max(0, getSettings().debounceMs || 0);
-    if (thr > 0 && ch === lastTypedCharRef.current && (ts - lastPressTsRef.current) < thr) return;
-    lastTypedCharRef.current = ch;
-    lastPressTsRef.current = ts;
-
-    const buf = [...typedChars];
-    buf[cursor] = ch;
-    setTypedChars(buf);
-    setTotalTyped(prev => prev + 1);
-
-    const expected = activeQuote[cursor];
-    const isCorrect = ch === expected || (ch === ' ' && expected === ' ');
-
-    let errType: ErrorKind | null = null;
-    if (!isCorrect) {
-      const typedIsWs = /\s/.test(ch);
-      const expectedIsWs = expected ? /\s/.test(expected) : false;
-      if (typedIsWs && !expectedIsWs) errType = 'skip';
-      else if (!typedIsWs && expectedIsWs) errType = 'extra';
-      else errType = 'slip';
-    }
-
-    if (isCorrect) {
-      setCorrectChars(prev => prev + 1);
-      if (errors.has(cursor)) {
-        const es = new Set(errors); es.delete(cursor); setErrors(es);
-      }
-      const prior = errorTypeAtRef.current.get(cursor);
-      if (prior) {
-        errorTypeAtRef.current.delete(cursor);
-        setErrorCounts(prev => ({ ...prev, [prior]: Math.max(0, prev[prior] - 1) }));
-      }
-    } else {
-      const es = new Set(errors); es.add(cursor); setErrors(es);
-      if (errType && !errorTypeAtRef.current.has(cursor)) {
-        errorTypeAtRef.current.set(cursor, errType);
-        const kind = errType;
-        setErrorCounts(prev => ({ ...prev, [kind]: prev[kind] + 1 }));
-      }
-    }
-
-    setCursor(prev => prev + 1);
-
-    // Final tallies are passed explicitly: the state updates above have not
-    // flushed, and the memoized wpm/accuracy still hold the previous render.
-    if (cursor + 1 === activeQuote.length && isCorrect) {
-      handleComplete(correctChars + 1, totalTyped + 1, start);
-    }
-
-    const progress = Math.floor(((cursor + 1) / activeQuote.length) * 100);
-    for (const milestone of [25, 50, 75]) {
-      if (progress >= milestone && lastAnnouncedProgress.current < milestone) {
-        announceProgress(milestone);
-        lastAnnouncedProgress.current = milestone;
-      }
-    }
-  }, [isComplete, startTime, cursor, activeQuote, typedChars, errors, correctChars, totalTyped, handleComplete, announceProgress]);
+  const typeCharacter = useCallback((ch: string, timeStamp: number) => {
+    dispatch({ type: 'type', ch, ts: timeStamp, quote: activeRef.current.text, debounceMs: Math.max(0, getSettings().debounceMs || 0) });
+  }, []);
 
   const backspace = useCallback(() => {
-    if (isComplete || cursor === 0) return;
-    // Smart rewind: jump back to the earliest uncorrected mistake.
-    let target = cursor - 1;
-    for (let i = cursor - 1; i >= 0; i--) {
-      if (errors.has(i)) { target = i; break; }
-    }
-    const buf = [...typedChars];
-    for (let i = target; i < buf.length; i++) buf[i] = '';
-    setTypedChars(buf);
-    setCursor(target);
-    if (errors.has(target)) {
-      const es = new Set(errors);
-      es.delete(target);
-      setErrors(es);
-      const prior = errorTypeAtRef.current.get(target);
-      if (prior) {
-        errorTypeAtRef.current.delete(target);
-        setErrorCounts(prev => ({ ...prev, [prior]: Math.max(0, prev[prior] - 1) }));
-      }
-    }
-  }, [isComplete, cursor, errors, typedChars]);
+    dispatch({ type: 'backspace' });
+  }, []);
 
   // Desktop path: keydown carries the character with the least latency.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -454,29 +476,18 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
   };
 
   // Mobile path: on-screen keyboards report most keys as "Unidentified" on
-  // keydown and deliver the text through input events instead.
-  const consumeInputValue = (el: HTMLInputElement, ts: number) => {
+  // keydown and deliver the text through input events instead. Composed
+  // words arrive whole and are fed through character by character.
+  const consumeInputValue = (el: HTMLInputElement, timeStamp: number) => {
     const value = el.value;
     if (!value) return;
     el.value = '';
-    for (const ch of value) {
-      audioEngine.keyDown(ch);
-      window.setTimeout(() => audioEngine.keyUp(ch), 60);
-      typeCharacter(ch, ts);
-      // typeCharacter closes over the current cursor; one character per
-      // event is the common case, and bursts settle on the next render.
-      break;
-    }
-    if (value.length > 1) {
-      // Composed words arrive whole. Feed the rest back one at a time.
-      const rest = Array.from(value).slice(1).join('');
-      window.setTimeout(() => {
-        const input = inputRef.current;
-        if (input) {
-          input.value = rest;
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      }, 0);
+    const chars = Array.from(value);
+    for (const ch of chars) typeCharacter(ch, timeStamp);
+    const first = chars[0];
+    if (first) {
+      audioEngine.keyDown(first);
+      window.setTimeout(() => audioEngine.keyUp(first), 60);
     }
   };
 
@@ -497,20 +508,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     }
     if (type === 'insertText' && typeof native.data === 'string' && native.data.length > 0 && !composingRef.current) {
       e.preventDefault();
-      const data = native.data;
-      const ch = Array.from(data)[0] ?? '';
-      audioEngine.keyDown(ch);
-      window.setTimeout(() => audioEngine.keyUp(ch), 60);
-      typeCharacter(ch, e.timeStamp);
-      if (data.length > 1) {
-        const rest = Array.from(data).slice(1).join('');
-        window.setTimeout(() => {
-          const input = inputRef.current;
-          if (input) {
-            input.value = rest;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-        }, 0);
+      const chars = Array.from(native.data);
+      for (const ch of chars) typeCharacter(ch, e.timeStamp);
+      const first = chars[0];
+      if (first) {
+        audioEngine.keyDown(first);
+        window.setTimeout(() => audioEngine.keyUp(first), 60);
       }
     }
   };
@@ -545,12 +548,9 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
         blurTimeout = null;
       }, 0);
     };
-    const onFocus = () => setTouchIdle(false);
     input.addEventListener('blur', onBlur);
-    input.addEventListener('focus', onFocus);
     return () => {
       input.removeEventListener('blur', onBlur);
-      input.removeEventListener('focus', onFocus);
       if (blurTimeout !== null) window.clearTimeout(blurTimeout);
     };
   }, []);
@@ -570,9 +570,14 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     return () => window.removeEventListener('keydown', handler, { capture: true });
   }, []);
 
+  // On touch devices a programmatic focus() at load does not open the
+  // keyboard, so the tap prompt stays until the first real tap or keystroke.
   useEffect(() => {
-    if (isTouchDevice()) setTouchIdle(document.activeElement !== inputRef.current);
+    if (!isTouchDevice()) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTouchIdle(true);
   }, []);
+  const showTapHint = touchIdle && cursor === 0 && !isComplete;
 
   useEffect(() => () => {
     if (progressTimeoutRef.current !== null) window.clearTimeout(progressTimeoutRef.current);
@@ -580,6 +585,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
   const focusInput = () => {
     inputRef.current?.focus();
+    setTouchIdle(false);
   };
 
   // -- rendering -------------------------------------------------------------
@@ -595,6 +601,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     else if (isTyped) state = hasError ? 'error' : 'correct';
 
     const isGhostPacer = index === ghostCursor && index > cursor;
+    // A plain space inside an inline-block collapses to nothing; the
+    // non-breaking space keeps the gap between words.
     const displayChar = char === ' ' ? ' ' : char;
     const shown = isTyped && typedChar ? (hasError ? (typedChar === ' ' ? ' ' : typedChar) : displayChar) : displayChar;
 
@@ -678,10 +686,17 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
       <div className="w-full max-w-4xl">
         {/* Quote display. Tapping anywhere on the card focuses the input so
             on-screen keyboards open; it is the only way touch devices can type. */}
+        {/* The card itself is not a control: the keyboard-reachable element
+            is the input inside it. The handlers only forward taps to it. */}
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
         <div
           ref={cardRef}
           className="glass quote-card relative rounded-2xl px-5 pt-6 pb-6 sm:px-8 sm:pt-8 sm:pb-7 mb-6"
+          // Both: pointerdown so iOS treats it as the gesture that may open
+          // the keyboard, click because a tap on a non-focusable box would
+          // otherwise move focus to the body right after.
           onPointerDown={focusInput}
+          onClick={focusInput}
         >
           <input
             ref={inputRef}
@@ -725,7 +740,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
           >
             <div className="quote-progress-fill" style={{ width: `${progressPct}%` }} />
           </div>
-          {touchIdle && !isComplete && (
+          {showTapHint && (
             <button
               type="button"
               className="quote-tap-hint"

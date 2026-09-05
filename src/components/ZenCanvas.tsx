@@ -179,6 +179,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
   useEffect(() => {
     const handleDraftChange = (e: Event) => {
       const detail = (e as CustomEvent).detail as { id: string | null };
+      // Our own freshly created draft announces itself too. Its body is
+      // empty, and loading it here would wipe the first word just typed.
+      if (detail.id && detail.id === activeDraftIdRef.current) return;
       activeDraftIdRef.current = detail.id;
       if (detail.id) {
         getDraft(detail.id).then(draft => { if (draft) transcriptRef.current = draft.body; }).catch(() => {});
@@ -219,20 +222,19 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
       if (document.visibilityState === 'hidden') flushSession();
     };
     const onPageHide = () => flushSession();
-    const onRecordedElsewhere = () => {
-      // The pause menu recorded this session itself.
-      const s = statsRef.current;
-      s.recordedWords = s.words;
-      s.recordedChars = s.chars;
-      s.recordedAt = Date.now();
+    // Reset Session in the pause menu: bank what was typed, then start over
+    // with a clean page.
+    const onReset = () => {
+      flushSession();
+      window.location.reload();
     };
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', onPageHide);
-    window.addEventListener('zenSessionRecorded', onRecordedElsewhere);
+    window.addEventListener('resetSession', onReset);
     return () => {
       document.removeEventListener('visibilitychange', onHide);
       window.removeEventListener('pagehide', onPageHide);
-      window.removeEventListener('zenSessionRecorded', onRecordedElsewhere);
+      window.removeEventListener('resetSession', onReset);
       flushSession();
       resetLiveStats('zen');
     };
@@ -714,7 +716,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
       )}
 
       {flowSecondsLeft !== null && !flowCompleted && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full glass border border-tint/20 text-xs font-mono text-tint/90 flex items-center gap-2 backdrop-blur-md z-10">
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full glass border border-tint/20 text-xs font-mono text-tint/90 flex items-center gap-2 backdrop-blur-md z-10" data-flow-countdown role="timer" aria-label="Timed flow remaining">
           <span className="w-2 h-2 rounded-full bg-tint animate-pulse" />
           <span>{Math.floor(flowSecondsLeft / 60)}:{(flowSecondsLeft % 60).toString().padStart(2, '0')}</span>
         </div>

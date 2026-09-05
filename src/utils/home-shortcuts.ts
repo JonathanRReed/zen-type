@@ -42,6 +42,8 @@ function handleKeys(e: KeyboardEvent): void {
   if (e.key === "Escape") {
     e.preventDefault();
     isPaused = !isPaused;
+    // The pause menu island may not have mounted yet; it reads this on mount.
+    document.documentElement.dataset.paused = String(isPaused);
     window.dispatchEvent(
       new CustomEvent("togglePause", { detail: isPaused }),
     );
@@ -58,6 +60,7 @@ function syncPauseState(event: Event): void {
       ? (event as CustomEvent<boolean | undefined>).detail
       : undefined;
   isPaused = typeof detail === "boolean" ? detail : !isPaused;
+  document.documentElement.dataset.paused = String(isPaused);
 }
 
 /**
