@@ -49,7 +49,7 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, max
   return lines;
 }
 
-export function renderShareCard(input: ShareCardInput): HTMLCanvasElement {
+function renderShareCard(input: ShareCardInput): HTMLCanvasElement {
   const width = 1200;
   const height = 630;
   const scale = 2;

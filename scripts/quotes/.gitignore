@@ -1,0 +1,4 @@
+# Gutenberg downloads and extractor output; regenerate with extract.py
+cache/
+cand_*.json
+ALL_CANDIDATES.txt

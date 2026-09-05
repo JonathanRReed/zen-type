@@ -22,7 +22,7 @@ const PanelFallback = () => (
   </div>
 );
 
-export interface PauseMenuBodyProps {
+interface PauseMenuBodyProps {
   mode: 'zen' | 'quote';
   /**
    * Owned by the shell so the `togglePause` listener can stay eager. The body

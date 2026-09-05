@@ -31,7 +31,7 @@ export interface DraftPrefs {
   preset: 'minimal' | 'structural' | 'editor-pro';
 }
 
-export const DEFAULT_DRAFT_PREFS: DraftPrefs = {
+const DEFAULT_DRAFT_PREFS: DraftPrefs = {
   counters: true,
   readTime: true,
   outline: false,
@@ -229,50 +229,6 @@ export function setActiveDraftId(id: string | null): void {
     }
   } catch (e) {
     console.error('Failed to persist active draft id:', e);
-  }
-}
-
-export function applyPreset(preset: DraftPrefs['preset']): Partial<DraftPrefs> {
-  switch (preset) {
-    case 'minimal':
-      return {
-        preset,
-        counters: true,
-        readTime: false,
-        outline: false,
-        quickJump: false,
-        search: false,
-        tags: false,
-        scratchpad: false,
-        keywordHighlighter: false,
-        grammar: false,
-      };
-    case 'structural':
-      return {
-        preset,
-        counters: true,
-        readTime: true,
-        outline: true,
-        quickJump: true,
-        search: true,
-        tags: false,
-        scratchpad: false,
-        keywordHighlighter: false,
-        grammar: false,
-      };
-    case 'editor-pro':
-      return {
-        preset,
-        counters: true,
-        readTime: true,
-        outline: true,
-        quickJump: true,
-        search: true,
-        tags: true,
-        scratchpad: true,
-        keywordHighlighter: true,
-        grammar: true,
-      };
   }
 }
 

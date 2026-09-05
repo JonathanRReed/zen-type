@@ -50,7 +50,7 @@ test('quote filters persist and take effect', async ({ page }) => {
     await page.getByRole('button', { name: 'New quote' }).click();
     await page.waitForTimeout(150);
     const chars = await page.locator('.quote-body .quote-char').count();
-    expect(chars).toBeLessThanOrEqual(70);
+    expect(chars).toBeLessThanOrEqual(60);
   }
 
   await page.reload();

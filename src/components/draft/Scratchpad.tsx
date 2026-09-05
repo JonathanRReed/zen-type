@@ -7,7 +7,7 @@ interface ScratchpadProps {
   onClose: () => void;
 }
 
-export const Scratchpad: React.FC<ScratchpadProps> = ({ value, onChange, onClose }) => {
+const Scratchpad: React.FC<ScratchpadProps> = ({ value, onChange, onClose }) => {
   const [width, setWidth] = useState(400);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

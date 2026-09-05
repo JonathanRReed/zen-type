@@ -14,7 +14,7 @@ interface EditorProps {
   onSelectionChange?: (start: number, end: number) => void;
 }
 
-export const Editor: React.FC<EditorProps> = ({
+const Editor: React.FC<EditorProps> = ({
   draft,
   onChange,
   grammarIssues: _grammarIssues,

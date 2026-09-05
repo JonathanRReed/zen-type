@@ -17,7 +17,7 @@ interface SearchItem {
   index: number;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({
+const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
   outlineItems,

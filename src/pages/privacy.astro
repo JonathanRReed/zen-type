@@ -42,30 +42,30 @@ const privacyUrl = `${siteUrl}/privacy/`;
 						<p class="eyebrow text-sm font-medium uppercase tracking-[0.28em]">Privacy</p>
 						<h1>Zen Typer Privacy</h1>
 						<p class="!text-lg !leading-8">
-							Zen Typer is designed as an account-free typing practice app. It keeps core writing and practice data in your browser.
+							Zen Typer has no accounts and no server of its own. Everything it remembers about you is stored in your browser, on your device.
 						</p>
 					</header>
 
 					<section class="space-y-4">
 						<h2>What the app stores</h2>
 						<p>
-							Zen Typer may use browser storage for settings, local drafts, archived writing sessions, theme preferences, reduced-motion preferences, and typing practice metrics such as WPM, accuracy, streaks, and session progress. This storage lets the app remember your workspace without requiring an account. Clearing browser storage for this site can remove those saved preferences and drafts.
+							Settings, typing stats, the day streak, a history of your last 500 sessions, and which one-time hints you have seen are kept in localStorage. Zen Mode drafts are kept in IndexedDB. Nothing is sent anywhere. Clearing site data for this domain removes all of it, and so does the delete-everything button in settings. There is also a reset button that clears stats and history but keeps your settings.
 						</p>
 						<p>
-							The app does not ask for a login, password, payment method, or profile. Typing practice can be used directly in the browser. Avoid entering sensitive personal, financial, medical, or confidential workplace information into any browser-based writing tool unless you are comfortable storing that content locally on your own device.
+							Settings has a backup button that writes all of the above to one JSON file on your machine, and a restore button that reads it back. That is the only way data moves between devices.
+						</p>
+						<p>
+							The app never asks for a login, a password, a payment method, or a profile. Drafts are plain text on your own disk, so treat Zen Mode like any other local notes app and keep anything confidential out of it if other people use the same browser profile.
 						</p>
 					</section>
 
 					<section class="space-y-4">
 						<h2>Analytics and third parties</h2>
 						<p>
-							Zen Typer is hosted on Cloudflare Pages. Cloudflare may process standard request metadata needed to serve the site, protect the service, and measure basic delivery health. See the <a href="/subprocessors/">subprocessor disclosure</a> for the current hosting and infrastructure context. The app is built to keep the typing experience local and lightweight. External links to Jonathan R. Reed projects or social profiles leave this site and are governed by those services.
+							There is no analytics script on this site and no third-party embed. The pages are served by Cloudflare Pages, which sees the same request metadata any web host sees (IP address, user agent, time of request) in order to deliver and protect the site. The <a href="/subprocessors/">subprocessor disclosure</a> lists that in full. Links to other sites, including Jonathan R. Reed's own, leave this one and are covered by whatever those sites do.
 						</p>
 						<p>
-							Local storage is device and browser specific. A draft saved in one browser profile is not meant to follow you to another device, so export anything you want to keep long term.
-						</p>
-						<p>
-							Questions about privacy, accessibility, or data handling can be sent through the contact options on the <a href="/contact/">contact page</a>. This notice was last updated on August 4, 2026.
+							Questions about privacy, accessibility, or data handling go through the <a href="/contact/">contact page</a>. This notice was last updated on September 4, 2026.
 						</p>
 					</section>
 				</article>

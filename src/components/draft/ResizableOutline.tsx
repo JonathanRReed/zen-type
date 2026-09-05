@@ -8,7 +8,7 @@ interface ResizableOutlineProps {
   onClose: () => void;
 }
 
-export const ResizableOutline: React.FC<ResizableOutlineProps> = ({ items, onItemClick, onClose }) => {
+const ResizableOutline: React.FC<ResizableOutlineProps> = ({ items, onItemClick, onClose }) => {
   const [width, setWidth] = useState(280);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

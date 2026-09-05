@@ -719,8 +719,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
           />
           <div key={activeQuote} className="quote-body text-xl sm:text-2xl leading-relaxed select-none">
             {chunks.length === 0 && renderRange(0, activeQuote.length)}
-            {chunks.length > 0 && chunks.map((c, ci) => (
-              <div key={ci} className="quote-line">
+            {chunks.length > 0 && chunks.map((c) => (
+              <div key={c.start} className="quote-line">
                 {renderRange(c.start, c.end)}
               </div>
             ))}

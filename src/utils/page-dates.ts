@@ -17,14 +17,14 @@
  * Pathname (with the trailing slash the site uses) to the date of the last
  * commit that changed that page's content.
  */
-export const PAGE_MODIFIED_DATES: Record<string, string> = {
+const PAGE_MODIFIED_DATES: Record<string, string> = {
   "/": "2026-09-04",
   "/404/": "2026-09-03",
   "/about/": "2026-09-04",
   "/contact/": "2026-08-04",
   "/privacy/": "2026-09-04",
   "/quote/": "2026-09-04",
-  "/subprocessors/": "2026-06-19",
+  "/subprocessors/": "2026-09-04",
   "/whats-new/": "2026-09-04",
   "/zen/": "2026-09-04",
 };

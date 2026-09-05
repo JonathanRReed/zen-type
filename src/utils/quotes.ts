@@ -31,16 +31,18 @@ export const QUOTE_TAGS: ReadonlyArray<{ id: string; label: string; blurb: strin
 ];
 
 // Bounds chosen so the corpus splits roughly 45 / 50 / 5.
-export const LENGTH_BOUNDS: Readonly<Record<QuoteLength, [number, number]>> = {
-  short: [0, 70],
-  medium: [71, 110],
-  long: [111, Infinity],
+const LENGTH_BOUNDS: Readonly<Record<QuoteLength, [number, number]>> = {
+  // Tertiles of the shipped pool (322 quotes, median 75 characters), so each
+  // chip in Settings leaves a real choice: about 80 short, 155 medium, 85 long.
+  short: [0, 60],
+  medium: [61, 90],
+  long: [91, Infinity],
 };
 
 export function quoteLength(text: string): QuoteLength {
   const n = text.length;
-  if (n <= 70) return 'short';
-  if (n <= 110) return 'medium';
+  if (n <= LENGTH_BOUNDS.short[1]) return 'short';
+  if (n <= LENGTH_BOUNDS.medium[1]) return 'medium';
   return 'long';
 }
 
@@ -74,15 +76,12 @@ export async function loadQuotes(): Promise<Quote[]> {
 
 export function filterQuotes(quotes: Quote[], filter?: QuoteFilter): Quote[] {
   if (!filter) return quotes;
-  const lengths = filter.lengths ?? [];
-  const tags = filter.tags ?? [];
+  const lengths = new Set(filter.lengths ?? []);
+  const tags = new Set(filter.tags ?? []);
   return quotes.filter(q => {
     if (filter.excludeId && q.id === filter.excludeId) return false;
-    if (lengths.length > 0 && !lengths.includes(quoteLength(q.text))) return false;
-    if (tags.length > 0) {
-      const own = q.tags ?? [];
-      if (!tags.some(t => own.includes(t))) return false;
-    }
+    if (lengths.size > 0 && !lengths.has(quoteLength(q.text))) return false;
+    if (tags.size > 0 && !(q.tags ?? []).some(t => tags.has(t))) return false;
     return true;
   });
 }
@@ -99,11 +98,6 @@ export function pickQuote(quotes: Quote[], filter?: QuoteFilter): Quote {
   if (pool.length === 0) pool = quotes.length > 0 ? quotes : getFallbackQuotes();
   const idx = Math.floor(Math.random() * pool.length);
   return pool[idx] ?? pool[0] ?? getFallbackQuotes()[0]!;
-}
-
-/** @deprecated use pickQuote */
-export function getRandomQuote(quotes: Quote[]): Quote {
-  return pickQuote(quotes);
 }
 
 export function getFallbackQuotes(): Quote[] {
@@ -139,6 +133,3 @@ export function getFallbackQuotes(): Quote[] {
   ];
 }
 
-export function formatQuote(quote: Quote): string {
-  return `${quote.text} — ${quote.author}`;
-}

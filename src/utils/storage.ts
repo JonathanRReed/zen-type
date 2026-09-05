@@ -11,14 +11,12 @@ export type StorageFailureDetail = {
 };
 
 let storagePersistenceDisabled = false;
-let lastStorageFailure: StorageFailureDetail | null = null;
 
 const isStorageAccessible = (): boolean => {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 };
 
 const notifyStorageFailure = (detail: StorageFailureDetail) => {
-  lastStorageFailure = detail;
   if (typeof window !== 'undefined') {
     try {
       window.dispatchEvent(new CustomEvent(STORAGE_PERSISTENCE_ERROR_EVENT, { detail }));
@@ -35,7 +33,7 @@ const markPersistenceDisabled = (detail: StorageFailureDetail) => {
   notifyStorageFailure(detail);
 };
 
-export function getJSON<T>(key: string, fallback: T): T {
+function getJSON<T>(key: string, fallback: T): T {
   if (!isStorageAccessible() || storagePersistenceDisabled) {
     return fallback;
   }
@@ -62,21 +60,12 @@ export function setJSON(key: string, value: unknown): void {
   }
 }
 
-export function isStoragePersistenceDisabled(): boolean {
-  return storagePersistenceDisabled;
-}
-
-export function getLastStorageFailure(): StorageFailureDetail | null {
-  return lastStorageFailure;
-}
-
 export function getStoragePersistenceErrorEvent(): string {
   return STORAGE_PERSISTENCE_ERROR_EVENT;
 }
 
 export function __resetStoragePersistenceStateForTests(): void {
   storagePersistenceDisabled = false;
-  lastStorageFailure = null;
   _settingsCache = null;
 }
 
@@ -111,7 +100,7 @@ const FONT_STACKS: Record<FontOption, string> = {
   'Lato': "'Lato', 'Inter', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
 };
 
-export function getFontStack(font: FontOption): string {
+function getFontStack(font: FontOption): string {
   return FONT_STACKS[font] ?? FONT_STACKS['Nebula Sans'];
 }
 
@@ -144,9 +133,9 @@ export const DEFAULT_STATS_BAR_METRICS: Readonly<Record<'zen' | 'quote', StatsBa
 const ALLOWED_STATS_BAR_METRICS: readonly StatsBarMetricKey[] = ['time', 'words', 'wpm', 'accuracy', 'streak'];
 
 export type ThemeName = 'Void' | 'Forest' | 'Ocean' | 'Cosmic' | 'Ember' | 'Sakura' | 'Aurora' | 'Glacier';
-export const THEME_NAMES: readonly ThemeName[] = ['Void', 'Cosmic', 'Aurora', 'Ocean', 'Glacier', 'Forest', 'Ember', 'Sakura'];
+const THEME_NAMES: readonly ThemeName[] = ['Void', 'Cosmic', 'Aurora', 'Ocean', 'Glacier', 'Forest', 'Ember', 'Sakura'];
 
-export type CaretStyle = 'line' | 'block' | 'underline' | 'glow';
+type CaretStyle = 'line' | 'block' | 'underline' | 'glow';
 export type SwitchSoundProfile = 'none' | 'thock' | 'cream' | 'raindrop' | 'typewriter' | 'holy-panda' | 'clicky';
 export type AmbientSoundscape = 'none' | 'rain' | 'wind' | 'drone' | 'fire';
 export type QuoteLength = 'short' | 'medium' | 'long';
@@ -214,15 +203,6 @@ export interface SessionSummary {
   errors?: { slip: number; skip: number; extra: number };
 }
 
-export interface SessionCardSummary {
-  mode: 'zen' | 'quote';
-  date: string; // ISO string
-  time: number; // seconds
-  words: number; // total words
-  wpm?: number; // quote mode
-  accuracy?: number; // quote mode
-}
-
 /** One finished session, as kept in the local history. */
 export interface SessionRecord {
   id: string;
@@ -238,7 +218,7 @@ export interface SessionRecord {
 }
 
 /** @deprecated Old 10-entry log shape, kept so older exports still parse. */
-export interface TelemetryEntry {
+interface TelemetryEntry {
   date: string; // ISO
   mode: 'zen' | 'quote';
   timeSec: number;
@@ -300,7 +280,7 @@ export const DEFAULT_SETTINGS: Settings = {
   quoteTags: [],
 };
 
-export const DEFAULT_STATS: Stats = {
+const DEFAULT_STATS: Stats = {
   totalWords: 0,
   totalChars: 0,
   totalTime: 0,
@@ -402,10 +382,6 @@ export function getSettings(): Settings {
 export function saveSettings(settings: Settings): void {
   _settingsCache = normalizeSettings(settings);
   setJSON(STORAGE_KEYS.SETTINGS, _settingsCache);
-}
-
-export function __invalidateSettingsCacheForTests(): void {
-  _settingsCache = null;
 }
 
 /**
@@ -622,28 +598,6 @@ export function recordSession(summary: SessionSummary): SessionRecord {
     window.dispatchEvent(new CustomEvent('sessionRecorded', { detail: record }));
   }
   return record;
-}
-
-/** @deprecated use recordSession */
-export function updateStats(summary: SessionSummary): void {
-  recordSession(summary);
-}
-
-/** @deprecated recordSession keeps the streak current */
-export function updateStreak(): void {
-  setJSON(STORAGE_KEYS.STREAK, computeStreak(getPracticeDays()));
-}
-
-/** @deprecated read getHistory() instead */
-export function getTelemetry(): TelemetryEntry[] {
-  return getHistory().slice(-10).map(r => ({
-    date: r.date,
-    mode: r.mode,
-    timeSec: r.timeSec,
-    words: r.words,
-    ...(r.wpm !== undefined ? { wpm: r.wpm } : {}),
-    ...(r.accuracy !== undefined ? { accuracy: r.accuracy } : {}),
-  }));
 }
 
 export function resetAllData(): void {

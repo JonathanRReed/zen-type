@@ -11,7 +11,7 @@ interface SimpleDraftsProps {
   onClose: () => void;
 }
 
-export const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) => {
+const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (

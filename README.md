@@ -1,116 +1,99 @@
-# Zen Type
+# Zen Typer
 
-Zen Type is a typing app built with Astro 7 and React 19, themed with the Rosé Pine palette. It includes an open-ended Zen mode and a quote practice mode, sharing a consistent UI styled with Tailwind CSS.
+A typing app with the pressure taken out. Live at [zentype.jonathanrreed.com](https://zentype.jonathanrreed.com).
 
-## Overview
+Quote Mode is a typing test on short passages from public-domain books. Zen Mode is a blank canvas where the words you finish drift off the screen and the session keeps its own time. There is no account, no server, and nothing you type leaves the browser.
 
-- **Framework**: Astro 5 with islands powered by React 19 components in `src/components/`
-- **Runtime**: Bun-first workflow for development, builds, and testing
-- **Styling**: Tailwind CSS layered over a custom Rosé Pine design system in `src/styles/globals.css`
-- **Routing**: Two primary surfaces, `src/pages/zen.astro` and `src/pages/quote.astro`, backed by shared stateful React hooks
-- **Storage**: Local persistence via `src/utils/storage.ts` so sessions, streaks, and preferences stay with the device
+Built by [Jonathan R. Reed](https://jonathanrreed.com/).
 
-## Key Experiences
+## What it does
 
-### Zen Mode
+**Quote Mode.** 322 quotes from 22 writers, each traced to a public-domain edition. The clock starts on your first keystroke and stops on the last character, so reading the quote first is free. Backspace jumps back to your earliest uncorrected mistake instead of one character at a time. At the end you get WPM, accuracy, and your mistakes sorted into wrong keys, skipped characters, and extras. You can filter the pool by length and by tag (stoic, tao, zen, nature, craft, and so on), paste your own text, and download a PNG card of the result.
 
-- `ZenCanvas.tsx` renders floating word tokens and session overlays
-- Session markers, ghost text recovery, and local analytics keep longer sessions consistent
-- Theme presets (Void, Forest, Ocean, Cosmic) adjust gradients while keeping Rosé Pine core colors
+**Zen Mode.** Type and keep typing. Each word you finish becomes a particle that drifts up and fades. The stats bar counts words and time. Everything you write is saved as a draft you can reopen, rename, copy, or export as Markdown. A timed flow of 5 to 60 minutes ends with a chime and a summary.
 
-### Quote Mode
+**Progress.** A calendar of the days you practiced, your streak, best WPM, average accuracy, and the last 500 sessions. Streaks count calendar days, so a late night followed by an early morning is two days.
 
-- `QuoteTyper.tsx` tracks accuracy and WPM for the quote set in `public/quotes.json`
-- Live region announcements surface progress for screen reader users
-- Export helpers in `src/utils/export.ts` create shareable session summaries
+**Sound, off by default.** Six procedurally synthesized switch profiles (thock, cream, holy panda, clicky, typewriter with a bell on Enter, raindrop) and four ambient beds (rain, wind, fire, drone). No audio files ship with the app. Everything comes out of Web Audio nodes at runtime, so it is a few kilobytes of code and it never fails to load.
 
-## Rosé Pine Design Language
+**Themes.** Eight of them, built on the Rosé Pine palette: Void, Cosmic, Aurora, Ocean, Glacier, Forest, Ember, Sakura. Each has a WebGL2 scene behind the page that reacts to your cursor and your typing. Reduced motion freezes it to a single frame. Performance mode turns it off.
 
-- **Base** `#191724` and **Overlay** `#26233a` drive the dark surfaces and glassmorphism
-- **Text** `#e0def4` provides primary legibility across backgrounds
-- Accents **Foam** `#9ccfd8`, **Iris** `#c4a7e7`, and **Gold** `#f6c177` are used for focus rings, metrics, and highlights
-- High contrast and reduced motion toggles reuse the same palette to meet accessibility preferences
-- CSS custom properties in `src/styles/globals.css` map directly to Rosé Pine reference values
+**Your data is yours.** Settings and stats live in localStorage, drafts in IndexedDB. One button exports everything to a JSON file, another restores it on a different machine. Reset stats and delete-everything buttons are in the same place.
 
-## Architecture
+**Phones work.** Quote Mode handles on-screen keyboards, composed input, and the keyboard inset. Zen Mode is desktop-first but fits.
 
-- **Astro islands** host React components such as `AboutPanel.tsx`, `StatsBar.tsx`, and `SettingsPanel.tsx`
-- **State Management** lives in hooks under `src/hooks/`, including motion preference detection and session state machines
-- **Utilities** in `src/utils/` handle Dexie-backed archives, quote hydration, web vitals logging, and preference schemas
-- **Testing** sits alongside components using Vitest and Testing Library for realistic interaction checks
+## Shortcuts
 
-## Getting Started
+| Key | Does |
+| --- | --- |
+| Tab | Switch mode (from the typing surface) |
+| Shift + Tab | Step back to the header |
+| Esc | Pause menu, with settings, drafts, progress, and about |
+| Ctrl / Cmd + D | Drafts |
+| Ctrl / Cmd + M | Sound on or off |
+| Ctrl / Cmd + P | Progress |
+| Ctrl + H | Help |
 
-### Prerequisites
+In Zen Mode, Space and Enter commit a word, and Backspace edits the word in progress.
 
-- Bun v1.0+
-- Node.js 18+ (only required for ecosystem tooling)
-- Modern browser with hardware acceleration enabled
+## Run it
 
-### Installation & Dev Server
+You need [Bun](https://bun.sh/).
 
 ```bash
-git clone https://github.com/jonathanreed/zen-type.git
-cd zen-type
-
 bun install
 bun run dev
 ```
 
-### Production Build & Preview
+The dev server runs on port 4321. `bun run build` writes a static site to `dist/`.
+
+## Verify it
 
 ```bash
-bun run build
-bun run preview
+bun run verify
 ```
 
-The build step emits an optimized static bundle with on-demand React islands, manual Rollup chunks, and image service support.
+That runs the type check, the linter, the unit tests, and the browser tests in that order. The browser tests build the site, serve `dist/` from a small Bun static server, and drive it with Playwright in a desktop project and a Pixel 7 project. The first run needs the Chromium build:
 
-## Scripts
+```bash
+bunx playwright install chromium
+```
 
-- `bun run dev` – Astro dev server with HMR and Bun runtime
-- `bun run build` – Production bundle targeting static output
-- `bun run preview` – Serve the built site locally for smoke testing
-- `bun run lint` – ESLint with Astro, React, and accessibility presets
-- `bun run check` – `astro check` type-safety and content validation
-- `bun run test` / `bun run test:run` / `bun run test:coverage` – Vitest suites for components and utilities
+The individual steps are `bun run check`, `bun run lint`, `bun run test:run`, and `bun run test:e2e`. Set `E2E_SKIP_BUILD=1` to run the browser tests against whatever is already in `dist/`.
 
-## Project Structure
+`bun run health` is the slower maintenance pass: the dependency audit, knip for dead code and unused packages, oxlint, and react-doctor.
+
+There is no CI. Run `verify` before you push; a push to `main` deploys.
+
+## How it is built
+
+Astro 7 renders the pages as static HTML. The interactive parts are React 19 islands mounted with `client:only`, which means each island is its own React root and they talk to each other through custom events on `window` (`settingsChanged`, `togglePause`, `newQuote`, `resetSession`, and friends). Settings go through one store in `src/utils/storage.ts` that every island reads with `useSyncExternalStore`.
+
+The typing engine in Quote Mode is a reducer. Each keystroke is applied against the latest state, so a burst of key repeats or a word composed on a phone keyboard cannot land on a stale cursor.
+
+The ambient scenes are one fragment shader in `src/lib/ambient/shader.ts` with a scene per theme, rendered by `src/lib/ambient/renderer.ts` at a capped frame rate and reduced resolution.
+
+Tailwind 3 with the palette exposed through CSS variables, so the theme can change at runtime and opacity modifiers like `bg-tint/20` still work.
 
 ```text
 src/
-├── components/      # React islands (Overlays, StatsBar, SettingsPanel, etc.)
-├── hooks/           # Motion preference, session logic, and timers
-├── pages/           # Astro surfaces: zen.astro, quote.astro, and supporting routes
-├── styles/          # globals.css contains Rosé Pine tokens and Tailwind layers
-├── types/           # Ambient type declarations (e.g., Astro font modules)
-└── utils/           # Storage, quotes, export, and performance helpers
+  components/    React islands and the shadcn-style primitives they use
+  hooks/         useSettings, useKeyboardInset, useMotionPreference
+  lib/           ambient shader and renderer, the Dexie draft store
+  pages/         index, quote, zen, about, privacy, contact, subprocessors, whats-new, 404
+  styles/        globals.css: tokens, themes, and the few components that are pure CSS
+  utils/         storage, quotes, audio engine, backup, share card, live stats
+e2e/             Playwright specs and helpers
+scripts/         the static server the browser tests use
+public/          quotes.json, fonts, icons, llms.txt
 ```
 
-## Accessibility
+## Quotes
 
-- **Keyboard first**: full tab navigation, skip links, and visible focus states
-- **Screen reader friendly**: live regions and ARIA descriptors cover both typing modes
-- **Motion sensitivity**: `useMotionPreference()` disables non-essential animations when reduced motion is requested
-- **High contrast**: a high contrast toggle raises color contrast using the Rosé Pine Love and Foam values
-
-## Contribution Guide
-
-1. Fork and branch from `main`
-2. `bun run lint` and `bun run test:run` before opening a PR
-3. Keep Rosé Pine theming consistent by reusing CSS custom properties
-4. Document new keyboard shortcuts or overlays directly in this README
+`public/quotes.json` is generated by `scripts/quotes/build_quotes.py`, which holds the hand-picked list. The candidates it was picked from came out of `scripts/quotes/extract.py`, which downloads public-domain editions from Project Gutenberg and pulls out sentences that stand on their own. Every entry has an author and a source. If you have a quote to suggest, send the quote, the author, and the edition it comes from through the [contact page](https://zentype.jonathanrreed.com/contact/).
 
 ## License
 
-This project is licensed under the MIT License.
+MIT. See [LICENSE](LICENSE).
 
-## Acknowledgements
-
-- **Rosé Pine** for the color palette
-- **Astro** for the application framework
-- **React** for island interactivity
-- **Tailwind CSS** for utility styling
-- **Bun** for the development runtime
-
----
+The palette is [Rosé Pine](https://rosepinetheme.com/).

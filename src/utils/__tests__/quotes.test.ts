@@ -13,10 +13,10 @@ const sample: Quote[] = [
 
 describe('quoteLength', () => {
   it('buckets by character count', () => {
-    expect(quoteLength('x'.repeat(70))).toBe('short');
-    expect(quoteLength('x'.repeat(71))).toBe('medium');
-    expect(quoteLength('x'.repeat(110))).toBe('medium');
-    expect(quoteLength('x'.repeat(111))).toBe('long');
+    expect(quoteLength('x'.repeat(60))).toBe('short');
+    expect(quoteLength('x'.repeat(61))).toBe('medium');
+    expect(quoteLength('x'.repeat(90))).toBe('medium');
+    expect(quoteLength('x'.repeat(91))).toBe('long');
   });
 });
 

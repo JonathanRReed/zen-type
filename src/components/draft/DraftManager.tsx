@@ -31,7 +31,7 @@ interface DraftManagerProps {
   onClose: () => void;
 }
 
-export const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
+const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [currentDraft, setCurrentDraft] = useState<Draft | null>(null);
   const [prefs, setPrefs] = useState<DraftPrefs>(() => getDraftPrefs());

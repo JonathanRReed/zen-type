@@ -106,15 +106,3 @@ export function checkGrammar(text: string): GrammarIssue[] {
   return issues;
 }
 
-export function getIssuesInRange(
-  issues: GrammarIssue[],
-  startIndex: number,
-  endIndex: number
-): GrammarIssue[] {
-  return issues.filter(
-    issue =>
-      (issue.startIndex >= startIndex && issue.startIndex < endIndex) ||
-      (issue.endIndex > startIndex && issue.endIndex <= endIndex) ||
-      (issue.startIndex <= startIndex && issue.endIndex >= endIndex)
-  );
-}

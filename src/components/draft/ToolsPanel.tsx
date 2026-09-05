@@ -19,7 +19,7 @@ const SHORTCUTS = {
   save: '⌘S',
 };
 
-export const ToolsPanel: React.FC<ToolsPanelProps> = ({
+const ToolsPanel: React.FC<ToolsPanelProps> = ({
   isOpen,
   onClose,
   prefs,

@@ -28,7 +28,7 @@ import {
   type DraftPrefs,
 } from '../lib/draftStore';
 
-export const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 1;
 
 export interface Backup {
   app: 'zen-typer';

@@ -4,7 +4,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 
-export interface HelpSheetBodyProps {
+interface HelpSheetBodyProps {
   /** Owned by the shell, which keeps the `toggleHelp` and Ctrl+H listeners eager. */
   open: boolean;
   onClose: () => void;
@@ -123,6 +123,10 @@ const HelpSheetBody = React.memo((props: HelpSheetBodyProps) => {
               <div className="flex items-center justify-between">
                 <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Ctrl / Cmd + M</kbd>
                 <span className="text-text">Toggle audio sound effects</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Ctrl / Cmd + P</kbd>
+                <span className="text-text">Open Progress</span>
               </div>
               <div className="flex items-center justify-between">
                 <kbd className="px-3 py-1.5 bg-surface rounded font-mono text-sm">Ctrl + H</kbd>

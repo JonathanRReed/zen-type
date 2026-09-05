@@ -11,7 +11,7 @@ interface VersionHistoryProps {
   onRestore: (snapshotId: string) => void;
 }
 
-export const VersionHistory: React.FC<VersionHistoryProps> = ({
+const VersionHistory: React.FC<VersionHistoryProps> = ({
   isOpen,
   onClose,
   snapshots,

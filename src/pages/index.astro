@@ -42,10 +42,12 @@ const webApplicationJsonLd = {
 		availability: "https://schema.org/InStock",
 	},
 	featureList: [
-		"Quote typing test with live WPM and accuracy",
-		"Free-flow Zen Mode for open writing practice",
-		"Session stats, streaks, and drafts stored in the browser",
-		"Keyboard-first controls with reduced-motion support",
+		"Quote typing test with live WPM and accuracy on 322 public-domain quotes",
+		"Free-flow Zen Mode with drafts and an optional timed flow",
+		"Progress calendar, day streak, and session history",
+		"Synthesized keyboard sounds and ambient beds, off by default",
+		"Eight themes with WebGL ambient scenes and reduced-motion support",
+		"Backup and restore of all data as one file; nothing leaves the browser",
 	],
 	creator: { "@id": `${homeUrl}#creator` },
 	publisher: { "@id": `${homeUrl}#creator` },
@@ -236,8 +238,12 @@ const webApplicationJsonLd = {
 							Aurora, Glacier).
 						</li>
 						<li>
-							Sessions export as JSON, CSV, TXT, PNG, or SVG. Free, no
-							account, and nothing is sent to a server.
+							Optional keyboard sounds and ambient rain, wind, or fire,
+							synthesized in the browser and off until you turn them on.
+						</li>
+						<li>
+							Back everything up to one file and restore it anywhere.
+							Free, no account, and nothing is sent to a server.
 						</li>
 					</ul>
 					<div class="flex flex-wrap gap-4 text-sm">
@@ -282,10 +288,10 @@ const webApplicationJsonLd = {
 					<div>
 						<h3 class="font-semibold text-text">What is stored</h3>
 						<p>
-							Settings, session stats, streaks, archived sessions, and Zen
-							Mode drafts are written to your browser's local storage and
-							IndexedDB. There is no account and no sync, so clearing site
-							data for this domain removes them. See the
+							Settings, session stats, the day streak, your last 500
+							sessions, and Zen Mode drafts are written to your browser's
+							local storage and IndexedDB. There is no account and no sync,
+							so clearing site data for this domain removes them. See the
 							<a class="text-foam transition-colors hover:text-text" href="/privacy/">privacy notice</a>
 							for the full detail.
 						</p>

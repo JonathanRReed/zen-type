@@ -12,7 +12,7 @@ interface SearchBoxProps {
   totalMatches: number;
 }
 
-export const SearchBox: React.FC<SearchBoxProps> = ({
+const SearchBox: React.FC<SearchBoxProps> = ({
   isOpen,
   onClose,
   onSearch,

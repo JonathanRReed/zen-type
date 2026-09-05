@@ -1,65 +1,45 @@
 # Zen Typer
 
-> Zen Typer is a mindful typing app built with Astro 7 and React 19. Quote Mode is a typing test on short Zen quotes with live WPM and accuracy. Zen Mode is a free-flow writing canvas. The app uses the Rosé Pine color palette, runs entirely in the browser, and keeps keyboard access and reduced-motion support in the main workflow.
+> Zen Typer is a free typing app that runs entirely in the browser. Quote Mode is a typing test on short passages from public-domain books, with live WPM and accuracy. Zen Mode is an open writing canvas. There is no account and no server; settings, stats, and drafts stay on the device.
 
-Zen Typer is for practicing typing speed and accuracy without a game layer on top. What it does:
+Zen Typer is built and maintained by Jonathan R. Reed. It is meant for typing practice without a leaderboard or a timer counting down at you.
 
-- **Quote Mode**: Type short Zen quotes with live accuracy, WPM, and an error breakdown of slips, skips, and extras
-- **Zen Mode**: Free-flow typing where each committed word drifts upward as a token, with session persistence and draft management
-- **Design System**: Built on Rosé Pine palette with 8 theme presets (Void, Cosmic, Aurora, Ocean, Glacier, Forest, Ember, Sakura)
-- **Accessibility First**: Full keyboard navigation, screen reader support, reduced motion options, and high contrast mode
-- **Local Persistence**: All sessions, streaks, and preferences stored locally using IndexedDB via Dexie
+## What it does
+
+- Quote Mode: 322 quotes from 22 writers, every one from a public-domain edition with its source named. The clock starts on the first keystroke and stops on the last character. Backspace rewinds to the earliest uncorrected mistake. The result shows WPM, accuracy, and mistakes grouped as wrong keys, skips, and extras. The pool can be filtered by length and by tag, and custom text can be pasted in.
+- Zen Mode: free-flow typing where each finished word drifts up the canvas. Everything typed is saved as a draft that can be reopened, copied, or exported as Markdown. An optional timed flow of 5 to 60 minutes ends with a summary.
+- Progress: a calendar of practice days, the current streak, best WPM, average accuracy, and the last 500 sessions.
+- Sound, off by default: six synthesized keyboard switch profiles and four ambient beds (rain, wind, fire, drone), generated with Web Audio at runtime. No audio files are downloaded.
+- Themes: Void, Cosmic, Aurora, Ocean, Glacier, Forest, Ember, Sakura, built on the Rosé Pine palette. Each has a WebGL2 ambient scene that freezes under reduced motion.
+- Backups: one JSON file exports settings, stats, history, and drafts; the same file restores them on another device. Stats can be reset and all data deleted from settings.
+- Phones: Quote Mode works with on-screen keyboards and composed input.
 
 ## Canonical pages
 
 - [Homepage](https://zentype.jonathanrreed.com/): Pick a mode and start typing.
-- [Quote mode](https://zentype.jonathanrreed.com/quote/): Typing test on short Zen quotes with live WPM and accuracy.
-- [Zen mode](https://zentype.jonathanrreed.com/zen/): Free-flow writing canvas with drifting word tokens.
-- [About](https://zentype.jonathanrreed.com/about/): What the app is for and how it works.
-- [Privacy](https://zentype.jonathanrreed.com/privacy/): What stays in the browser, which is everything.
-- [Subprocessors](https://zentype.jonathanrreed.com/subprocessors/): Hosting and infrastructure disclosure.
-- [Contact](https://zentype.jonathanrreed.com/contact/): Bug reports and questions.
+- [Quote mode](https://zentype.jonathanrreed.com/quote/): The typing test.
+- [Zen mode](https://zentype.jonathanrreed.com/zen/): The writing canvas.
+- [What's new](https://zentype.jonathanrreed.com/whats-new/): Release notes.
+- [About](https://zentype.jonathanrreed.com/about/): Who built it and why.
+- [Privacy](https://zentype.jonathanrreed.com/privacy/): What is stored in the browser, and that nothing is sent anywhere.
+- [Subprocessors](https://zentype.jonathanrreed.com/subprocessors/): Hosting disclosure.
+- [Contact](https://zentype.jonathanrreed.com/contact/): Bug reports, accessibility issues, quote suggestions.
 - [Sitemap](https://zentype.jonathanrreed.com/sitemap-index.xml): Every indexable URL on the site.
-- [Creator](https://jonathanrreed.com/): Jonathan R. Reed's canonical site.
+- [Creator](https://jonathanrreed.com/): Jonathan R. Reed's site.
 
-## Key Features
+## How it is built
 
-- **Typing Modes**: Quote mode for guided practice and Zen mode for creative expression
-- **Performance Tracking**: Real-time WPM, accuracy percentage, and session history
-- **Theme System**: Multiple theme presets maintaining Rosé Pine core colors
-- **Accessibility**: WCAG compliant with keyboard navigation and screen reader support
-- **Data Persistence**: Local storage using IndexedDB for offline-first experience
+Astro 7 renders static pages. The interactive parts are React 19 islands. Styling is Tailwind over CSS variables holding the Rosé Pine tokens. Settings and stats are in localStorage; drafts are in IndexedDB through Dexie. The source is on GitHub under the MIT license.
 
-## Architecture
-
-The application uses Astro's islands architecture with React components for interactivity. Key components include:
-
-- `QuoteTyper.tsx`: Handles quote mode typing with accuracy tracking
-- `ZenCanvas.tsx`: Manages zen mode with floating tokens and session overlays
-- `StatsBar.tsx`: Displays real-time performance metrics
-- `SettingsPanel.tsx`: Manages user preferences and customization
-
-Storage is handled through `src/utils/storage.ts` using localStorage and IndexedDB (Dexie) for session persistence and analytics.
-
-Zen Typer is a standalone web application with no external APIs. All data is stored locally. The application can be integrated into other projects or deployed as a static site. For deployment, the build process generates optimized static files with code splitting and image optimization.
-
-## Technical Stack
-
-- [Astro Documentation](https://docs.astro.build/): Framework for building the application with islands architecture
-- [React Documentation](https://react.dev/): Component library used for interactive islands
-- [Tailwind CSS](https://tailwindcss.com/docs): Utility-first CSS framework for styling
-- [Rosé Pine](https://rosepinetheme.com/): Color palette and design system
-- [Bun](https://bun.sh/docs): JavaScript runtime and package manager
+- [Astro](https://docs.astro.build/)
+- [React](https://react.dev/)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [Rosé Pine](https://rosepinetheme.com/)
+- [Bun](https://bun.sh/docs)
 
 ## Policies
 
 - [robots.txt](https://zentype.jonathanrreed.com/robots.txt): The machine-readable version of everything below (Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference). If the two disagree, robots.txt governs.
-- **Search: allowed.** You may index this site and return hyperlinks and short excerpts in search results.
-- **AI answers and grounding: allowed.** You may retrieve this content in real time as input to AI answers, retrieval-augmented generation, and grounded search summaries, with attribution and a link back.
-- **AI training: not allowed.** You may not use this content to train or fine-tune AI models. This is an express reservation of rights under Article 4 of EU Directive 2019/790.
-
-## Optional
-
-- [Vitest Documentation](https://vitest.dev/): Testing framework used for component and utility tests
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/): Type system used throughout the codebase
-- [Dexie.js Documentation](https://dexie.org/): IndexedDB wrapper for session storage
+- Search: allowed. You may index this site and return hyperlinks and short excerpts in search results.
+- AI answers and grounding: allowed. You may retrieve this content in real time as input to AI answers, retrieval-augmented generation, and grounded search summaries, with attribution and a link back.
+- AI training: not allowed. You may not use this content to train or fine-tune AI models. This is an express reservation of rights under Article 4 of EU Directive 2019/790.
