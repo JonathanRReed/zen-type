@@ -26,6 +26,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   }, []);
 
   useEffect(() => {
+    if (!showQuick) return;
     const handleClickAway = (event: MouseEvent) => {
       const wrapper = quickWrapperRef.current;
       if (!wrapper) return;
@@ -36,17 +37,23 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        // Capture + stop so the page-level Esc handler doesn't also open the
+        // pause menu on the same keypress. Focus returns to the trigger
+        // because the menu's controls unmount.
+        event.preventDefault();
+        event.stopPropagation();
         setShowQuick(false);
+        quickWrapperRef.current?.querySelector('button')?.focus();
       }
     };
 
     window.addEventListener('mousedown', handleClickAway);
-    window.addEventListener('keydown', handleEscape);
+    window.addEventListener('keydown', handleEscape, true);
     return () => {
       window.removeEventListener('mousedown', handleClickAway);
-      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('keydown', handleEscape, true);
     };
-  }, []);
+  }, [showQuick]);
 
   const _updateSetting = (key: keyof Settings, value: boolean) => {
     updateSettings({ [key]: value } as Partial<Settings>);
@@ -72,9 +79,10 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
         : 'border-muted/30 text-muted hover:text-text hover:border-muted/50'
     }`;
 
-  // Phones get icon-only pills; the labels come back from the sm breakpoint.
+  // Icon-only pills until lg: the full labeled set needs ~950px, so labels at
+  // sm made the row overlap between 640-1024px. Labels return where they fit.
   const primaryButtonClass =
-    'group inline-flex items-center justify-center gap-2 h-11 w-11 sm:w-auto sm:px-5 sm:min-w-[10rem] rounded-xl border border-tint/25 bg-[color:var(--rp-surface)]/45 text-sm font-medium text-tint transition-colors shadow-[0_8px_20px_-16px_color-mix(in_oklab,var(--theme-accent)_45%,transparent)] hover:bg-[color:var(--rp-surface)]/60 hover:border-tint/45 hover:text-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tint/55';
+    'group inline-flex items-center justify-center gap-2 h-11 w-11 lg:w-auto lg:px-5 lg:min-w-[10rem] rounded-xl border border-tint/25 bg-[color:var(--rp-surface)]/45 text-sm font-medium text-tint transition-colors shadow-[0_8px_20px_-16px_color-mix(in_oklab,var(--theme-accent)_45%,transparent)] hover:bg-[color:var(--rp-surface)]/60 hover:border-tint/45 hover:text-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tint/55';
 
   const quickSettingIcons = {
     reducedMotion: (
@@ -157,7 +165,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 px-3 py-3 sm:px-6 sm:py-5 bg-base/80 backdrop-blur-md pt-[max(0.75rem,env(safe-area-inset-top))]">
-      <div className="flex flex-nowrap items-center justify-between gap-2 sm:gap-4 md:gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-4 md:gap-x-6">
         <div className="flex flex-nowrap items-center gap-2 sm:gap-3 min-w-0">
           <nav aria-label="Mode toggle" className="flex items-center gap-2">
             <a
@@ -239,7 +247,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                     strokeLinecap="round"
                   />
                 </svg>
-                <span className="font-medium hidden sm:inline">Drafts</span>
+                <span className="font-medium hidden lg:inline">Drafts</span>
               </span>
             </Button>
           )}
@@ -250,6 +258,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
               type="button"
               className={primaryButtonClass}
               variant="outline"
+              aria-label="New quote"
               onClick={() => window.dispatchEvent(new CustomEvent('newQuote'))}
             >
               <span className="relative z-10 flex items-center gap-2 text-sm tracking-wide">
@@ -276,7 +285,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span className="font-medium hidden sm:inline">New quote</span>
+                <span className="font-medium hidden lg:inline">New quote</span>
               </span>
             </Button>
           )}
@@ -304,13 +313,13 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                   <path d="M12 20h9" />
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                 </svg>
-                <span className="font-medium hidden sm:inline">Custom</span>
+                <span className="font-medium hidden lg:inline">Custom</span>
               </span>
             </Button>
           )}
         </div>
 
-        <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2.5 justify-end shrink-0">
+        <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2.5 justify-end shrink-0 ml-auto">
           {/* Auto next lives on the completion card too, so on a phone the
               header pill can go; eight pills do not fit a 390px row. */}
           {mode === 'quote' && (
@@ -365,7 +374,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
           <Button
             type="button"
             variant="outline"
-            className={`${primaryButtonClass} uppercase tracking-[0.26em] text-[0.72rem] font-semibold sm:px-6 sm:min-w-[9rem] justify-center`}
+            className={`${primaryButtonClass} uppercase tracking-[0.26em] text-[0.72rem] font-semibold lg:px-6 lg:min-w-[9rem] justify-center`}
             aria-label="Open settings menu"
             onClick={() => window.dispatchEvent(new CustomEvent('togglePause', { detail: true }))}
           >
@@ -386,7 +395,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
                 />
                 <circle cx="9" cy="9" r="1.9" stroke="currentColor" strokeWidth="1.2" />
               </svg>
-              <span className="hidden sm:inline">Settings</span>
+              <span className="hidden lg:inline">Settings</span>
             </span>
           </Button>
 
@@ -419,7 +428,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
             {showQuick && (
               <div
                 role="menu"
-                className="glass absolute top-12 right-0 z-50 rounded-2xl p-6 w-72 shadow-xl border border-muted/30 text-sm flex flex-col gap-4"
+                className="glass absolute top-12 right-0 z-50 rounded-2xl p-6 w-72 max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain shadow-xl border border-muted/30 text-sm flex flex-col gap-4"
                 aria-label="Quick settings"
               >
                 <div className="space-y-2">

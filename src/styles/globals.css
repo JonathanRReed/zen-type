@@ -95,12 +95,18 @@ h4 {
   text-wrap: balance;
 }
 
-.glass {
-  background: color-mix(in oklab, var(--rp-surface) 80%, transparent);
-  backdrop-filter: blur(var(--blur));
-  box-shadow: var(--shadow-soft);
-  border: 1px solid color-mix(in oklab, var(--theme-accent) 13%, transparent);
-  position: relative;
+/* In the components layer so positioning utilities can override it: an
+   unlayered `.glass` used to beat `.absolute`/`.fixed` from the utilities
+   layer, which kept dropdowns in flow and blew the header open. The default
+   `position: relative` stays for the ::before sheen on static glass cards. */
+@layer components {
+  .glass {
+    background: color-mix(in oklab, var(--rp-surface) 80%, transparent);
+    backdrop-filter: blur(var(--blur));
+    box-shadow: var(--shadow-soft);
+    border: 1px solid color-mix(in oklab, var(--theme-accent) 13%, transparent);
+    position: relative;
+  }
 }
 
 /* Enhanced glassmorphism with inner glow and noise texture */
@@ -1176,18 +1182,9 @@ html[data-kb="open"] footer.fixed {
   container-type: inline-size;
 }
 
-@container zen-shell (max-width: 900px) {
-  header.fixed {
-    flex-wrap: wrap;
-    gap: 1.25rem;
-  }
-
-  header.fixed>div:last-child {
-    width: 100%;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-}
+/* The header row wraps via `flex-wrap` + `ml-auto` on the trailing group, so
+   no container query is needed here. (The old one targeted `header.fixed`,
+   which is a block element — the flex row is its child — so it never ran.) */
 
 /* Phones: the stats bar stays pinned above the footer, just tighter. */
 @container (max-width: 720px) {

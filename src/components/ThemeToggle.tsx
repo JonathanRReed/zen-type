@@ -168,12 +168,12 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
           <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
-        <span className="hidden sm:inline" suppressHydrationWarning>{theme}</span>
+        <span className="hidden lg:inline" suppressHydrationWarning>{theme}</span>
       </IconButton>
 
       {isOpen && (
         <div className="absolute top-full mt-2 right-0 z-50" role="menu" aria-label="Color themes">
-          <div className="glass rounded-lg p-2 min-w-[140px]">
+          <div className="glass rounded-lg p-2 min-w-[140px] max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain">
             {themes.map((t) => (
               <Button
                 key={t}
