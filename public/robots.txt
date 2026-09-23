@@ -1,6 +1,6 @@
 # ---------------------------------------------------------------------------
-# robots.txt — policy: search YES / AI grounding YES / AI training NO
-# Last reviewed: 2026-08-04
+# robots.txt — policy: search YES / AI grounding YES / Google-Extended training YES
+# Last reviewed: 2026-09-22
 #
 # As a condition of accessing this website, you agree to abide by the
 # following content signals:
@@ -29,7 +29,7 @@
 # AND RELATED RIGHTS IN THE DIGITAL SINGLE MARKET.
 # ---------------------------------------------------------------------------
 
-# === DEFAULT: everything may crawl; search + AI grounding granted, training refused
+# === DEFAULT: search + AI grounding allowed; training refused except Google-Extended
 User-agent: *
 Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
@@ -131,11 +131,14 @@ Disallow: /
 User-agent: ClaudeBot
 Disallow: /
 
-# Google — controls BOTH Gemini training AND Gemini Apps / Vertex grounding;
-# no token splits them. Training-no wins per site policy. This has NO effect
-# on Google Search, AI Overviews, or AI Mode (governed by Googlebot access).
+# Google-Extended controls Gemini Apps / Vertex grounding and Gemini training.
+# The owner allows those uses. Google Search still uses Googlebot separately.
 User-agent: Google-Extended
-Disallow: /
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+Disallow: /search/
+Disallow: /*?s=
+Disallow: /*?q=
 
 # Apple training opt-out. Does not crawl; Applebot itself stays allowed via "*".
 User-agent: Applebot-Extended
