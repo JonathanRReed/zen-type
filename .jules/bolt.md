@@ -1,0 +1,3 @@
+## 2025-05-18 - RegExp Re-compilation & O(N^2) Array Slicing in Grammar Check
+**Learning:** In text processing functions called frequently during typing (such as `checkGrammar`), creating `RegExp` instances inside function scope re-compiles regexes and allocates memory on every keypress/render. Additionally, using `split(/\b/)` with `words.slice(0, i).join('')` inside loops creates $O(N^2)$ complexity.
+**Action:** Always compile global `RegExp` objects at module scope (taking care to reset `.lastIndex = 0` before `exec()` loops) and use $O(N)$ regex pattern matching for duplicate word detection.
