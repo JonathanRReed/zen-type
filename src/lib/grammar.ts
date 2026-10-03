@@ -25,6 +25,12 @@ const COMMON_PAST_PARTICIPLES = [
   'designed', 'implemented', 'tested', 'approved', 'rejected', 'accepted',
 ];
 
+// Pre-compiled regex for passive voice check to avoid compiling on every call to checkGrammar
+const PASSIVE_PATTERN = new RegExp(
+  `\\b(${PASSIVE_INDICATORS.join('|')})\\s+(\\w+ed|\\w+en|${COMMON_PAST_PARTICIPLES.join('|')})\\b`,
+  'gi'
+);
+
 export function checkGrammar(text: string): GrammarIssue[] {
   const issues: GrammarIssue[] = [];
 
@@ -72,15 +78,13 @@ export function checkGrammar(text: string): GrammarIssue[] {
     }
   }
 
-  // Check for passive voice patterns
+  // Check for passive voice patterns using pre-compiled regex
+  // Reset lastIndex because RegExp with 'g' flag retains lastIndex across calls
+  PASSIVE_PATTERN.lastIndex = 0;
   const lowerText = text.toLowerCase();
-  const passivePattern = new RegExp(
-    `\\b(${PASSIVE_INDICATORS.join('|')})\\s+(\\w+ed|\\w+en|${COMMON_PAST_PARTICIPLES.join('|')})\\b`,
-    'gi'
-  );
 
   let match;
-  while ((match = passivePattern.exec(lowerText)) !== null) {
+  while ((match = PASSIVE_PATTERN.exec(lowerText)) !== null) {
     const startIndex = match.index;
     const endIndex = startIndex + (match[0]?.length || 0);
 
@@ -105,4 +109,3 @@ export function checkGrammar(text: string): GrammarIssue[] {
 
   return issues;
 }
-
