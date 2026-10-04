@@ -43,3 +43,17 @@ for (const closeWith of ['Escape', 'button']) {
     expect(document.activeElement).toBe(editor);
   });
 }
+
+it('handles Escape without closing the surrounding draft workspace', () => {
+  act(() => root.render(surface(true)));
+  const query = host.querySelector<HTMLInputElement>('[aria-label="Search in draft"]')!;
+  const surroundingShortcut = vi.fn();
+  window.addEventListener('keydown', surroundingShortcut);
+  try {
+    act(() => query.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(host.querySelector('[aria-label="Search in draft"]')).toBeNull();
+    expect(surroundingShortcut).not.toHaveBeenCalled();
+  } finally {
+    window.removeEventListener('keydown', surroundingShortcut);
+  }
+});
