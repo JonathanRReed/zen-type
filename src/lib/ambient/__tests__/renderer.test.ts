@@ -19,3 +19,8 @@ describe('resolveColor', () => {
     expect(probes.length).toBe(1);
   });
 });
+
+it('does not reuse the previous color when the next CSS value is invalid', () => {
+  resolveColor('rgb(255, 0, 0)', [0, 0, 0]);
+  expect(resolveColor('not-a-css-color', [0.1, 0.2, 0.3])).toEqual([0.1, 0.2, 0.3]);
+});
