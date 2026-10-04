@@ -142,7 +142,8 @@ export function findInText(text: string, query: string, caseSensitive: boolean =
       scanIndex++;
     }
 
-    const column = index - (lastNewlineIndex + 1);
+    // substring(0, index) previously clamped offsets to the source length.
+    const column = Math.min(index, text.length) - (lastNewlineIndex + 1);
 
     matches.push({
       index,
