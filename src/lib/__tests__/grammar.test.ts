@@ -41,3 +41,27 @@ describe('checkGrammar', () => {
     expect(checkGrammar(text)).toEqual([]);
   });
 });
+
+describe('repeated grammar checks', () => {
+  it('resets every shared expression between alternating inputs', () => {
+    const text = 'The the code was written. It  works.';
+    const expected = checkGrammar(text);
+    expect(expected.map(issue => issue.type)).toEqual(['duplicate-word', 'passive-voice', 'extra-space']);
+    for (let index = 0; index < 20; index++) {
+      expect(checkGrammar('')).toEqual([]);
+      expect(checkGrammar('Developers write clean code.')).toEqual([]);
+      expect(checkGrammar(text)).toEqual(expected);
+    }
+  });
+
+  it('preserves offsets and the original spelling for repeated words', () => {
+    const text = 'Hello, The the world.';
+    const issue = checkGrammar(text).find(item => item.type === 'duplicate-word');
+    expect(issue).toMatchObject({ startIndex: 7, endIndex: 14, suggestion: 'The' });
+    expect(text.slice(issue!.startIndex, issue!.endIndex)).toBe('The the');
+  });
+
+  it('does not join distinct words or words separated by punctuation', () => {
+    expect(checkGrammar('there then. The, the.')).toEqual([]);
+  });
+});
