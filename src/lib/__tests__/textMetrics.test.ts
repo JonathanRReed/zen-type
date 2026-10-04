@@ -100,3 +100,14 @@ describe('extractOutline', () => {
     ]);
   });
 });
+
+// Preserve the legacy substring clamp when Unicode case folding expands a
+// character. Mapping folded match indices back to source indices is separate.
+it('keeps columns bounded by the source line after case-fold expansion', () => {
+  const matches = findInText('İİİxxx', 'x');
+  expect(matches.map(({ column }) => column)).toEqual([6, 6, 6]);
+  const multiline = findInText('a\nİİİxxx', 'x');
+  expect(multiline.map(({ line, column }) => ({ line, column }))).toEqual([
+    { line: 1, column: 6 }, { line: 1, column: 6 }, { line: 1, column: 6 },
+  ]);
+});
