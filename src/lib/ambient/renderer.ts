@@ -17,6 +17,7 @@ export interface AmbientOptions {
 }
 
 const UNIFORMS = ['uRes', 'uTime', 'uCursor', 'uEnergy', 'uTheme', 'uBase', 'uAccent', 'uAccent2', 'uText'] as const;
+const PALETTE_KEYS = ['base', 'accent', 'accent2', 'text'] as const;
 type UniformName = typeof UNIFORMS[number];
 
 /**
@@ -122,19 +123,29 @@ export class AmbientRenderer {
   }
 
   setOptions(options: Partial<AmbientOptions>): void {
-    const wasMotion = this.options.motion;
+    const previous = this.options;
     this.options = { ...this.options, ...options };
-    if (options.scale !== undefined) this.resize();
-    if (wasMotion !== this.options.motion) {
-      if (this.options.motion) this.start(); else this.renderOnce();
+    const resized = previous.scale !== this.options.scale && this.resizeBuffer();
+    // Initial configuration must not paint with incomplete theme/size settings.
+    if (!this.drawn) return;
+    if (this.options.motion) {
+      if (resized) this.draw((performance.now() - this.startAt) / 1000, 0);
+      if (!previous.motion) this.start();
+    } else if (previous.motion || resized) {
+      this.renderOnce();
     }
   }
 
   setTheme(theme: number, palette: AmbientPalette): void {
+    const unchanged = theme === this.theme && PALETTE_KEYS.every(key =>
+      palette[key].every((value, index) => value === this.palette[key][index]),
+    );
+    if (unchanged) return;
     this.theme = theme;
     this.palette = palette;
+    if (!this.drawn) return;
     if (!this.options.motion) this.renderOnce();
-    else if (this.drawn) this.draw((performance.now() - this.startAt) / 1000, 0);
+    else this.draw((performance.now() - this.startAt) / 1000, 0);
   }
 
   setCursor(x: number, y: number): void {
@@ -146,23 +157,27 @@ export class AmbientRenderer {
   }
 
   resize(): void {
+    if (!this.resizeBuffer() || !this.drawn) return;
+    // Changing the buffer size clears it to black. Repaint straight away
+    // rather than waiting on an animation frame that a hidden tab never gets.
+    if (!this.options.motion) this.renderOnce();
+    else this.draw((performance.now() - this.startAt) / 1000, 0);
+  }
+
+  private resizeBuffer(): boolean {
     const gl = this.gl;
-    if (!gl) return;
+    if (!gl) return false;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const cssW = this.canvas.clientWidth || window.innerWidth;
     const cssH = this.canvas.clientHeight || window.innerHeight;
     const scale = this.options.scale * dpr;
     const width = Math.max(64, Math.min(1400, Math.round(cssW * scale)));
     const height = Math.max(64, Math.round(cssH * scale));
-    if (this.canvas.width !== width || this.canvas.height !== height) {
-      this.canvas.width = width;
-      this.canvas.height = height;
-    }
+    if (this.canvas.width === width && this.canvas.height === height) return false;
+    this.canvas.width = width;
+    this.canvas.height = height;
     gl.viewport(0, 0, width, height);
-    // Changing the buffer size clears it to black. Repaint straight away
-    // rather than waiting on an animation frame that a hidden tab never gets.
-    if (!this.options.motion) this.renderOnce();
-    else if (this.drawn) this.draw((performance.now() - this.startAt) / 1000, 0);
+    return true;
   }
 
   start(): void {

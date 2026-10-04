@@ -48,8 +48,11 @@ const AmbientLayer: React.FC = () => {
     if (import.meta.env.DEV) {
       (window as unknown as { __ambient?: AmbientRenderer }).__ambient = renderer;
     }
-    renderer.resize();
     renderer.setTheme(THEME_INDEX[theme], readPalette(theme));
+    const small = window.innerWidth < 720;
+    // Configure the first frame before starting; readiness only controls its fade-in.
+    renderer.setOptions({ motion, fps: small ? 24 : 30, scale: small ? 0.45 : 0.5 });
+    renderer.resize();
     renderer.start();
 
     const onResize = () => renderer.resize();
@@ -75,7 +78,7 @@ const AmbientLayer: React.FC = () => {
       renderer.dispose();
       rendererRef.current = null;
     };
-    // The theme is read once here; later changes go through the effect below.
+    // Initial preferences are read once; later changes go through the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -88,7 +91,7 @@ const AmbientLayer: React.FC = () => {
     apply();
     const timer = window.setTimeout(apply, 120);
     return () => window.clearTimeout(timer);
-  }, [theme, ready]);
+  }, [theme]);
 
   useEffect(() => {
     const renderer = rendererRef.current;
@@ -99,8 +102,7 @@ const AmbientLayer: React.FC = () => {
       fps: small ? 24 : 30,
       scale: small ? 0.45 : 0.5,
     });
-    renderer.start();
-  }, [motion, ready]);
+  }, [motion]);
 
   return (
     <canvas
