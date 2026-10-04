@@ -27,7 +27,13 @@ const SearchBox: React.FC<SearchBoxProps> = ({
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
+      const previousFocus = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
       inputRef.current.focus();
+      return () => {
+        if (previousFocus?.isConnected) previousFocus.focus();
+      };
     }
   }, [isOpen]);
 
