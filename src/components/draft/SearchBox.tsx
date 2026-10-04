@@ -35,6 +35,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
         if (previousFocus?.isConnected) previousFocus.focus();
       };
     }
+    return undefined;
   }, [isOpen]);
 
   const handleQueryChange = (val: string) => {
