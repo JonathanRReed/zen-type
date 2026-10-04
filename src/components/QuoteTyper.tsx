@@ -165,10 +165,18 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
   const composingRef = useRef(false);
   const handledKeydownAtRef = useRef(0);
   const completedAtRef = useRef<number | null>(null);
-  // Cumulative metrics across consecutive quotes in one sitting
-  const [sittingTimeSec, setSittingTimeSec] = useState(0);
-  const [sittingCorrect, setSittingCorrect] = useState(0);
-  const [sittingTotal, setSittingTotal] = useState(0);
+  // Keep the completion marker with its totals so the displayed current quote
+  // contributes exactly once, both before and after completion effects run.
+  const [sitting, setSitting] = useState({
+    timeSec: 0, correct: 0, total: 0, completedAt: null as number | null,
+  });
+  const currentAlreadyCounted = isComplete && ts.endedAt !== null && sitting.completedAt === ts.endedAt;
+  const sittingCorrect = sitting.correct + (currentAlreadyCounted ? 0 : correctChars);
+  const sittingTotal = sitting.total + (currentAlreadyCounted ? 0 : totalTyped);
+  const completedElapsedSec = startTime && endTime
+    ? Math.max(0, Math.floor((endTime.getTime() - startTime.getTime()) / 1000))
+    : 0;
+  const sittingTimeSec = sitting.timeSec + (currentAlreadyCounted ? 0 : completedElapsedSec);
   const quotesRef = useRef<Quote[]>([]);
   const activeRef = useRef(active);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
@@ -330,11 +338,11 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
   useEffect(() => {
     if (!startTime) return;
     const tick = () => {
-      const elapsedSec = Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000));
-      const totalSec = sittingTimeSec + elapsedSec;
+      const elapsedSec = Math.max(0, Math.floor(((endTime?.getTime() ?? Date.now()) - startTime.getTime()) / 1000));
+      const totalSec = sitting.timeSec + (currentAlreadyCounted ? 0 : elapsedSec);
       const minutes = Math.max(1 / 60, totalSec / 60);
-      const aggCorrect = sittingCorrect + correctChars;
-      const aggTyped = sittingTotal + totalTyped;
+      const aggCorrect = sittingCorrect;
+      const aggTyped = sittingTotal;
       publishLiveStats('quote', {
         time: totalSec,
         words: Math.floor(aggCorrect / 5),
@@ -348,7 +356,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     if (isComplete) return;
     const interval = window.setInterval(tick, 1000);
     return () => window.clearInterval(interval);
-  }, [startTime, isComplete, correctChars, totalTyped, sittingTimeSec, sittingCorrect, sittingTotal]);
+  }, [startTime, endTime, isComplete, currentAlreadyCounted, sitting.timeSec, sittingCorrect, sittingTotal]);
 
   useEffect(() => () => resetLiveStats('quote'), []);
 
@@ -411,9 +419,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     onComplete?.(summary);
 
     const elapsed = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 1000));
-    setSittingTimeSec(prev => prev + elapsed);
-    setSittingCorrect(prev => prev + ts.correct);
-    setSittingTotal(prev => prev + ts.total);
+    setSitting(prev => ({
+      timeSec: prev.timeSec + elapsed,
+      correct: prev.correct + ts.correct,
+      total: prev.total + ts.total,
+      completedAt: ts.endedAt,
+    }));
 
     // The one-time nudge toward sound, after the first finished quote.
     try {
@@ -783,8 +794,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
                 </div>
                 <div className="rounded-xl border border-tint/15 bg-surface/40 p-4">
                   <div className="text-xs uppercase tracking-widest text-muted/80 mb-2">This sitting</div>
-                  <div className="font-mono text-text/90">Characters: {sittingTotal + totalTyped}</div>
-                  <div className="font-mono text-text/90">Correct: {sittingCorrect + correctChars}</div>
+                  <div className="font-mono text-text/90">Characters: {sittingTotal}</div>
+                  <div className="font-mono text-text/90">Correct: {sittingCorrect}</div>
                   <div className="font-mono text-text/90">Time: {Math.floor((sittingTimeSec) / 60)}:{String(sittingTimeSec % 60).padStart(2, '0')}</div>
                 </div>
               </div>
