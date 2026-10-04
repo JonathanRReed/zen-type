@@ -36,9 +36,6 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
     useEffect(() => {
         const previousValue = previousValueRef.current;
 
-        // Skip animation if value hasn't changed
-        if (previousValue === value) return;
-
         // Check for reduced motion: the OS setting or the app's reactive setting hook
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const appReducedMotion = !!settings.reducedMotion;
@@ -46,9 +43,14 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
         if (prefersReducedMotion || appReducedMotion) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setDisplayValue(value);
+            setIsUpdating(false);
+            setIsImproving(false);
             previousValueRef.current = value;
             return;
         }
+
+        // A settings change must clear motion state even if the value is unchanged.
+        if (previousValue === value) return;
 
         // Determine if this is an improvement
         const improving = showImprovement && value > previousValue;

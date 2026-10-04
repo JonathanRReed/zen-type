@@ -248,14 +248,14 @@ let sharedProbe: HTMLSpanElement | null = null;
 
 function getSharedProbe(): HTMLSpanElement | null {
   if (typeof document === 'undefined' || !document.body) return null;
-  if (!sharedProbe) {
+  if (!sharedProbe || sharedProbe.ownerDocument !== document) {
     sharedProbe = document.createElement('span');
     sharedProbe.style.position = 'absolute';
     sharedProbe.style.opacity = '0';
     sharedProbe.style.pointerEvents = 'none';
     sharedProbe.style.visibility = 'hidden';
-    document.body.appendChild(sharedProbe);
   }
+  if (!sharedProbe.isConnected) document.body.appendChild(sharedProbe);
   return sharedProbe;
 }
 
@@ -267,7 +267,10 @@ export function resolveColor(cssValue: string, fallback: [number, number, number
   if (typeof document === 'undefined') return fallback;
   const probe = getSharedProbe();
   if (!probe) return fallback;
+  // Invalid assignments otherwise leave the previous successful color intact.
+  probe.style.color = '';
   probe.style.color = cssValue;
+  if (!probe.style.color) return fallback;
   const rgb = getComputedStyle(probe).color;
   const m = rgb.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/);
   if (!m) return fallback;
