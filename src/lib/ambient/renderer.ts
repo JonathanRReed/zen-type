@@ -44,7 +44,6 @@ export class AmbientRenderer {
   private cursorTarget: [number, number] = [0.5, 0.5];
   private energy = 0;
   private lost = false;
-  private dirty = true;
   private drawn = false;
   private options: AmbientOptions = { motion: true, fps: 30, scale: 0.5 };
   /** Called after the first frame lands, so the canvas can fade in over the CSS. */
@@ -119,7 +118,6 @@ export class AmbientRenderer {
     for (const name of UNIFORMS) this.uniforms.set(name, gl.getUniformLocation(program, name));
     this.vao = gl.createVertexArray();
     gl.bindVertexArray(this.vao);
-    this.dirty = true;
     return true;
   }
 
@@ -128,7 +126,6 @@ export class AmbientRenderer {
     this.options = { ...this.options, ...options };
     if (options.scale !== undefined) this.resize();
     if (wasMotion !== this.options.motion) {
-      this.dirty = true;
       if (this.options.motion) this.start(); else this.renderOnce();
     }
   }
@@ -136,7 +133,6 @@ export class AmbientRenderer {
   setTheme(theme: number, palette: AmbientPalette): void {
     this.theme = theme;
     this.palette = palette;
-    this.dirty = true;
     if (!this.options.motion) this.renderOnce();
     else if (this.drawn) this.draw((performance.now() - this.startAt) / 1000, 0);
   }
@@ -163,7 +159,6 @@ export class AmbientRenderer {
       this.canvas.height = height;
     }
     gl.viewport(0, 0, width, height);
-    this.dirty = true;
     // Changing the buffer size clears it to black. Repaint straight away
     // rather than waiting on an animation frame that a hidden tab never gets.
     if (!this.options.motion) this.renderOnce();
@@ -229,7 +224,6 @@ export class AmbientRenderer {
     gl.uniform3fv(this.uniforms.get('uAccent2') ?? null, this.palette.accent2);
     gl.uniform3fv(this.uniforms.get('uText') ?? null, this.palette.text);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    this.dirty = false;
     if (!this.drawn) {
       this.drawn = true;
       this.onFirstFrame?.();
@@ -250,17 +244,34 @@ export class AmbientRenderer {
   }
 }
 
-/** Resolve a CSS colour (any syntax) to 0..1 rgb via a probe element. */
+let sharedProbe: HTMLSpanElement | null = null;
+
+function getSharedProbe(): HTMLSpanElement | null {
+  if (typeof document === 'undefined' || !document.body) return null;
+  if (!sharedProbe || sharedProbe.ownerDocument !== document) {
+    sharedProbe = document.createElement('span');
+    sharedProbe.style.position = 'absolute';
+    sharedProbe.style.opacity = '0';
+    sharedProbe.style.pointerEvents = 'none';
+    sharedProbe.style.visibility = 'hidden';
+  }
+  if (!sharedProbe.isConnected) document.body.appendChild(sharedProbe);
+  return sharedProbe;
+}
+
+/**
+ * Resolve a CSS colour (any syntax) to 0..1 rgb via a single reused probe element.
+ * Reusing the probe element avoids DOM node allocation and insertion/removal layout thrashing.
+ */
 export function resolveColor(cssValue: string, fallback: [number, number, number]): [number, number, number] {
   if (typeof document === 'undefined') return fallback;
-  const probe = document.createElement('span');
+  const probe = getSharedProbe();
+  if (!probe) return fallback;
+  // Invalid assignments otherwise leave the previous successful color intact.
+  probe.style.color = '';
   probe.style.color = cssValue;
-  probe.style.position = 'absolute';
-  probe.style.opacity = '0';
-  probe.style.pointerEvents = 'none';
-  document.body.appendChild(probe);
+  if (!probe.style.color) return fallback;
   const rgb = getComputedStyle(probe).color;
-  document.body.removeChild(probe);
   const m = rgb.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/);
   if (!m) return fallback;
   return [Number(m[1]) / 255, Number(m[2]) / 255, Number(m[3]) / 255];

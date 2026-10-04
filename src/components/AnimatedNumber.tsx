@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useSettings } from '../hooks/useSettings';
 
 interface AnimatedNumberProps {
     value: number;
@@ -25,6 +26,7 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
     className = '',
     showImprovement = true,
 }) => {
+    const settings = useSettings();
     const [displayValue, setDisplayValue] = useState(value);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isImproving, setIsImproving] = useState(false);
@@ -34,27 +36,21 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
     useEffect(() => {
         const previousValue = previousValueRef.current;
 
-        // Skip animation if value hasn't changed
-        if (previousValue === value) return;
-
-        // Check for reduced motion: the OS setting or the app's own toggle.
-        // (The app flag used to be ignored here, so in-app Reduced Motion
-        // still animated the count-ups.)
+        // Check for reduced motion: the OS setting or the app's reactive setting hook
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        let appReducedMotion = false;
-        try {
-            const raw = localStorage.getItem('zt.settings');
-            appReducedMotion = !!raw && !!(JSON.parse(raw) as { reducedMotion?: boolean }).reducedMotion;
-        } catch {
-            appReducedMotion = false;
-        }
+        const appReducedMotion = !!settings.reducedMotion;
 
         if (prefersReducedMotion || appReducedMotion) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setDisplayValue(value);
+            setIsUpdating(false);
+            setIsImproving(false);
             previousValueRef.current = value;
             return;
         }
+
+        // A settings change must clear motion state even if the value is unchanged.
+        if (previousValue === value) return;
 
         // Determine if this is an improvement
         const improving = showImprovement && value > previousValue;
@@ -96,7 +92,7 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
                 cancelAnimationFrame(animationRef.current);
             }
         };
-    }, [value, duration, showImprovement]);
+    }, [value, duration, showImprovement, settings.reducedMotion]);
 
     const classes = [
         'animated-number',
