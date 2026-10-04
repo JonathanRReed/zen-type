@@ -128,12 +128,21 @@ export function findInText(text: string, query: string, caseSensitive: boolean =
   const matches: SearchMatch[] = [];
 
   let index = 0;
+  let line = 0;
+  let lastNewlineIndex = -1;
+  let scanIndex = 0;
+
   while ((index = searchText.indexOf(searchQuery, index)) !== -1) {
-    // Calculate line and column
-    const before = text.substring(0, index);
-    const lines = before.split('\n');
-    const line = lines.length - 1;
-    const column = (lines[lines.length - 1] || '').length;
+    // Single-pass incremental line & column tracking instead of O(N) substring + split
+    while (scanIndex < index) {
+      if (text[scanIndex] === '\n') {
+        line++;
+        lastNewlineIndex = scanIndex;
+      }
+      scanIndex++;
+    }
+
+    const column = index - (lastNewlineIndex + 1);
 
     matches.push({
       index,
