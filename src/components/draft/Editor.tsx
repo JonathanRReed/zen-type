@@ -61,12 +61,11 @@ const Editor: React.FC<EditorProps> = ({
     };
   }, [handleSelectionChange]);
 
-  // Scroll to current search match
+  // Select the current match without interrupting typing in the search field.
   useEffect(() => {
     if (searchMatches.length > 0 && currentMatchIndex >= 0 && textareaRef.current) {
       const match = searchMatches[currentMatchIndex];
       if (match) {
-        textareaRef.current.focus();
         textareaRef.current.setSelectionRange(match.index, match.index + match.length);
       }
     }
