@@ -2,11 +2,12 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import QuoteTyper from '../QuoteTyper';
+import type * as QuotesModule from '../../utils/quotes';
 import { getLiveStats } from '../../utils/liveStats';
 import { updateSettings } from '../../utils/storage';
 
 vi.mock('../../utils/quotes', async (importOriginal) => ({
-  ...await importOriginal<typeof import('../../utils/quotes')>(),
+  ...await importOriginal<typeof QuotesModule>(),
   loadQuotes: vi.fn().mockResolvedValue([]),
 }));
 
