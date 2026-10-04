@@ -27,8 +27,15 @@ const SearchBox: React.FC<SearchBoxProps> = ({
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
+      const previousFocus = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
       inputRef.current.focus();
+      return () => {
+        if (previousFocus?.isConnected) previousFocus.focus();
+      };
     }
+    return undefined;
   }, [isOpen]);
 
   const handleQueryChange = (val: string) => {
@@ -51,6 +58,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
+      e.stopPropagation();
       onClose();
     }
   };
