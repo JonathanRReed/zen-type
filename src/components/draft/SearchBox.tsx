@@ -58,6 +58,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
+      e.stopPropagation();
       onClose();
     }
   };
