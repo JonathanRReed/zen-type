@@ -27,19 +27,8 @@ const STOP_WORDS = new Set([
 
 // Single-pass computeTextMetrics to avoid string array allocations (.split(/\s+/))
 // and RegExp match allocations (.match(/[.!?]+/g)) on every editor metric update.
-// Complexity: O(N) time with O(1) space allocation.
+// Complexity: O(N) time with O(1) auxiliary space.
 export function computeTextMetrics(text: string): TextMetrics {
-  const trimmed = text.trim();
-  
-  if (!trimmed) {
-    return {
-      words: 0,
-      chars: 0,
-      sentences: 0,
-      readTimeMinutes: 0,
-    };
-  }
-
   const chars = text.length;
   let words = 0;
   let inWord = false;
@@ -49,8 +38,13 @@ export function computeTextMetrics(text: string): TextMetrics {
   for (let i = 0; i < chars; i++) {
     const ch = text.charCodeAt(i);
 
-    // Whitespace check (<= 32 covers spaces, tabs, newlines, line feeds)
-    if (ch <= 32) {
+    // Match ECMAScript WhiteSpace and LineTerminator, as trim() and /\s/ do.
+    const isWhitespace =
+      (ch >= 0x0009 && ch <= 0x000d) || ch === 0x0020 || ch === 0x00a0 ||
+      ch === 0x1680 || (ch >= 0x2000 && ch <= 0x200a) ||
+      ch === 0x2028 || ch === 0x2029 || ch === 0x202f ||
+      ch === 0x205f || ch === 0x3000 || ch === 0xfeff;
+    if (isWhitespace) {
       if (inWord) {
         words++;
         inWord = false;
@@ -72,6 +66,16 @@ export function computeTextMetrics(text: string): TextMetrics {
 
   if (inWord) {
     words++;
+  }
+
+  // Preserve the original all-zero metrics for empty or whitespace-only text.
+  if (words === 0) {
+    return {
+      words: 0,
+      chars: 0,
+      sentences: 0,
+      readTimeMinutes: 0,
+    };
   }
 
   if (sentences === 0) {

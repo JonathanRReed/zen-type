@@ -8,4 +8,4 @@
 
 ## 2025-05-20 - Single-pass text metric calculations
 **Learning:** `computeTextMetrics` in `src/lib/textMetrics.ts` was executing `text.trim().split(/\s+/)` and `text.match(/[.!?]+/g)` on every editor update, creating string array allocations for all words and match objects in the document.
-**Action:** Replace string split and regex match calls with a single-pass character code iteration (`charCodeAt`) to count words and sentences in O(N) time with zero memory allocations.
+**Action:** Replace string split and regex match calls with a single-pass character code iteration (`charCodeAt`) to count words and sentences in O(N) time with O(1) auxiliary space, without intermediate split/match arrays. Preserve the full ECMAScript whitespace set rather than treating all character codes <= 32 as whitespace. Check parity against the previous implementation, including every UTF-16 code unit; a speedup is not established by these correctness tests.

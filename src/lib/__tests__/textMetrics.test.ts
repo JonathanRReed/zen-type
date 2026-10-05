@@ -1,6 +1,31 @@
 import { describe, it, expect } from 'vitest';
 import { findInText, computeTextMetrics, getKeywordFrequencies, extractOutline } from '../textMetrics';
 
+// Reference implementation from before the single-pass optimization.
+function legacyTextMetrics(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return { words: 0, chars: 0, sentences: 0, readTimeMinutes: 0 };
+  }
+  const words = trimmed.split(/\s+/).length;
+  return {
+    words,
+    chars: text.length,
+    sentences: (trimmed.match(/[.!?]+/g) || []).length || 1,
+    readTimeMinutes: Math.ceil(words / 200),
+  };
+}
+
+const ECMASCRIPT_WHITESPACE = [
+  0x0009, 0x000a, 0x000b, 0x000c, 0x000d, 0x0020, 0x00a0, 0x1680,
+  0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007,
+  0x2008, 0x2009, 0x200a, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000,
+  0xfeff,
+].map(code => ({
+  name: `U+${code.toString(16).toUpperCase().padStart(4, '0')}`,
+  whitespace: String.fromCharCode(code),
+}));
+
 describe('findInText', () => {
   it('returns empty array when query is empty or text is empty', () => {
     expect(findInText('', 'test')).toEqual([]);
@@ -79,6 +104,57 @@ describe('computeTextMetrics', () => {
     expect(metrics.chars).toBe(text.length);
     expect(metrics.sentences).toBe(3);
     expect(metrics.readTimeMinutes).toBe(1);
+  });
+
+  it('counts words separated by a non-breaking space', () => {
+    expect(computeTextMetrics('one\u00a0two')).toEqual({
+      words: 2,
+      chars: 7,
+      sentences: 1,
+      readTimeMinutes: 1,
+    });
+  });
+
+  it.each(ECMASCRIPT_WHITESPACE)('preserves metrics across $name whitespace', ({ whitespace }) => {
+    const inputs = [
+      whitespace,
+      whitespace.repeat(3),
+      `one${whitespace}two`,
+      `${whitespace}one${whitespace}${whitespace}two${whitespace}`,
+      `one!${whitespace}two?`,
+    ];
+    for (const text of inputs) {
+      expect(computeTextMetrics(text)).toEqual(legacyTextMetrics(text));
+    }
+  });
+
+  it.each([
+    ['empty', ''],
+    ['mixed whitespace only', '\t\r\n \u00a0\u2003\u2028\ufeff'],
+    ['multiline', '\nFirst line.\r\nSecond\tline!\n\nThird line?\n'],
+    ['punctuation only', '...!!!???'],
+    ['separated punctuation', '. ! ?'],
+    ['consecutive sentence delimiters', 'Wait... Really?! Yes!!'],
+    ['Unicode sentence punctuation', 'One\u3002Two\uff01Three\uff1f'],
+    ['no sentence delimiters', 'Hello world'],
+    ['UTF-16 characters', '\ud83d\ude00 caf\u00e9\u2003\ud83d\ude80'],
+    ['non-whitespace Unicode characters', 'one\u0085two\u180ethree\u200bfour'],
+    ['control characters', '\u0000one\u0001two\u001fthree\u0000'],
+  ])('preserves legacy metrics for %s text', (_name, text) => {
+    expect(computeTextMetrics(text)).toEqual(legacyTextMetrics(text));
+  });
+
+  it.each([199, 200, 201, 400, 401])('preserves reading time for %i words', count => {
+    const text = Array.from({ length: count }, () => 'word').join('\u202f');
+    expect(computeTextMetrics(text)).toEqual(legacyTextMetrics(text));
+    expect(computeTextMetrics(text).readTimeMinutes).toBe(Math.ceil(count / 200));
+  });
+
+  it('matches legacy word boundaries for every UTF-16 code unit', () => {
+    for (let code = 0; code <= 0xffff; code++) {
+      const text = `one${String.fromCharCode(code)}two`;
+      expect(computeTextMetrics(text)).toEqual(legacyTextMetrics(text));
+    }
   });
 });
 
