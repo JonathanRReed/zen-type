@@ -25,10 +25,51 @@ const STOP_WORDS = new Set([
   'were', 'said', 'did', 'having', 'may', 'should', 'could', 'would'
 ]);
 
+// Single-pass computeTextMetrics to avoid string array allocations (.split(/\s+/))
+// and RegExp match allocations (.match(/[.!?]+/g)) on every editor metric update.
+// Complexity: O(N) time with O(1) auxiliary space.
 export function computeTextMetrics(text: string): TextMetrics {
-  const trimmed = text.trim();
-  
-  if (!trimmed) {
+  const chars = text.length;
+  let words = 0;
+  let inWord = false;
+  let sentences = 0;
+  let inSentenceDelimiter = false;
+
+  for (let i = 0; i < chars; i++) {
+    const ch = text.charCodeAt(i);
+
+    // Match ECMAScript WhiteSpace and LineTerminator, as trim() and /\s/ do.
+    const isWhitespace =
+      (ch >= 0x0009 && ch <= 0x000d) || ch === 0x0020 || ch === 0x00a0 ||
+      ch === 0x1680 || (ch >= 0x2000 && ch <= 0x200a) ||
+      ch === 0x2028 || ch === 0x2029 || ch === 0x202f ||
+      ch === 0x205f || ch === 0x3000 || ch === 0xfeff;
+    if (isWhitespace) {
+      if (inWord) {
+        words++;
+        inWord = false;
+      }
+    } else {
+      inWord = true;
+    }
+
+    // Sentence punctuation check: '.' (46), '!' (33), '?' (63)
+    if (ch === 46 || ch === 33 || ch === 63) {
+      if (!inSentenceDelimiter) {
+        sentences++;
+        inSentenceDelimiter = true;
+      }
+    } else {
+      inSentenceDelimiter = false;
+    }
+  }
+
+  if (inWord) {
+    words++;
+  }
+
+  // Preserve the original all-zero metrics for empty or whitespace-only text.
+  if (words === 0) {
     return {
       words: 0,
       chars: 0,
@@ -37,10 +78,10 @@ export function computeTextMetrics(text: string): TextMetrics {
     };
   }
 
-  const words = trimmed.split(/\s+/).length;
-  const chars = text.length;
-  const sentences = (trimmed.match(/[.!?]+/g) || []).length || 1;
-  
+  if (sentences === 0) {
+    sentences = 1;
+  }
+
   // Average reading speed: 200 WPM
   const readTimeMinutes = Math.ceil(words / 200);
 
