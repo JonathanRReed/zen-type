@@ -18,7 +18,7 @@
  * commit that changed that page's content.
  */
 const PAGE_MODIFIED_DATES: Record<string, string> = {
-  "/": "2026-09-04",
+  "/": "2026-10-05",
   "/404/": "2026-09-03",
   "/about/": "2026-09-04",
   "/contact/": "2026-08-04",

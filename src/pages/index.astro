@@ -20,39 +20,6 @@ const randomQuote = pickQuote(quotes);
 const siteUrl = "https://zentype.jonathanrreed.com";
 const homeUrl = `${siteUrl}/`;
 
-const webApplicationJsonLd = {
-	"@context": "https://schema.org",
-	"@type": "WebApplication",
-	"@id": `${homeUrl}#webapp`,
-	name: "Zen Typer",
-	alternateName: "ZenType",
-	url: homeUrl,
-	description:
-		"A free mindful typing test and typing practice app. Type short Zen quotes with live WPM and accuracy, or switch to a free-flow writing mode. No account, and sessions stay in the browser.",
-	applicationCategory: "EducationalApplication",
-	applicationSubCategory: "Typing test",
-	operatingSystem: "Any device with a modern web browser",
-	browserRequirements: "Requires JavaScript.",
-	inLanguage: "en-US",
-	isAccessibleForFree: true,
-	offers: {
-		"@type": "Offer",
-		price: "0",
-		priceCurrency: "USD",
-		availability: "https://schema.org/InStock",
-	},
-	featureList: [
-		"Quote typing test with live WPM and accuracy on 322 public-domain quotes",
-		"Free-flow Zen Mode with drafts and an optional timed flow",
-		"Progress calendar, day streak, and session history",
-		"Synthesized keyboard sounds and ambient beds, off by default",
-		"Eight themes with WebGL ambient scenes and reduced-motion support",
-		"Backup and restore of all data as one file; nothing leaves the browser",
-	],
-	creator: { "@id": `${homeUrl}#creator` },
-	publisher: { "@id": `${homeUrl}#creator` },
-	isPartOf: { "@id": `${homeUrl}#website` },
-};
 ---
 
 <!doctype html>
@@ -62,7 +29,6 @@ const webApplicationJsonLd = {
 			title="Mindful Typing Test and Practice for Focus | Zen Typer"
 			description="Zen Typer is a free mindful typing test with Zen quotes, live WPM and accuracy, and a free-flow writing mode. No account, and sessions stay in your browser."
 			canonical={homeUrl}
-			jsonLd={webApplicationJsonLd}
 			keywords={[
 				"typing test",
 				"mindful typing test",

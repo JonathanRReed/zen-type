@@ -59,3 +59,36 @@ test('Tab switches mode from the typing surface', async ({ page }) => {
   await page.keyboard.press('Tab');
   await page.waitForURL('**/quote/');
 });
+
+test('the homepage retains site metadata without unrated software-rich-result claims', async ({ page }) => {
+  await page.goto('/');
+  const nodes = await page.locator('script[type="application/ld+json"]').evaluateAll(scripts =>
+    scripts.flatMap(script => {
+      const data = JSON.parse(script.textContent || '');
+      return Array.isArray(data) ? data : data['@graph'] || [data];
+    }),
+  );
+  const serialized = JSON.stringify(nodes);
+  expect(serialized).not.toMatch(/"(?:SoftwareApplication|WebApplication|MobileApplication)"/);
+  expect(serialized).not.toMatch(/"(?:aggregateRating|review|ratingValue|ratingCount|reviewCount)"\s*:/);
+
+  const origin = 'https://zentype.jonathanrreed.com/';
+  expect(nodes.find(node => node['@type'] === 'WebSite')).toMatchObject({
+    '@id': `${origin}#website`,
+    name: 'Zen Typer',
+    url: origin,
+  });
+  expect(nodes.find(node => node['@type'] === 'WebPage')).toMatchObject({
+    '@id': `${origin}#webpage`,
+    url: origin,
+    isPartOf: { '@id': `${origin}#website` },
+  });
+  expect(nodes.find(node => node['@type'] === 'Person')).toMatchObject({
+    '@id': `${origin}#creator`,
+    name: 'Jonathan R. Reed',
+  });
+  expect(nodes.find(node => node['@type'] === 'BreadcrumbList')).toBeDefined();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', origin);
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', origin);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', `${origin}og-image.png`);
+});
