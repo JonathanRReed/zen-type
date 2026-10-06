@@ -21,10 +21,11 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
   const [selectedSnapshot, setSelectedSnapshot] = useState<DraftSnapshot | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Performance optimization: Pre-compute line diffs for snapshots once when
-  // `snapshots` array reference changes, rather than recalculating O(N * D)
-  // Myers line diffs for all snapshots on every component render / state change.
+  // Defer line diffs while closed, then reuse them across open-panel state
+  // changes until the snapshot array changes or the panel is reopened.
   const snapshotItems = useMemo(() => {
+    if (!isOpen) return [];
+
     const reversed = [...snapshots].reverse();
     return reversed.map((snapshot, index) => {
       const prevSnapshot = index < reversed.length - 1 ? reversed[index + 1] : null;
@@ -37,7 +38,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
         removedLines,
       };
     });
-  }, [snapshots]);
+  }, [isOpen, snapshots]);
 
   if (!isOpen) return null;
 
