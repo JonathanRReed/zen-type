@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { diffLines } from 'diff';
 import type { DraftSnapshot } from '../../lib/draftStore';
 import { Button } from '@/components/ui/button';
@@ -21,16 +21,29 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
   const [selectedSnapshot, setSelectedSnapshot] = useState<DraftSnapshot | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Performance optimization: Pre-compute line diffs for snapshots once when
+  // `snapshots` array reference changes, rather than recalculating O(N * D)
+  // Myers line diffs for all snapshots on every component render / state change.
+  const snapshotItems = useMemo(() => {
+    const reversed = [...snapshots].reverse();
+    return reversed.map((snapshot, index) => {
+      const prevSnapshot = index < reversed.length - 1 ? reversed[index + 1] : null;
+      const diff = prevSnapshot ? diffLines(prevSnapshot.body, snapshot.body) : null;
+      const addedLines = diff ? diff.filter(d => d.added).length : 0;
+      const removedLines = diff ? diff.filter(d => d.removed).length : 0;
+      return {
+        snapshot,
+        addedLines,
+        removedLines,
+      };
+    });
+  }, [snapshots]);
+
   if (!isOpen) return null;
 
   const formatTimestamp = (ts: number) => {
     const date = new Date(ts);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const getDiff = (oldText: string, newText: string) => {
-    const changes = diffLines(oldText, newText);
-    return changes;
   };
 
   const handleRestore = (snapshot: DraftSnapshot) => {
@@ -75,18 +88,13 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {snapshots.length === 0 ? (
+          {snapshotItems.length === 0 ? (
             <div className="text-center py-12 text-muted/60">
               <p>No snapshots yet. Snapshots are created automatically every 2 minutes or when you press ⌘S.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {[...snapshots].reverse().map((snapshot, index) => {
-                const prevSnapshot = index < snapshots.length - 1 ? snapshots[snapshots.length - 2 - index] : null;
-                const diff = prevSnapshot ? getDiff(prevSnapshot.body, snapshot.body) : null;
-                const addedLines = diff ? diff.filter(d => d.added).length : 0;
-                const removedLines = diff ? diff.filter(d => d.removed).length : 0;
-
+              {snapshotItems.map(({ snapshot, addedLines, removedLines }) => {
                 return (
                   <div
                     key={snapshot.id}

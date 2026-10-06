@@ -2,9 +2,11 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
+import { resolve } from 'node:path';
+
 // Source-contract checks complement the rendered JSON-LD browser regression.
-const home = readFileSync(new URL('../../pages/index.astro', import.meta.url), 'utf8');
-const seo = readFileSync(new URL('../SEO.astro', import.meta.url), 'utf8');
+const home = readFileSync(resolve(process.cwd(), 'src/pages/index.astro'), 'utf8');
+const seo = readFileSync(resolve(process.cwd(), 'src/components/SEO.astro'), 'utf8');
 
 test('the homepage does not opt an unrated app into software rich results', () => {
   assert.doesNotMatch(home, /["']@type["']\s*:\s*["'](?:SoftwareApplication|WebApplication|MobileApplication)["']/);
