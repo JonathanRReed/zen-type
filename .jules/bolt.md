@@ -9,3 +9,7 @@
 ## 2025-05-20 - Single-pass text metric calculations
 **Learning:** `computeTextMetrics` in `src/lib/textMetrics.ts` was executing `text.trim().split(/\s+/)` and `text.match(/[.!?]+/g)` on every editor update, creating string array allocations for all words and match objects in the document.
 **Action:** Replace string split and regex match calls with a single-pass character code iteration (`charCodeAt`) to count words and sentences in O(N) time with O(1) auxiliary space, without intermediate split/match arrays. Preserve the full ECMAScript whitespace set rather than treating all character codes <= 32 as whitespace. Check parity against the previous implementation, including every UTF-16 code unit; a speedup is not established by these correctness tests.
+
+## 2025-05-21 - Memoize text analysis on draft body instead of draft object
+**Learning:** In `DraftManager.tsx`, `useMemo` hooks for derived calculations (`computeTextMetrics`, `extractOutline`, `checkGrammar`, `getKeywordFrequencies`, `findInText`, `recentLines`) depended on `currentDraft`. Any metadata edit (title input, tags, scratchpad notes, background sync) created a new draft object reference, re-running expensive text calculations and string allocations even when body text was unchanged.
+**Action:** Extract `draftBody = currentDraft?.body` and use primitive string dependency in `useMemo` hooks so non-body metadata edits completely skip text analysis routines.

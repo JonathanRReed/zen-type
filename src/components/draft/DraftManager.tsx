@@ -386,27 +386,33 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
     saveDraftPrefs({ ...current, ...updates });
   }, []);
 
-  // Computed values
+  // Performance optimization: Memoize derived text calculations on `draftBody`
+  // rather than `currentDraft`. Updating non-body metadata (title, tags, scratchpad,
+  // snapshots, or background sync timestamps) creates a new `currentDraft` object reference.
+  // Using `draftBody` avoids re-running expensive text metrics, grammar checks, outline
+  // extraction, keyword frequencies, and search matching when body text hasn't changed.
+  const draftBody = currentDraft?.body;
+
   const metrics = useMemo(() => {
-    return currentDraft ? computeTextMetrics(currentDraft.body) : null;
-  }, [currentDraft]);
+    return draftBody !== undefined ? computeTextMetrics(draftBody) : null;
+  }, [draftBody]);
 
   const outline = useMemo(() => {
-    return currentDraft && prefs.outline ? extractOutline(currentDraft.body) : [];
-  }, [currentDraft, prefs.outline]);
+    return draftBody && prefs.outline ? extractOutline(draftBody) : [];
+  }, [draftBody, prefs.outline]);
 
   const grammarIssues = useMemo(() => {
-    return currentDraft && prefs.grammar ? checkGrammar(currentDraft.body) : [];
-  }, [currentDraft, prefs.grammar]);
+    return draftBody && prefs.grammar ? checkGrammar(draftBody) : [];
+  }, [draftBody, prefs.grammar]);
 
   const keywordFrequencies = useMemo(() => {
-    return currentDraft && prefs.keywordHighlighter ? getKeywordFrequencies(currentDraft.body) : [];
-  }, [currentDraft, prefs.keywordHighlighter]);
+    return draftBody && prefs.keywordHighlighter ? getKeywordFrequencies(draftBody) : [];
+  }, [draftBody, prefs.keywordHighlighter]);
 
   const searchMatches = useMemo(() => {
-    if (!currentDraft || !searchQuery.trim()) return [];
-    return findInText(currentDraft.body, searchQuery, searchCaseSensitive);
-  }, [currentDraft, searchQuery, searchCaseSensitive]);
+    if (!draftBody || !searchQuery.trim()) return [];
+    return findInText(draftBody, searchQuery, searchCaseSensitive);
+  }, [draftBody, searchQuery, searchCaseSensitive]);
 
   const handleSearch = useCallback((query: string, caseSensitive: boolean) => {
     setSearchQuery(query);
@@ -468,12 +474,12 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
   }, [currentDraft, flagPersistError]);
 
   const recentLines = useMemo(() => {
-    if (!currentDraft) return [];
-    return currentDraft.body
+    if (!draftBody) return [];
+    return draftBody
       .split('\n')
       .filter(line => line.trim().length > 10)
       .slice(-50);
-  }, [currentDraft]);
+  }, [draftBody]);
 
   if (!isOpen) return null;
 
