@@ -13,3 +13,7 @@
 ## 2025-05-21 - Memoize text analysis on draft body instead of draft object
 **Learning:** In `DraftManager.tsx`, `useMemo` hooks for derived calculations (`computeTextMetrics`, `extractOutline`, `checkGrammar`, `getKeywordFrequencies`, `findInText`, `recentLines`) depended on `currentDraft`. Any metadata edit (title input, tags, scratchpad notes, background sync) created a new draft object reference, re-running expensive text calculations and string allocations even when body text was unchanged.
 **Action:** Extract `draftBody = currentDraft?.body` and use primitive string dependency in `useMemo` hooks so non-body metadata edits completely skip text analysis routines.
+
+## 2026-10-08 - Gate overlay data derivation on modal visibility and scan backward
+**Learning:** `recentLines` in `DraftManager.tsx` was executing `draftBody.split('\n').filter(...).slice(-50)` on every single keystroke in the editor even when `CommandPalette` was closed. Scanning from index 0 created full document line string arrays on every keypress.
+**Action:** Gate modal data derivation in `useMemo` on `commandPaletteOpen` so closed modals return early in O(1) time. For line extraction from the end of a document, scan backward with `lastIndexOf('\n')` and stop after N matching lines. The result retains at most N lines, but scanning and temporary slices can cover the whole document when too few lines qualify; worst-case work remains O(document length).

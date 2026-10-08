@@ -16,7 +16,7 @@ import {
   type Draft,
   type DraftPrefs,
 } from '../../lib/draftStore';
-import { computeTextMetrics, extractOutline, getKeywordFrequencies, findInText } from '../../lib/textMetrics';
+import { computeTextMetrics, extractOutline, getKeywordFrequencies, findInText, extractRecentLines } from '../../lib/textMetrics';
 import { checkGrammar } from '../../lib/grammar';
 import Editor from './Editor';
 import ToolsPanel from './ToolsPanel';
@@ -474,12 +474,9 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
   }, [currentDraft, flagPersistError]);
 
   const recentLines = useMemo(() => {
-    if (!draftBody) return [];
-    return draftBody
-      .split('\n')
-      .filter(line => line.trim().length > 10)
-      .slice(-50);
-  }, [draftBody]);
+    if (!draftBody || !commandPaletteOpen || !prefs.quickJump) return [];
+    return extractRecentLines(draftBody);
+  }, [draftBody, commandPaletteOpen, prefs.quickJump]);
 
   if (!isOpen) return null;
 

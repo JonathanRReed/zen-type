@@ -161,6 +161,26 @@ export interface SearchMatch {
   column: number;
 }
 
+// Backward-scanning line extraction helper to extract the last N lines matching line.trim().length > 10.
+// Avoids splitting the entire document into line arrays from start to finish.
+export function extractRecentLines(text: string, count: number = 50, minLength: number = 10): string[] {
+  if (!text) return [];
+  const lines: string[] = [];
+  let end = text.length;
+
+  while (end > 0 && lines.length < count) {
+    const start = text.lastIndexOf('\n', end - 1);
+    const line = start === -1 ? text.slice(0, end) : text.slice(start + 1, end);
+    if (line.trim().length > minLength) {
+      lines.push(line);
+    }
+    if (start === -1) break;
+    end = start;
+  }
+
+  return lines.reverse();
+}
+
 export function findInText(text: string, query: string, caseSensitive: boolean = false): SearchMatch[] {
   if (!query) return [];
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findInText, computeTextMetrics, getKeywordFrequencies, extractOutline } from '../textMetrics';
+import { findInText, computeTextMetrics, getKeywordFrequencies, extractOutline, extractRecentLines } from '../textMetrics';
 
 // Reference implementation from before the single-pass optimization.
 function legacyTextMetrics(text: string) {
@@ -174,6 +174,49 @@ describe('extractOutline', () => {
       { text: 'Heading 1', level: 1, startIndex: 0 },
       { text: 'Heading 2', level: 2, startIndex: 39 },
     ]);
+  });
+});
+
+describe('extractRecentLines', () => {
+  it('preserves whitespace, CRLF, Unicode, and original order', () => {
+    const text = '\n  \r\n  padded long line  \r\n😀😀😀😀😀😀\r\n東京東京東京東京東京東京\nshort\n\n';
+    expect(extractRecentLines(text)).toEqual(text.split('\n').filter(line => line.trim().length > 10).slice(-50));
+  });
+
+  it('scans past a long rejected suffix without losing qualifying lines', () => {
+    const text = 'First qualifying long line\nSecond qualifying long line\n' + 'short\n'.repeat(20_000);
+    expect(extractRecentLines(text)).toEqual(['First qualifying long line', 'Second qualifying long line']);
+  });
+
+  it('returns empty array when text is empty', () => {
+    expect(extractRecentLines('')).toEqual([]);
+  });
+
+  it('filters lines with length <= minLength and keeps up to count matching lines', () => {
+    const lines = [
+      'Short line',
+      'This line is long enough to be included 1',
+      'Tiny',
+      'This line is long enough to be included 2',
+      'This line is long enough to be included 3',
+    ];
+    const text = lines.join('\n');
+    expect(extractRecentLines(text, 2, 10)).toEqual([
+      'This line is long enough to be included 2',
+      'This line is long enough to be included 3',
+    ]);
+  });
+
+  it('matches full split and filter behavior for multi-line documents', () => {
+    const lines = Array.from({ length: 100 }, (_, i) =>
+      i % 2 === 0 ? `Line number ${i} which has more than 10 chars` : `Short ${i}`
+    );
+    const text = lines.join('\n');
+    const legacyResult = text
+      .split('\n')
+      .filter(line => line.trim().length > 10)
+      .slice(-50);
+    expect(extractRecentLines(text, 50, 10)).toEqual(legacyResult);
   });
 });
 
