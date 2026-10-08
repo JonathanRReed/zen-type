@@ -139,3 +139,33 @@ describe('DraftManager memoization', () => {
     expect(host.textContent).toContain('Duplicate word: "duplicate"');
   });
 });
+it('gates recent-line extraction and refreshes on reopen for a large draft', async () => {
+  saveDraftPrefs({ quickJump: true });
+  const spy = vi.spyOn(textMetrics, 'extractRecentLines');
+  await renderStoredDraft();
+  expect(spy).not.toHaveBeenCalled();
+  const body = Array.from({ length: 20000 }, (_, i) => `Unique long line number ${i} 😀`).join('\n') + '\n  \n';
+  const editor = host.querySelector<HTMLTextAreaElement>('textarea[aria-label="Draft editor"]')!;
+  await enterText(editor, body);
+  expect(spy).not.toHaveBeenCalled();
+  await act(async () => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); });
+  expect(spy).toHaveBeenCalledWith(body);
+  expect(host.querySelector('[aria-label="Quick jump palette"]')).not.toBeNull();
+  expect(host.textContent).toContain('Unique long line number 19950');
+  await act(async () => { host.querySelector('[aria-label="Quick jump palette"] input')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+  expect(host.querySelector('[aria-label="Quick jump palette"]')).toBeNull();
+  spy.mockClear();
+  await enterText(editor, body + 'Updated final line after closing');
+  expect(spy).not.toHaveBeenCalled();
+  await act(async () => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); });
+  expect(spy).toHaveBeenCalledWith(body + 'Updated final line after closing');
+});
+
+it('skips recent-line extraction with quick jump disabled', async () => {
+  saveDraftPrefs({ quickJump: false });
+  const spy = vi.spyOn(textMetrics, 'extractRecentLines');
+  await renderStoredDraft();
+  await act(async () => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); });
+  expect(spy).not.toHaveBeenCalled();
+  expect(host.querySelector('[aria-label="Quick jump palette"]')).toBeNull();
+});

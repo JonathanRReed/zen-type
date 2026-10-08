@@ -16,4 +16,4 @@
 
 ## 2025-05-22 - Gate overlay data derivation on modal visibility and scan backward
 **Learning:** `recentLines` in `DraftManager.tsx` was executing `draftBody.split('\n').filter(...).slice(-50)` on every single keystroke in the editor even when `CommandPalette` was closed. Scanning from index 0 created full document line string arrays on every keypress.
-**Action:** Gate modal data derivation in `useMemo` on `commandPaletteOpen` so closed modals return early in O(1) time. For line extraction from the end of a document, scan backward with `lastIndexOf('\n')` to bound work to O(1) relative to document length and allocate at most N string objects.
+**Action:** Gate modal data derivation in `useMemo` on `commandPaletteOpen` so closed modals return early in O(1) time. For line extraction from the end of a document, scan backward with `lastIndexOf('\n')` and stop after N matching lines. The result retains at most N lines, but scanning and temporary slices can cover the whole document when too few lines qualify; worst-case work remains O(document length).

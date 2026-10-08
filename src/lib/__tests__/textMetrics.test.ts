@@ -178,6 +178,16 @@ describe('extractOutline', () => {
 });
 
 describe('extractRecentLines', () => {
+  it('preserves whitespace, CRLF, Unicode, and original order', () => {
+    const text = '\n  \r\n  padded long line  \r\n😀😀😀😀😀😀\r\n東京東京東京東京東京東京\nshort\n\n';
+    expect(extractRecentLines(text)).toEqual(text.split('\n').filter(line => line.trim().length > 10).slice(-50));
+  });
+
+  it('scans past a long rejected suffix without losing qualifying lines', () => {
+    const text = 'First qualifying long line\nSecond qualifying long line\n' + 'short\n'.repeat(20_000);
+    expect(extractRecentLines(text)).toEqual(['First qualifying long line', 'Second qualifying long line']);
+  });
+
   it('returns empty array when text is empty', () => {
     expect(extractRecentLines('')).toEqual([]);
   });
