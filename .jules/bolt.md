@@ -17,3 +17,8 @@
 ## 2026-10-08 - Gate overlay data derivation on modal visibility and scan backward
 **Learning:** `recentLines` in `DraftManager.tsx` was executing `draftBody.split('\n').filter(...).slice(-50)` on every single keystroke in the editor even when `CommandPalette` was closed. Scanning from index 0 created full document line string arrays on every keypress.
 **Action:** Gate modal data derivation in `useMemo` on `commandPaletteOpen` so closed modals return early in O(1) time. For line extraction from the end of a document, scan backward with `lastIndexOf('\n')` and stop after N matching lines. The result retains at most N lines, but scanning and temporary slices can cover the whole document when too few lines qualify; worst-case work remains O(document length).
+
+## 2026-10-09 - Single-pass keyword frequency extraction
+**Learning:** `getKeywordFrequencies` in `src/lib/textMetrics.ts` was executing `text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(...)` on every keystroke when `keywordHighlighter` was enabled. This allocated two full-document lowercased/replaced string copies, a word array for all words in the document, and a filtered array.
+**Action:** Lowercase the complete document before scanning so Unicode folding and expansions preserve the original word boundaries. Replace the remaining regex replacement/split/filter chain with a character-code loop (`charCodeAt`), skipping candidate words with length <= 2 and slicing longer candidates directly into the frequency map. This retains one lowercased string while eliminating the replacement string and intermediate word arrays. Regression coverage includes Kelvin-sign folding, dotted-I expansion, and every UTF-16 code unit.
+

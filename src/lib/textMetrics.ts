@@ -93,15 +93,41 @@ export function computeTextMetrics(text: string): TextMetrics {
   };
 }
 
+// Scan the lowercased document without regex replacement or intermediate word arrays.
+// Fold before scanning: Unicode lowercasing can introduce ASCII word characters
+// (e.g. K -> k) or expand a character (İ -> i + combining dot).
 export function getKeywordFrequencies(text: string, topN: number = 10): KeywordFrequency[] {
-  const words = text.toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
-
+  text = text.toLowerCase();
   const freq = new Map<string, number>();
-  for (const word of words) {
-    freq.set(word, (freq.get(word) || 0) + 1);
+  const len = text.length;
+  let inWord = false;
+  let wordStart = 0;
+
+  for (let i = 0; i <= len; i++) {
+    const ch = i < len ? text.charCodeAt(i) : 0;
+
+    // Match \w characters: [a-zA-Z0-9_]
+    const isWordChar =
+      (ch >= 97 && ch <= 122) || // a-z
+      (ch >= 65 && ch <= 90) ||  // A-Z
+      (ch >= 48 && ch <= 57) ||  // 0-9
+      ch === 95;                 // _
+
+    if (isWordChar) {
+      if (!inWord) {
+        inWord = true;
+        wordStart = i;
+      }
+    } else if (inWord) {
+      inWord = false;
+      const wordLen = i - wordStart;
+      if (wordLen > 2) {
+        const word = text.slice(wordStart, i);
+        if (!STOP_WORDS.has(word)) {
+          freq.set(word, (freq.get(word) || 0) + 1);
+        }
+      }
+    }
   }
 
   const result: KeywordFrequency[] = [];
@@ -218,3 +244,4 @@ export function findInText(text: string, query: string, caseSensitive: boolean =
 
   return matches;
 }
+

@@ -158,11 +158,74 @@ describe('computeTextMetrics', () => {
   });
 });
 
+function legacyKeywordFrequencies(text: string, topN: number = 10) {
+  const STOP_WORDS = new Set([
+    'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
+    'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
+    'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
+    'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their',
+    'what', 'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go',
+    'me', 'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know',
+    'take', 'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them',
+    'see', 'other', 'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over',
+    'think', 'also', 'back', 'after', 'use', 'two', 'how', 'our', 'work',
+    'first', 'well', 'way', 'even', 'new', 'want', 'because', 'any', 'these',
+    'give', 'day', 'most', 'us', 'is', 'was', 'are', 'been', 'has', 'had',
+    'were', 'said', 'did', 'having', 'may', 'should', 'could', 'would'
+  ]);
+
+  const words = text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+
+  const freq = new Map<string, number>();
+  for (const word of words) {
+    freq.set(word, (freq.get(word) || 0) + 1);
+  }
+
+  const result: { word: string; count: number }[] = [];
+  for (const [word, count] of freq.entries()) {
+    if (count > 1) {
+      result.push({ word, count });
+    }
+  }
+  return result.sort((a, b) => b.count - a.count).slice(0, topN);
+}
+
 describe('getKeywordFrequencies', () => {
   it('extracts top non-stop-word frequencies', () => {
     const text = 'TypeScript is great. Programmers write TypeScript code because TypeScript is flexible.';
     const freqs = getKeywordFrequencies(text, 5);
     expect(freqs[0]).toEqual({ word: 'typescript', count: 3 });
+  });
+
+  it('handles empty text and text with no repeated words', () => {
+    expect(getKeywordFrequencies('')).toEqual([]);
+    expect(getKeywordFrequencies('unique words only here')).toEqual([]);
+  });
+
+  it('filters out short words (length <= 2) and stop words', () => {
+    const text = 'is to be in on at or an it if up my so no do go me no by my at am is or re re';
+    expect(getKeywordFrequencies(text)).toEqual([]);
+  });
+
+  it('respects topN limit and sorts by count descending', () => {
+    const text = 'apple apple apple banana banana cherry cherry cherry cherry date date';
+    const freqs = getKeywordFrequencies(text, 2);
+    expect(freqs).toEqual([
+      { word: 'cherry', count: 4 },
+      { word: 'apple', count: 3 },
+    ]);
+  });
+
+  it.each([
+    ['simple text', 'testing testing testing performance performance optimization'],
+    ['mixed punctuation', 'hello, world! hello: world... hello? world!'],
+    ['multiline document', 'drafting text\ndrafting text\ndrafting text\nagain again'],
+    ['numbers and underscores', 'var_1 var_1 var_2 var_2 var_2 test_123 test_123'],
+  ])('matches legacy keyword frequencies parity for %s', (_name, text) => {
+    expect(getKeywordFrequencies(text)).toEqual(legacyKeywordFrequencies(text));
   });
 });
 
@@ -229,4 +292,22 @@ it('keeps columns bounded by the source line after case-fold expansion', () => {
   expect(multiline.map(({ line, column }) => ({ line, column }))).toEqual([
     { line: 1, column: 6 }, { line: 1, column: 6 }, { line: 1, column: 6 },
   ]);
+});
+
+
+it.each([
+  ['Kelvin sign folding', 'Key Key key'],
+  ['dotted I expansion', 'ABİ ABİ'],
+  ['expansion inside a token', 'ABİCDE ABİCDE'],
+  ['mixed scripts and punctuation', 'Café café 東京 hello! HELLO KERNEL kernel'],
+])('preserves keyword boundaries after %s', (_name, text) => {
+  expect(getKeywordFrequencies(text)).toEqual(legacyKeywordFrequencies(text));
+});
+
+it('preserves keyword folding and boundaries for every UTF-16 code unit', () => {
+  for (let code = 0; code <= 0xffff; code++) {
+    const token = `ab${String.fromCharCode(code)}cde`;
+    const text = `${token} ${token}`;
+    expect(getKeywordFrequencies(text)).toEqual(legacyKeywordFrequencies(text));
+  }
 });
