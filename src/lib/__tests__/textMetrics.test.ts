@@ -293,3 +293,21 @@ it('keeps columns bounded by the source line after case-fold expansion', () => {
     { line: 1, column: 6 }, { line: 1, column: 6 }, { line: 1, column: 6 },
   ]);
 });
+
+
+it.each([
+  ['Kelvin sign folding', 'Key Key key'],
+  ['dotted I expansion', 'ABİ ABİ'],
+  ['expansion inside a token', 'ABİCDE ABİCDE'],
+  ['mixed scripts and punctuation', 'Café café 東京 hello! HELLO KERNEL kernel'],
+])('preserves keyword boundaries after %s', (_name, text) => {
+  expect(getKeywordFrequencies(text)).toEqual(legacyKeywordFrequencies(text));
+});
+
+it('preserves keyword folding and boundaries for every UTF-16 code unit', () => {
+  for (let code = 0; code <= 0xffff; code++) {
+    const token = `ab${String.fromCharCode(code)}cde`;
+    const text = `${token} ${token}`;
+    expect(getKeywordFrequencies(text)).toEqual(legacyKeywordFrequencies(text));
+  }
+});

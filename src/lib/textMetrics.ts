@@ -93,10 +93,11 @@ export function computeTextMetrics(text: string): TextMetrics {
   };
 }
 
-// Single-pass getKeywordFrequencies to extract words directly without full-document
-// lowercasing, regex replacement, or intermediate array allocations (.split / .filter).
-// Reduces memory allocation and speeds up keyword calculations on document edits.
+// Scan the lowercased document without regex replacement or intermediate word arrays.
+// Fold before scanning: Unicode lowercasing can introduce ASCII word characters
+// (e.g. K -> k) or expand a character (İ -> i + combining dot).
 export function getKeywordFrequencies(text: string, topN: number = 10): KeywordFrequency[] {
+  text = text.toLowerCase();
   const freq = new Map<string, number>();
   const len = text.length;
   let inWord = false;
@@ -121,7 +122,7 @@ export function getKeywordFrequencies(text: string, topN: number = 10): KeywordF
       inWord = false;
       const wordLen = i - wordStart;
       if (wordLen > 2) {
-        const word = text.slice(wordStart, i).toLowerCase();
+        const word = text.slice(wordStart, i);
         if (!STOP_WORDS.has(word)) {
           freq.set(word, (freq.get(word) || 0) + 1);
         }
@@ -243,3 +244,4 @@ export function findInText(text: string, query: string, caseSensitive: boolean =
 
   return matches;
 }
+

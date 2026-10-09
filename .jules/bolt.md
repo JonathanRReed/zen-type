@@ -20,4 +20,5 @@
 
 ## 2026-10-09 - Single-pass keyword frequency extraction
 **Learning:** `getKeywordFrequencies` in `src/lib/textMetrics.ts` was executing `text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(...)` on every keystroke when `keywordHighlighter` was enabled. This allocated two full-document lowercased/replaced string copies, a word array for all words in the document, and a filtered array.
-**Action:** Replace full-document string lowercasing/replace/split/filter chaining with a single-pass character code loop (`charCodeAt`). Skip candidate words with length <= 2 without allocating string objects, slicing and lowercasing only candidate words > 2 characters directly into the frequency map.
+**Action:** Lowercase the complete document before scanning so Unicode folding and expansions preserve the original word boundaries. Replace the remaining regex replacement/split/filter chain with a character-code loop (`charCodeAt`), skipping candidate words with length <= 2 and slicing longer candidates directly into the frequency map. This retains one lowercased string while eliminating the replacement string and intermediate word arrays. Regression coverage includes Kelvin-sign folding, dotted-I expansion, and every UTF-16 code unit.
+
