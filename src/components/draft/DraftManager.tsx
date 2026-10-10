@@ -16,7 +16,7 @@ import {
   type Draft,
   type DraftPrefs,
 } from '../../lib/draftStore';
-import { computeTextMetrics, extractOutline, getKeywordFrequencies, findInText, extractRecentLines } from '../../lib/textMetrics';
+import { computeTextMetrics, extractOutline, getKeywordFrequencies, findInText, extractRecentLines, getDraftPreview } from '../../lib/textMetrics';
 import { checkGrammar } from '../../lib/grammar';
 import Editor from './Editor';
 import ToolsPanel from './ToolsPanel';
@@ -533,15 +533,7 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
               const displayTitle = (draft.title && draft.title.trim().length > 0)
                 ? draft.title.trim()
                 : `Zen Session: ${updatedAt.toLocaleString()}`;
-              const previewLine = draft.body
-                .split('\n')
-                .map(line => line.trim())
-                .find(line => line.length > 0);
-              const previewText = previewLine
-                ? previewLine.length > 140
-                  ? `${previewLine.slice(0, 140).trim()}…`
-                  : previewLine
-                : '';
+              const previewText = getDraftPreview(draft.body);
               const tagsToShow = draft.tags.slice(0, 2);
 
               return (
