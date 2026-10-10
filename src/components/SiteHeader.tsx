@@ -166,7 +166,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ mode }) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-40 px-3 py-3 sm:px-6 sm:py-5 bg-base/80 backdrop-blur-md pt-[max(0.75rem,env(safe-area-inset-top))]">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-4 md:gap-x-6">
-        <div className="flex flex-nowrap items-center gap-2 sm:gap-3 min-w-0">
+        <div className="flex flex-nowrap items-center gap-1 sm:gap-3 min-w-0">
           <nav aria-label="Mode toggle" className="flex items-center gap-2">
             <a
               href="/zen/"
