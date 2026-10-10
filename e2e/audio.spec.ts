@@ -29,8 +29,8 @@ for (const mode of ['normal', 'reduced motion', 'performance mode']) {
       localStorage.setItem('zt.settings', JSON.stringify({ performanceMode: true }));
     });
     await open(page, '/zen/');
-    await page.keyboard.type('Quiet practice builds a steady rhythm.');
-    await expect(page.getByLabel('Free-flow typing input')).toHaveValue('rhythm.');
+    await page.keyboard.type('Quiet practice builds a steady rhythm');
+    await expect(page.getByLabel('Free-flow typing input')).toHaveValue('rhythm');
     expect(await contexts(page)).toEqual([]);
   });
 }
