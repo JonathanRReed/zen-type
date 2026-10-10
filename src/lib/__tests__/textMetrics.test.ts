@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findInText, computeTextMetrics, getKeywordFrequencies, extractOutline, extractRecentLines } from '../textMetrics';
+import { findInText, computeTextMetrics, getKeywordFrequencies, extractOutline, extractRecentLines, getDraftPreview } from '../textMetrics';
 
 // Reference implementation from before the single-pass optimization.
 function legacyTextMetrics(text: string) {
@@ -237,6 +237,54 @@ describe('extractOutline', () => {
       { text: 'Heading 1', level: 1, startIndex: 0 },
       { text: 'Heading 2', level: 2, startIndex: 39 },
     ]);
+  });
+});
+
+describe('getDraftPreview', () => {
+  it('returns empty string for empty or whitespace-only text', () => {
+    expect(getDraftPreview('')).toBe('');
+    expect(getDraftPreview('   \n\t  \n  ')).toBe('');
+  });
+
+  it('returns first non-empty line trimmed', () => {
+    expect(getDraftPreview('  Hello World  ')).toBe('Hello World');
+    expect(getDraftPreview('\n\n  First Line  \nSecond Line')).toBe('First Line');
+  });
+
+  it('truncates line if longer than maxLength (default 140)', () => {
+    const longLine = 'a'.repeat(200);
+    const preview = getDraftPreview(longLine);
+    expect(preview).toBe('a'.repeat(140) + '…');
+    expect(preview.length).toBe(141);
+  });
+
+  it('respects custom maxLength parameter', () => {
+    expect(getDraftPreview('Hello World', 5)).toBe('Hello…');
+  });
+
+  it('matches legacy split/find behavior', () => {
+    const testCases = [
+      '',
+      '   \n\n  \t ',
+      'Simple line',
+      '   Leading spaces line   ',
+      '\n\n  Multi-line document\nSecond line\nThird line',
+      'Line with trailing spaces   \nAnother line',
+      'X'.repeat(150),
+    ];
+
+    for (const text of testCases) {
+      const previewLine = text
+        .split('\n')
+        .map(line => line.trim())
+        .find(line => line.length > 0);
+      const expected = previewLine
+        ? previewLine.length > 140
+          ? `${previewLine.slice(0, 140).trim()}…`
+          : previewLine
+        : '';
+      expect(getDraftPreview(text)).toBe(expected);
+    }
   });
 });
 

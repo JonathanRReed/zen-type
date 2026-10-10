@@ -207,6 +207,43 @@ export function extractRecentLines(text: string, count: number = 50, minLength: 
   return lines.reverse();
 }
 
+/**
+ * Extract a short preview string from the first non-empty line of text.
+ * Scans line by line without splitting the entire document into line arrays.
+ */
+export function getDraftPreview(text: string, maxLength: number = 140): string {
+  if (!text) return '';
+  let lineStart = 0;
+  const len = text.length;
+
+  while (lineStart < len) {
+    let lineEnd = text.indexOf('\n', lineStart);
+    if (lineEnd === -1) lineEnd = len;
+
+    // Fast check for non-whitespace in the current line segment
+    let hasNonWhitespace = false;
+    for (let i = lineStart; i < lineEnd; i++) {
+      const ch = text.charCodeAt(i);
+      if (ch !== 32 && ch !== 9 && ch !== 13) {
+        hasNonWhitespace = true;
+        break;
+      }
+    }
+
+    if (hasNonWhitespace) {
+      const line = text.slice(lineStart, lineEnd).trim();
+      if (line.length > maxLength) {
+        return `${line.slice(0, maxLength).trim()}…`;
+      }
+      return line;
+    }
+
+    lineStart = lineEnd + 1;
+  }
+
+  return '';
+}
+
 export function findInText(text: string, query: string, caseSensitive: boolean = false): SearchMatch[] {
   if (!query) return [];
 
