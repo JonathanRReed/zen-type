@@ -232,6 +232,10 @@ export function getDraftPreview(text: string, maxLength: number = 140): string {
 
     if (hasNonWhitespace) {
       const line = text.slice(lineStart, lineEnd).trim();
+      if (line.length === 0) {
+        lineStart = lineEnd + 1;
+        continue;
+      }
       if (line.length > maxLength) {
         return `${line.slice(0, maxLength).trim()}…`;
       }
@@ -281,4 +285,5 @@ export function findInText(text: string, query: string, caseSensitive: boolean =
 
   return matches;
 }
+
 
