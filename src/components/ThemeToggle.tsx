@@ -151,7 +151,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
       <IconButton
         shape="pill"
         subtle
-        className="px-4 gap-2 text-sm font-semibold tracking-[0.08em]"
+        className="w-10 px-0 sm:w-auto sm:px-4 gap-2 text-sm font-semibold tracking-[0.08em]"
         aria-label={`${theme} theme, toggle theme`}
         aria-haspopup="menu"
         aria-expanded={isOpen}
