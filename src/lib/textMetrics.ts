@@ -232,14 +232,12 @@ export function getDraftPreview(text: string, maxLength: number = 140): string {
 
     if (hasNonWhitespace) {
       const line = text.slice(lineStart, lineEnd).trim();
-      if (line.length === 0) {
-        lineStart = lineEnd + 1;
-        continue;
+      if (line.length > 0) {
+        if (line.length > maxLength) {
+          return `${line.slice(0, maxLength).trim()}…`;
+        }
+        return line;
       }
-      if (line.length > maxLength) {
-        return `${line.slice(0, maxLength).trim()}…`;
-      }
-      return line;
     }
 
     lineStart = lineEnd + 1;
@@ -285,5 +283,4 @@ export function findInText(text: string, query: string, caseSensitive: boolean =
 
   return matches;
 }
-
 

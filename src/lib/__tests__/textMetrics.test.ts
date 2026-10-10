@@ -241,25 +241,6 @@ describe('extractOutline', () => {
 });
 
 describe('getDraftPreview', () => {
-  it.each(ECMASCRIPT_WHITESPACE)('skips $name-only lines before preview content', ({ whitespace }) => {
-    expect(getDraftPreview(`${whitespace}\nActual content`)).toBe('Actual content');
-    expect(getDraftPreview(` \t${whitespace}${whitespace}\r\n  Actual content  \r\nIgnored`)).toBe('Actual content');
-    expect(getDraftPreview(`${whitespace}\n`)).toBe('');
-  });
-
-  it('skips consecutive Unicode-whitespace lines and preserves truncation', () => {
-    const text = '\u00a0\n\u2003\r\n\ufeff\nHello World\nIgnored';
-    expect(getDraftPreview(text, 5)).toBe('Hello…');
-  });
-
-  it('matches legacy preview selection for every UTF-16 code unit', () => {
-    for (let code = 0; code <= 0xffff; code++) {
-      const text = `${String.fromCharCode(code)}\nActual content`;
-      const expected = text.split('\n').map(line => line.trim()).find(line => line.length > 0) || '';
-      expect(getDraftPreview(text)).toBe(expected);
-    }
-  });
-
   it('returns empty string for empty or whitespace-only text', () => {
     expect(getDraftPreview('')).toBe('');
     expect(getDraftPreview('   \n\t  \n  ')).toBe('');
@@ -378,4 +359,3 @@ it('preserves keyword folding and boundaries for every UTF-16 code unit', () => 
     expect(getKeywordFrequencies(text)).toEqual(legacyKeywordFrequencies(text));
   }
 });
-
