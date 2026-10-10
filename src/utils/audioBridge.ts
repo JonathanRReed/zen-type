@@ -2,7 +2,7 @@
 // unlock. Import once per page (any island will do); it is idempotent.
 
 import { audioEngine } from './audioEngine';
-import { getSettings, subscribeSettings } from './storage';
+import { getSettings, subscribeSettings, type Settings } from './storage';
 
 let armed = false;
 
@@ -11,21 +11,28 @@ export function armAudio(): void {
   armed = true;
 
   audioEngine.applySettings(getSettings());
-  subscribeSettings((settings) => audioEngine.applySettings(settings));
+  const applySettings = (settings: Settings) => {
+    const wasEnabled = audioEngine.isEnabled();
+    audioEngine.applySettings(settings);
+    // Enable clicks/shortcuts must unlock before their user activation expires.
+    // Saved/background settings wait for the next gesture instead.
+    if (!wasEnabled && audioEngine.isEnabled() && navigator.userActivation?.isActive) {
+      void audioEngine.unlock();
+    }
+  };
+  subscribeSettings(applySettings);
   // Islands that still broadcast the legacy event without going through
   // updateSettings() are covered too.
   window.addEventListener('settingsChanged', (e) => {
     const detail = (e as CustomEvent).detail;
-    if (detail && typeof detail === 'object') audioEngine.applySettings(detail);
+    if (detail && typeof detail === 'object') applySettings(detail);
   });
 
-  const unlock = () => {
-    void audioEngine.unlock();
-  };
   // Browsers only start audio inside a gesture. Keep listening: the first
   // gesture may land while the tab is still backgrounded and fail to resume.
   const stopIfReady = () => {
-    unlock();
+    if (!audioEngine.isEnabled()) return;
+    void audioEngine.unlock();
     if (audioEngine.ready) {
       window.removeEventListener('pointerdown', stopIfReady, true);
       window.removeEventListener('keydown', stopIfReady, true);
