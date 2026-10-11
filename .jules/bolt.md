@@ -25,3 +25,7 @@
 ## 2026-10-10 - Single-pass draft preview extraction
 **Learning:** `DraftManager.tsx` was executing `draft.body.split('\n').map(line => line.trim()).find(...)` for every draft item on every render pass. For large drafts, splitting the whole body into line arrays and mapping trimmed strings for every line created thousands of string allocations and GC pressure on every keystroke.
 **Action:** Extract preview text using a single-pass `getDraftPreview` function that scans character codes until finding the first non-whitespace line, returning at most 140 characters in O(line_length) time with zero document line array allocations.
+
+## 2026-10-11 - Memoize character span rendering in QuoteTyper
+**Learning:** In `QuoteTyper.tsx`, `renderRange` was re-rendering every character span in the quote on every single keystroke. For a 300-1000 character quote, this allocated hundreds of VDOM elements and forced React to reconcile all character spans per keypress.
+**Action:** Extract individual character rendering into a `React.memo` component (`QuoteChar`) accepting primitive props (`char`, `typedChar`, `state`, `isGhostPacer`). React skips reconciliation for all unchanged character spans, reducing per-keystroke updates from O(N) to O(1).

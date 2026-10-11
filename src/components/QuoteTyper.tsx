@@ -147,6 +147,33 @@ function typingReducer(state: TypingState, action: TypingAction): TypingState {
 const isTouchDevice = (): boolean =>
   typeof window !== 'undefined' && (('ontouchstart' in window) || navigator.maxTouchPoints > 0);
 
+interface QuoteCharProps {
+  char: string;
+  typedChar?: string | undefined;
+  state: 'pending' | 'current' | 'correct' | 'error';
+  isGhostPacer: boolean;
+}
+
+// Memoized character span component to prevent re-rendering unchanged quote characters
+// on every keystroke. Reduces per-keystroke VDOM allocations and DOM diffing from O(N) to O(1).
+// eslint-disable-next-line react/prop-types
+const QuoteChar = React.memo<QuoteCharProps>(({ char, typedChar, state, isGhostPacer }) => {
+  const isTyped = state === 'correct' || state === 'error';
+  const hasError = state === 'error';
+  const displayChar = char === ' ' ? ' ' : char;
+  const shown = isTyped && typedChar ? (hasError ? (typedChar === ' ' ? ' ' : typedChar) : displayChar) : displayChar;
+
+  return (
+    <span
+      className={`quote-char font-mono ${state}${isGhostPacer ? ' ghost-pacer' : ''}`}
+      data-state={state}
+    >
+      {shown}
+    </span>
+  );
+});
+QuoteChar.displayName = 'QuoteChar';
+
 const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onComplete }) => {
   const settings = useSettings();
   const [active, setActive] = useState<ActiveQuote>({ text: quote, ...(author ? { author } : {}), ...(quoteId ? { id: quoteId } : {}) });
@@ -601,33 +628,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
   // -- rendering -------------------------------------------------------------
 
-  const renderChar = (char: string, index: number) => {
-    const isTyped = index < cursor;
-    const isCurrent = index === cursor;
-    const hasError = errors.has(index);
-    const typedChar = typedChars[index];
-
-    let state = 'pending';
-    if (isCurrent) state = 'current';
-    else if (isTyped) state = hasError ? 'error' : 'correct';
-
-    const isGhostPacer = index === ghostCursor && index > cursor;
-    // A plain space inside an inline-block collapses to nothing; the
-    // non-breaking space keeps the gap between words.
-    const displayChar = char === ' ' ? ' ' : char;
-    const shown = isTyped && typedChar ? (hasError ? (typedChar === ' ' ? ' ' : typedChar) : displayChar) : displayChar;
-
-    return (
-      <span
-        key={`qc_${index}`}
-        className={`quote-char font-mono ${state}${isGhostPacer ? ' ghost-pacer' : ''}`}
-        data-state={state}
-      >
-        {shown}
-      </span>
-    );
-  };
-
   const renderRange = (start: number, end: number): React.ReactNode[] => {
     const nodes: React.ReactNode[] = [];
     let word: React.ReactNode[] = [];
@@ -644,7 +644,25 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     for (let i = start; i < end; i++) {
       const ch = activeQuote[i] ?? '';
       if (word.length === 0) wordKey = i;
-      word.push(renderChar(ch === ' ' ? ' ' : ch, i));
+
+      const isTyped = i < cursor;
+      const isCurrent = i === cursor;
+      const hasError = errors.has(i);
+      let state: 'pending' | 'current' | 'correct' | 'error' = 'pending';
+      if (isCurrent) state = 'current';
+      else if (isTyped) state = hasError ? 'error' : 'correct';
+
+      const isGhostPacer = i === ghostCursor && i > cursor;
+
+      word.push(
+        <QuoteChar
+          key={`qc_${i}`}
+          char={ch === ' ' ? ' ' : ch}
+          typedChar={typedChars[i]}
+          state={state}
+          isGhostPacer={isGhostPacer}
+        />
+      );
       if (ch === ' ') flush();
     }
     flush();
