@@ -154,8 +154,8 @@ interface QuoteCharProps {
   isGhostPacer: boolean;
 }
 
-// Memoized character span component to prevent re-rendering unchanged quote characters
-// on every keystroke. Reduces per-keystroke VDOM allocations and DOM diffing from O(N) to O(1).
+// Memoized character span component. While renderRange constructs QuoteChar JSX elements on each render,
+// React.memo skips re-rendering unchanged QuoteChar child components and DOM updates during reconciliation.
 // eslint-disable-next-line react/prop-types
 const QuoteChar = React.memo<QuoteCharProps>(({ char, typedChar, state, isGhostPacer }) => {
   const isTyped = state === 'correct' || state === 'error';

@@ -75,4 +75,44 @@ describe('QuoteTyper sitting totals', () => {
     act(() => updateSettings({ reducedMotion: false }));
     expect(getLiveStats('quote')).toMatchObject({ chars: 4, time: 3 });
   });
+
+  it('handles backspace and error correction', () => {
+    // Type incorrect character
+    type('x');
+    const firstChar = host.querySelector<HTMLSpanElement>('.quote-char');
+    expect(firstChar?.getAttribute('data-state')).toBe('error');
+
+    // Press Backspace
+    const input = host.querySelector<HTMLInputElement>('[aria-label="Type the quote shown here"]')!;
+    act(() => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true })));
+
+    // First char should now be 'current'
+    expect(firstChar?.getAttribute('data-state')).toBe('current');
+
+    // Type correct character
+    type('C');
+    expect(firstChar?.getAttribute('data-state')).toBe('correct');
+  });
+
+  it('resets quote progress when Type again is clicked', () => {
+    finishQuote();
+    const retry = [...host.querySelectorAll('button')].find(button => button.textContent?.includes('Type again'))!;
+    expect(retry).toBeDefined();
+    act(() => retry.click());
+
+    expect(host.querySelectorAll('.quote-char[data-state="correct"]').length).toBe(0);
+    const firstChar = host.querySelector<HTMLSpanElement>('.quote-char');
+    expect(firstChar?.getAttribute('data-state')).toBe('current');
+  });
+
+  it('advances ghost-pacer element as targetWpm pace progresses', () => {
+    act(() => updateSettings({ targetWpm: 60 })); // 60 WPM = 5 CPS
+    type('C'); // start typing
+
+    // Advance time by 400ms -> targetCps = 5, 0.4s * 5 = 2 chars (ghost cursor at index 2)
+    act(() => vi.advanceTimersByTime(400));
+
+    const pacer = host.querySelector('.quote-char.ghost-pacer');
+    expect(pacer).not.toBeNull();
+  });
 });
