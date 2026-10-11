@@ -27,5 +27,5 @@
 **Action:** Extract preview text using a single-pass `getDraftPreview` function that scans character codes until finding the first non-whitespace line, returning at most 140 characters in O(line_length) time with zero document line array allocations.
 
 ## 2026-10-11 - Memoize character span rendering in QuoteTyper
-**Learning:** In `QuoteTyper.tsx`, `renderRange` was re-rendering every character span in the quote on every single keystroke. For a 300-1000 character quote, this allocated hundreds of VDOM elements and forced React to reconcile all character spans per keypress.
-**Action:** Extract individual character rendering into a `React.memo` component (`QuoteChar`) accepting primitive props (`char`, `typedChar`, `state`, `isGhostPacer`). React skips reconciliation for all unchanged character spans, reducing per-keystroke updates from O(N) to O(1).
+**Learning:** In `QuoteTyper.tsx`, `renderRange` constructs JSX elements for each character on render. Wrapping individual character rendering in a `React.memo` component prevents React from re-rendering unchanged character child components and diffing DOM nodes.
+**Action:** Extract individual character rendering into a `React.memo` component (`QuoteChar`) accepting primitive props (`char`, `typedChar`, `state`, `isGhostPacer`) so React skips child reconciliation for unchanged characters during typing updates.

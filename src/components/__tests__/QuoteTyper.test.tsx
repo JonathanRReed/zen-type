@@ -107,12 +107,21 @@ describe('QuoteTyper sitting totals', () => {
 
   it('advances ghost-pacer element as targetWpm pace progresses', () => {
     act(() => updateSettings({ targetWpm: 60 })); // 60 WPM = 5 CPS
-    type('C'); // start typing
+    type('C'); // start typing (cursor = 1)
 
-    // Advance time by 400ms -> targetCps = 5, 0.4s * 5 = 2 chars (ghost cursor at index 2)
+    // Advance time by 400ms -> 0.4s * 5 CPS = ghost cursor at index 2 ('d')
     act(() => vi.advanceTimersByTime(400));
+    const pacer1 = host.querySelector('.quote-char.ghost-pacer');
+    expect(pacer1).not.toBeNull();
+    expect(pacer1?.textContent).toBe('d');
 
-    const pacer = host.querySelector('.quote-char.ghost-pacer');
-    expect(pacer).not.toBeNull();
+    // Advance time by another 300ms (700ms total) -> interval at 640ms calculates 0.64s * 5 CPS = ghost cursor at index 3 ('e')
+    act(() => vi.advanceTimersByTime(300));
+    const pacer2 = host.querySelector('.quote-char.ghost-pacer');
+    expect(pacer2).not.toBeNull();
+    expect(pacer2?.textContent).toBe('e');
+
+    // Verify marker position changed between timer advances
+    expect(pacer1).not.toBe(pacer2);
   });
 });
