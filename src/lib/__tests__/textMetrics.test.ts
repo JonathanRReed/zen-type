@@ -272,6 +272,33 @@ describe('extractOutline', () => {
     ]);
   });
 
+  it('preserves malformed hash-prefixed paragraph intros before blank lines and EOF', () => {
+    for (const sentence of ['#not a heading.', '####### A sentence.', '#\u200bInvalid sentence.']) {
+      for (const ending of ['', '\n', '\n\n', '\r\n\u2003\u00a0\r\n']) {
+        const text = `## Valid heading\r\n${sentence}${ending}`;
+        expect(extractOutline(text)).toEqual(legacyExtractOutline(text));
+        expect(extractOutline(text).at(-1)).toEqual({ text: sentence, level: 0, startIndex: 18 });
+      }
+    }
+  });
+
+  it('preserves whitespace, newline, length-boundary, and invalid heading semantics', () => {
+    const lines = ['# Heading.', '#not a heading.', '####### A sentence.', '#', '# ',
+      '#\tTabbed', '  ## Indented  ', '\u00a0###\u2003Unicode\uFEFF', '# A\u2028B',
+      'x'.repeat(9) + '.', 'x'.repeat(10) + '.', 'x'.repeat(98) + '.', 'x'.repeat(99) + '.',
+      'Sentence ending here.', '\t\u2003\u00a0\uFEFF', 'Follow-up text', ''];
+    for (const separator of ['\n', '\r\n']) {
+      for (const line of lines) {
+        for (const next of lines) {
+          for (const ending of ['', separator]) {
+            const text = `${line}${separator}${next}${ending}`;
+            expect(extractOutline(text)).toEqual(legacyExtractOutline(text));
+          }
+        }
+      }
+    }
+  });
+
   it('handles empty string and whitespace-only text', () => {
     expect(extractOutline('')).toEqual([]);
     expect(extractOutline('   \n\t\n  ')).toEqual([]);

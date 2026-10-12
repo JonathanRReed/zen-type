@@ -146,8 +146,7 @@ export interface OutlineItem {
 }
 
 // Single-pass outline extraction avoiding text.split('\n') array allocations.
-// Scans line segments in O(N) time with O(1) auxiliary space (allocating only
-// the resulting outline item strings).
+// Each line is still sliced and trimmed; the full-document line array is avoided.
 export function extractOutline(text: string): OutlineItem[] {
   if (!text) return [];
   const outline: OutlineItem[] = [];
@@ -161,39 +160,32 @@ export function extractOutline(text: string): OutlineItem[] {
     const line = text.slice(lineStart, lineEnd);
     const trimmed = line.trim();
 
-    // Fast-gate: check heading prefix (# is char code 35) or trailing period (. is char code 46)
-    if (trimmed.length > 0) {
-      if (trimmed.charCodeAt(0) === 35) {
-        // Markdown-style headings
-        const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
-        if (headingMatch) {
-          outline.push({
-            text: headingMatch[2] || '',
-            level: headingMatch[1]?.length || 1,
-            startIndex: lineStart,
-          });
-        }
-      } else if (
-        trimmed.charCodeAt(trimmed.length - 1) === 46 &&
-        trimmed.length > 10 &&
-        trimmed.length < 100
-      ) {
-        // First sentence of paragraphs (if next line is blank or absent)
-        let isNextLineBlank = true;
-        if (lineEnd < len) {
-          let nextLineEnd = text.indexOf('\n', lineEnd + 1);
-          if (nextLineEnd === -1) nextLineEnd = len;
-          const nextLine = text.slice(lineEnd + 1, nextLineEnd);
-          isNextLineBlank = nextLine.trim().length === 0;
-        }
+    // Invalid hash-prefixed lines can still be paragraph introductions.
+    const headingMatch = trimmed.startsWith('#')
+      ? trimmed.match(/^(#{1,6})\s+(.+)$/)
+      : null;
+    if (headingMatch) {
+      outline.push({
+        text: headingMatch[2] || '',
+        level: headingMatch[1]?.length || 1,
+        startIndex: lineStart,
+      });
+    } else if (trimmed.endsWith('.') && trimmed.length > 10 && trimmed.length < 100) {
+      // First sentence of paragraphs (if next line is blank or absent)
+      let isNextLineBlank = true;
+      if (lineEnd < len) {
+        let nextLineEnd = text.indexOf('\n', lineEnd + 1);
+        if (nextLineEnd === -1) nextLineEnd = len;
+        const nextLine = text.slice(lineEnd + 1, nextLineEnd);
+        isNextLineBlank = nextLine.trim().length === 0;
+      }
 
-        if (isNextLineBlank) {
-          outline.push({
-            text: trimmed,
-            level: 0,
-            startIndex: lineStart,
-          });
-        }
+      if (isNextLineBlank) {
+        outline.push({
+          text: trimmed,
+          level: 0,
+          startIndex: lineStart,
+        });
       }
     }
 

@@ -31,5 +31,5 @@
 **Action:** Extract individual character rendering into a `React.memo` component (`QuoteChar`) accepting primitive props (`char`, `typedChar`, `state`, `isGhostPacer`) so React skips child reconciliation for unchanged characters during typing updates.
 
 ## 2026-10-12 - Single-pass document outline extraction
-**Learning:** `extractOutline` in `src/lib/textMetrics.ts` was executing `text.split('\n')` on every keystroke in `DraftManager.tsx` when `prefs.outline` was enabled. For multi-thousand line documents, splitting the document into line arrays created tens of thousands of string allocations and GC pressure on every keystroke.
-**Action:** Extract outline items using a single-pass `indexOf('\n')` line scanner with fast char code checks (`#` and `.`), allocating string slices only for actual outline items.
+**Learning:** `extractOutline` runs while typing with the outline enabled. An index-based line scanner avoids retaining a split array for the document, but still slices and trims each line. Invalid hash-prefixed lines must retain the paragraph-introduction fallback.
+**Action:** Preserve legacy output with parity tests for malformed headings, CRLF, Unicode whitespace, and blank next lines. Performance depends on the document and runtime; no allocation ratio or typing responsiveness guarantee has been established.
