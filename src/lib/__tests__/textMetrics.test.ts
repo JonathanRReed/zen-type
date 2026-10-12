@@ -229,6 +229,39 @@ describe('getKeywordFrequencies', () => {
   });
 });
 
+function legacyExtractOutline(text: string) {
+  const lines = text.split('\n');
+  const outline: { text: string; level: number; startIndex: number }[] = [];
+  let currentIndex = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] || '';
+    const trimmed = line.trim();
+
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      outline.push({
+        text: headingMatch[2] || '',
+        level: headingMatch[1]?.length || 1,
+        startIndex: currentIndex,
+      });
+    } else if (trimmed.endsWith('.') && trimmed.length > 10 && trimmed.length < 100) {
+      const nextLine = lines[i + 1];
+      if (!nextLine || !nextLine.trim()) {
+        outline.push({
+          text: trimmed,
+          level: 0,
+          startIndex: currentIndex,
+        });
+      }
+    }
+
+    currentIndex += line.length + 1;
+  }
+
+  return outline;
+}
+
 describe('extractOutline', () => {
   it('extracts headings from markdown text', () => {
     const text = '# Heading 1\nSome paragraph without dot\n## Heading 2\nMore text';
@@ -237,6 +270,64 @@ describe('extractOutline', () => {
       { text: 'Heading 1', level: 1, startIndex: 0 },
       { text: 'Heading 2', level: 2, startIndex: 39 },
     ]);
+  });
+
+  it('handles empty string and whitespace-only text', () => {
+    expect(extractOutline('')).toEqual([]);
+    expect(extractOutline('   \n\t\n  ')).toEqual([]);
+  });
+
+  it('extracts headings # through ###### and paragraph intros ending with period', () => {
+    const text = [
+      '# Level 1 Heading',
+      'This is a short introductory sentence.',
+      '',
+      '## Level 2 Heading',
+      'A longer paragraph sentence that ends with a period.',
+      'Followup sentence in same paragraph.',
+      '',
+      '### Level 3 Heading',
+      '#### Level 4 Heading',
+      '##### Level 5 Heading',
+      '###### Level 6 Heading',
+      'Final paragraph sentence ending with period.',
+    ].join('\n');
+
+    expect(extractOutline(text)).toEqual(legacyExtractOutline(text));
+  });
+
+  it('ignores paragraph intros shorter than 11 chars or longer than 99 chars', () => {
+    const text = [
+      'Short.', // 6 chars
+      '',
+      'A'.repeat(100) + '.', // 101 chars
+      '',
+      'This sentence is exactly 45 characters long.', // 45 chars
+      '',
+    ].join('\n');
+
+    expect(extractOutline(text)).toEqual(legacyExtractOutline(text));
+  });
+
+  it('matches legacy extractOutline output across varied synthetic documents', () => {
+    const testCases = [
+      '# Title\n\nParagraph 1.\n\n## Subtitle\nParagraph 2.',
+      '   # Heading with leading spaces\n   Paragraph text.\n\n',
+      '####### Not a valid markdown heading (7 hashes)\nSome text.',
+      '# Heading without blank line\nThis is a long sentence ending with a period.',
+      'Line 1.\nLine 2.\nLine 3.',
+      Array.from({ length: 500 }, (_, i) =>
+        i % 10 === 0
+          ? `# Heading ${i}`
+          : i % 10 === 5
+          ? `Paragraph summary sentence for section ${i}.`
+          : `Regular content line number ${i}`
+      ).join('\n'),
+    ];
+
+    for (const text of testCases) {
+      expect(extractOutline(text)).toEqual(legacyExtractOutline(text));
+    }
   });
 });
 
