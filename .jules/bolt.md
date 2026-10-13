@@ -29,3 +29,7 @@
 ## 2026-10-11 - Memoize character span rendering in QuoteTyper
 **Learning:** In `QuoteTyper.tsx`, `renderRange` constructs JSX elements for each character on render. Wrapping individual character rendering in a `React.memo` component prevents React from re-rendering unchanged character child components and diffing DOM nodes.
 **Action:** Extract individual character rendering into a `React.memo` component (`QuoteChar`) accepting primitive props (`char`, `typedChar`, `state`, `isGhostPacer`) so React skips child reconciliation for unchanged characters during typing updates.
+
+## 2026-10-12 - Line-by-line index scanning for document outline extraction
+**Learning:** `extractOutline` in `src/lib/textMetrics.ts` was executing `text.split('\n')` on every keystroke in the editor when the outline feature was enabled. For large documents, splitting the document into line arrays allocated thousands of temporary line strings on every single keystroke.
+**Action:** Scan document lines using `text.indexOf('\n', lineStart)` with a fast `trimmed.startsWith('#')` guard to skip non-heading regex evaluations. This extracts markdown headings and paragraph outlines in O(N) time with zero document-level line array allocations.

@@ -229,6 +229,41 @@ describe('getKeywordFrequencies', () => {
   });
 });
 
+function legacyExtractOutline(text: string) {
+  const lines = text.split('\n');
+  const outline: { text: string; level: number; startIndex: number }[] = [];
+  let currentIndex = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] || '';
+    const trimmed = line.trim();
+
+    // Markdown-style headings
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      outline.push({
+        text: headingMatch[2] || '',
+        level: headingMatch[1]?.length || 1,
+        startIndex: currentIndex,
+      });
+    } else if (trimmed.endsWith('.') && trimmed.length > 10 && trimmed.length < 100) {
+      // First sentence of paragraphs (if next line is blank)
+      const nextLine = lines[i + 1];
+      if (!nextLine || !nextLine.trim()) {
+        outline.push({
+          text: trimmed,
+          level: 0,
+          startIndex: currentIndex,
+        });
+      }
+    }
+
+    currentIndex += line.length + 1; // +1 for newline
+  }
+
+  return outline;
+}
+
 describe('extractOutline', () => {
   it('extracts headings from markdown text', () => {
     const text = '# Heading 1\nSome paragraph without dot\n## Heading 2\nMore text';
@@ -237,6 +272,63 @@ describe('extractOutline', () => {
       { text: 'Heading 1', level: 1, startIndex: 0 },
       { text: 'Heading 2', level: 2, startIndex: 39 },
     ]);
+  });
+
+  it.each([
+    ['empty text', ''],
+    ['whitespace only', '   \n\t  \n  '],
+    ['single heading', '# Title'],
+    ['multiple levels of headings', '# Title\n## Subtitle\n### Section\n#### Sub\n##### Deep\n###### Deepest'],
+    ['headings with surrounding spaces', '  ##  Spaced Heading  \n\n ### Another Heading  '],
+    ['invalid heading levels/formats', '#NoSpace\n####### SevenHashes\n# '],
+    ['invalid heading ending with dot falling through to paragraph rule', '#Not a heading.\n\nNext line'],
+    ['overdeep heading ending with dot falling through to paragraph rule', '####### Overdeep title.'],
+    ['spaced invalid heading ending with dot falling through to paragraph rule', '  #Not a heading with spaces.\n\nNext line'],
+    ['invalid heading ending with dot but followed by nonblank line', '#Not a heading.\nNon-blank line'],
+    ['paragraph ending with dot followed by blank line', 'This is a valid paragraph sentence that ends with a dot.\n\nNext line'],
+    ['paragraph ending with dot followed by non-blank line', 'This paragraph sentence ends with a dot.\nNot a blank line.'],
+    ['paragraph sentence too short (<= 10)', 'Too short.\n\nNext line'],
+    ['paragraph sentence too long (>= 100)', 'A'.repeat(100) + '.\n\nNext line'],
+    ['complex markdown document', '# Introduction\n\nThis is the intro section of a document.\n\n## Section 1\n\nSome details here.\n\n### Subsection 1.1\n\nMore details.\n'],
+    ['document with CRLF line endings', '# Heading 1\r\n\r\nParagraph text.\r\n\r\n## Heading 2\r\n'],
+    ['trailing newlines', '# Heading 1\n\n\n'],
+    ['unicode content in headings and paragraphs', '# 🚀 Launch Sequence\n\nThis is a unicode test paragraph with emoji 😀.\n\n## 🌲 Forest Theme\n'],
+  ])('matches legacy outline extraction parity for %s', (_name, text) => {
+    expect(extractOutline(text)).toEqual(legacyExtractOutline(text));
+  });
+
+  describe.each(['#Not a heading.', '####### Overdeep title.'])('paragraph fallback for %s', line => {
+    it.each([
+      ['EOF', '', ''],
+      ['newline at EOF', '', '\n'],
+      ['blank next line', '', '\n\nNext line'],
+      ['whitespace-only next line', '', '\n \t\nNext line'],
+      ['leading whitespace at EOF', ' \t', ''],
+      ['leading whitespace before a blank next line', ' \t', '\n\nNext line'],
+      ['leading whitespace before a CRLF whitespace-only next line', ' \t', '\r\n \t\r\nNext line'],
+    ])('preserves the level-0 entry with %s', (_name, prefix, suffix) => {
+      const text = `Before\n${prefix}${line}${suffix}`;
+      const expected = [{ text: line, level: 0, startIndex: 7 }];
+      expect(legacyExtractOutline(text)).toEqual(expected);
+      expect(extractOutline(text)).toEqual(expected);
+    });
+
+    it.each([
+      ['nonblank next line', '', '\nNext line'],
+      ['leading whitespace before a nonblank next line', ' \t', '\nNext line'],
+      ['leading whitespace before a CRLF nonblank next line', ' \t', '\r\nNext line'],
+    ])('omits the paragraph with %s', (_name, prefix, suffix) => {
+      const text = `Before\n${prefix}${line}${suffix}`;
+      expect(legacyExtractOutline(text)).toEqual([]);
+      expect(extractOutline(text)).toEqual([]);
+    });
+  });
+
+  it('does not duplicate a matched heading ending with a period as a paragraph', () => {
+    const text = '# A valid heading.\n\nNext line';
+    const expected = [{ text: 'A valid heading.', level: 1, startIndex: 0 }];
+    expect(legacyExtractOutline(text)).toEqual(expected);
+    expect(extractOutline(text)).toEqual(expected);
   });
 });
 
