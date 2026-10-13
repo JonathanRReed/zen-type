@@ -145,36 +145,59 @@ export interface OutlineItem {
   startIndex: number;
 }
 
+// Line-by-line scanning outline extraction to avoid splitting the entire document
+// into line arrays on every keystroke when outline is enabled.
+// Complexity: O(N) time with O(number_of_outline_items) string allocations.
 export function extractOutline(text: string): OutlineItem[] {
-  const lines = text.split('\n');
+  if (!text) return [];
   const outline: OutlineItem[] = [];
-  let currentIndex = 0;
+  const len = text.length;
+  let lineStart = 0;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] || '';
+  while (lineStart <= len) {
+    let lineEnd = text.indexOf('\n', lineStart);
+    if (lineEnd === -1) {
+      lineEnd = len;
+    }
+
+    const line = text.slice(lineStart, lineEnd);
     const trimmed = line.trim();
 
     // Markdown-style headings
-    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
-    if (headingMatch) {
-      outline.push({
-        text: headingMatch[2] || '',
-        level: headingMatch[1]?.length || 1,
-        startIndex: currentIndex,
-      });
+    if (trimmed.startsWith('#')) {
+      const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+      if (headingMatch) {
+        outline.push({
+          text: headingMatch[2] || '',
+          level: headingMatch[1]?.length || 1,
+          startIndex: lineStart,
+        });
+      }
     } else if (trimmed.endsWith('.') && trimmed.length > 10 && trimmed.length < 100) {
       // First sentence of paragraphs (if next line is blank)
-      const nextLine = lines[i + 1];
-      if (!nextLine || !nextLine.trim()) {
+      let isNextBlank = true;
+      if (lineEnd < len) {
+        const nextLineStart = lineEnd + 1;
+        let nextLineEnd = text.indexOf('\n', nextLineStart);
+        if (nextLineEnd === -1) nextLineEnd = len;
+
+        const nextLine = text.slice(nextLineStart, nextLineEnd);
+        if (nextLine.trim().length > 0) {
+          isNextBlank = false;
+        }
+      }
+
+      if (isNextBlank) {
         outline.push({
           text: trimmed,
           level: 0,
-          startIndex: currentIndex,
+          startIndex: lineStart,
         });
       }
     }
 
-    currentIndex += line.length + 1; // +1 for newline
+    if (lineEnd === len) break;
+    lineStart = lineEnd + 1;
   }
 
   return outline;
