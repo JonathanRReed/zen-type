@@ -296,6 +296,40 @@ describe('extractOutline', () => {
   ])('matches legacy outline extraction parity for %s', (_name, text) => {
     expect(extractOutline(text)).toEqual(legacyExtractOutline(text));
   });
+
+  describe.each(['#Not a heading.', '####### Overdeep title.'])('paragraph fallback for %s', line => {
+    it.each([
+      ['EOF', '', ''],
+      ['newline at EOF', '', '\n'],
+      ['blank next line', '', '\n\nNext line'],
+      ['whitespace-only next line', '', '\n \t\nNext line'],
+      ['leading whitespace at EOF', ' \t', ''],
+      ['leading whitespace before a blank next line', ' \t', '\n\nNext line'],
+      ['leading whitespace before a CRLF whitespace-only next line', ' \t', '\r\n \t\r\nNext line'],
+    ])('preserves the level-0 entry with %s', (_name, prefix, suffix) => {
+      const text = `Before\n${prefix}${line}${suffix}`;
+      const expected = [{ text: line, level: 0, startIndex: 7 }];
+      expect(legacyExtractOutline(text)).toEqual(expected);
+      expect(extractOutline(text)).toEqual(expected);
+    });
+
+    it.each([
+      ['nonblank next line', '', '\nNext line'],
+      ['leading whitespace before a nonblank next line', ' \t', '\nNext line'],
+      ['leading whitespace before a CRLF nonblank next line', ' \t', '\r\nNext line'],
+    ])('omits the paragraph with %s', (_name, prefix, suffix) => {
+      const text = `Before\n${prefix}${line}${suffix}`;
+      expect(legacyExtractOutline(text)).toEqual([]);
+      expect(extractOutline(text)).toEqual([]);
+    });
+  });
+
+  it('does not duplicate a matched heading ending with a period as a paragraph', () => {
+    const text = '# A valid heading.\n\nNext line';
+    const expected = [{ text: 'A valid heading.', level: 1, startIndex: 0 }];
+    expect(legacyExtractOutline(text)).toEqual(expected);
+    expect(extractOutline(text)).toEqual(expected);
+  });
 });
 
 describe('getDraftPreview', () => {
