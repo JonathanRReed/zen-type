@@ -164,16 +164,20 @@ export function extractOutline(text: string): OutlineItem[] {
     const trimmed = line.trim();
 
     // Markdown-style headings
+    let matchedHeading = false;
     if (trimmed.startsWith('#')) {
       const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
       if (headingMatch) {
+        matchedHeading = true;
         outline.push({
           text: headingMatch[2] || '',
           level: headingMatch[1]?.length || 1,
           startIndex: lineStart,
         });
       }
-    } else if (trimmed.endsWith('.') && trimmed.length > 10 && trimmed.length < 100) {
+    }
+
+    if (!matchedHeading && trimmed.endsWith('.') && trimmed.length > 10 && trimmed.length < 100) {
       // First sentence of paragraphs (if next line is blank)
       let isNextBlank = true;
       if (lineEnd < len) {
