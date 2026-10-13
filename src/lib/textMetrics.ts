@@ -145,9 +145,8 @@ export interface OutlineItem {
   startIndex: number;
 }
 
-// Line-by-line scanning outline extraction to avoid splitting the entire document
-// into line arrays on every keystroke when outline is enabled.
-// Complexity: O(N) time with O(number_of_outline_items) string allocations.
+// Scan document lines incrementally when outline is enabled, avoiding a
+// document-wide line array on each editor update.
 export function extractOutline(text: string): OutlineItem[] {
   if (!text) return [];
   const outline: OutlineItem[] = [];
