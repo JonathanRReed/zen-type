@@ -40,6 +40,11 @@ describe('checkGrammar', () => {
     const text = 'The quick brown fox jumps over the lazy dog.';
     expect(checkGrammar(text)).toEqual([]);
   });
+
+  it('handles multi-character sentence delimiters correctly', () => {
+    const text = 'First clause with words... Second clause with words!! Third clause with words.';
+    expect(checkGrammar(text)).toEqual([]);
+  });
 });
 
 describe('repeated grammar checks', () => {

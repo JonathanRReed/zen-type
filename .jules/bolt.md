@@ -33,3 +33,7 @@
 ## 2026-10-12 - Line-by-line index scanning for document outline extraction
 **Learning:** `extractOutline` in `src/lib/textMetrics.ts` was executing `text.split('\n')` on every keystroke in the editor when the outline feature was enabled. For large documents, splitting the document into line arrays allocated thousands of temporary line strings on every single keystroke.
 **Action:** Scan document lines using `text.indexOf('\n', lineStart)` with a fast `trimmed.startsWith('#')` guard to skip non-heading regex evaluations. This extracts markdown headings and paragraph outlines in O(N) time with zero document-level line array allocations.
+
+## 2026-10-13 - Zero-allocation sentence word counting in checkGrammar
+**Learning:** `checkGrammar` in `src/lib/grammar.ts` was executing `text.split(/[.!?]+/)` and `sentence.trim().split(/\s+/)` on every keystroke when grammar check was enabled, creating thousands of sentence and word string array allocations per keypress. In addition, `text.toLowerCase()` created a full duplicate string copy before executing `PASSIVE_PATTERN` even though `PASSIVE_PATTERN` already used case-insensitive `/gi` flags.
+**Action:** Replace sentence and word array splitting with character code range scanning (`countWordsInRange`) using sentence delimiter index offsets (`match.index + match[0].length`), and pass `text` directly to `PASSIVE_PATTERN.exec(text)`.
