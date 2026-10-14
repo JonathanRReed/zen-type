@@ -33,3 +33,7 @@
 ## 2026-10-12 - Line-by-line index scanning for document outline extraction
 **Learning:** `extractOutline` in `src/lib/textMetrics.ts` was executing `text.split('\n')` on every keystroke in the editor when the outline feature was enabled. For large documents, splitting the document into line arrays allocated thousands of temporary line strings on every single keystroke.
 **Action:** Scan document lines using `text.indexOf('\n', lineStart)` with a fast `trimmed.startsWith('#')` guard to skip non-heading regex evaluations. This extracts markdown headings and paragraph outlines in O(N) time with zero document-level line array allocations.
+
+## 2026-10-13 - Sentence scanning without split arrays
+**Learning:** `checkGrammar` split the document into sentence arrays and each sentence into word arrays. It also lowercased the full document before a case-insensitive passive-voice match, which could shift source offsets when Unicode lowercasing expanded a character.
+**Action:** Count words over source ranges and advance past complete punctuation runs. Match passive voice against the original text. This removes split arrays and the lowercase copy; regex matches and issue objects still allocate. No performance percentage has been measured. Regression tests cover source offsets, word-count boundaries, whitespace and repeated calls.
