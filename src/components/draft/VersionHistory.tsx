@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { diffLines } from 'diff';
 import type { DraftSnapshot } from '../../lib/draftStore';
+import { computeTextMetrics } from '../../lib/textMetrics';
 import { Button } from '@/components/ui/button';
 
 interface VersionHistoryProps {
@@ -32,10 +33,13 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
       const diff = prevSnapshot ? diffLines(prevSnapshot.body, snapshot.body) : null;
       const addedLines = diff ? diff.filter(d => d.added).length : 0;
       const removedLines = diff ? diff.filter(d => d.removed).length : 0;
+      // Single-pass word count calculation using computeTextMetrics avoids split(/\s+/) string array allocations
+      const words = computeTextMetrics(snapshot.body).words;
       return {
         snapshot,
         addedLines,
         removedLines,
+        words,
       };
     });
   }, [isOpen, snapshots]);
@@ -95,7 +99,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {snapshotItems.map(({ snapshot, addedLines, removedLines }) => {
+              {snapshotItems.map(({ snapshot, addedLines, removedLines, words }) => {
                 return (
                   <div
                     key={snapshot.id}
@@ -114,7 +118,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
                           )}
                         </div>
                         <p className="text-xs text-muted mt-1">
-                          {snapshot.body.split(/\s+/).length} words • {snapshot.body.length} chars
+                          {words} words • {snapshot.body.length} chars
                         </p>
                         {(addedLines > 0 || removedLines > 0) && (
                           <div className="flex items-center gap-3 mt-2 text-xs">
