@@ -37,3 +37,7 @@
 ## 2026-10-13 - Sentence scanning without split arrays
 **Learning:** `checkGrammar` split the document into sentence arrays and each sentence into word arrays. It also lowercased the full document before a case-insensitive passive-voice match, which could shift source offsets when Unicode lowercasing expanded a character.
 **Action:** Count words over source ranges and advance past complete punctuation runs. Match passive voice against the original text. This removes split arrays and the lowercase copy; regex matches and issue objects still allocate. No performance percentage has been measured. Regression tests cover source offsets, word-count boundaries, whitespace and repeated calls.
+
+## 2026-10-14 - Single-pass quote chunking and word counting
+**Learning:** `chunks` in `src/components/QuoteTyper.tsx` was splitting quote text using `split(/\s+/).filter(Boolean)` and iterating with `activeQuote.indexOf(w, idx)` for every word to find word starting indices for line wrapping. Word count calls also invoked `split(/\s+/).filter(Boolean).length`, allocating word string arrays for garbage collection.
+**Action:** Scan character codes with `charCodeAt` in a single pass to collect word starting indices in O(N) time with zero intermediate string or word-array allocations, and use `computeTextMetrics` for word counts.

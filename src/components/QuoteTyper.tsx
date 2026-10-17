@@ -12,6 +12,7 @@ import {
 } from '../utils/storage';
 import { useSettings } from '../hooks/useSettings';
 import { loadQuotes, pickQuote, getFallbackQuotes, type Quote } from '../utils/quotes';
+import { computeTextMetrics } from '../lib/textMetrics';
 import { Button } from '@/components/ui/button';
 import AnimatedNumber from './AnimatedNumber';
 import { audioEngine } from '../utils/audioEngine';
@@ -281,24 +282,37 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
   // Group the quote into lines of roughly ten words so the surface wraps on
   // word boundaries rather than mid-word.
+  // Single-pass charCodeAt scan identifies word starting indices in O(N) time with
+  // zero intermediate string or word-array allocations (avoiding split(/\s+/) and indexOf).
   type Chunk = { start: number; end: number };
   const chunks = useMemo<Chunk[]>(() => {
-    const words = activeQuote.split(/\s+/).filter(Boolean);
     const starts: number[] = [];
-    let idx = 0;
-    for (const w of words) {
-      const found = activeQuote.indexOf(w, idx);
-      if (found === -1) break;
-      starts.push(found);
-      idx = found + w.length;
+    const len = activeQuote.length;
+    let inWord = false;
+
+    for (let i = 0; i < len; i++) {
+      const ch = activeQuote.charCodeAt(i);
+      const isWhitespace =
+        (ch >= 0x0009 && ch <= 0x000d) || ch === 0x0020 || ch === 0x00a0 ||
+        ch === 0x1680 || (ch >= 0x2000 && ch <= 0x200a) ||
+        ch === 0x2028 || ch === 0x2029 || ch === 0x202f ||
+        ch === 0x205f || ch === 0x3000 || ch === 0xfeff;
+      if (isWhitespace) {
+        inWord = false;
+      } else if (!inWord) {
+        inWord = true;
+        starts.push(i);
+      }
     }
+
+    const wordCount = starts.length;
     const out: Chunk[] = [];
-    const targetChunks = Math.max(1, Math.ceil(words.length / 10));
-    const size = Math.max(8, Math.min(12, Math.ceil(words.length / targetChunks)));
-    for (let w = 0; w < words.length; w += size) {
-      const last = Math.min(words.length - 1, w + size - 1);
+    const targetChunks = Math.max(1, Math.ceil(wordCount / 10));
+    const size = Math.max(8, Math.min(12, Math.ceil(wordCount / targetChunks)));
+    for (let w = 0; w < wordCount; w += size) {
+      const last = Math.min(wordCount - 1, w + size - 1);
       const start = starts[w] ?? 0;
-      const end = last + 1 < starts.length ? (starts[last + 1] ?? activeQuote.length) : activeQuote.length;
+      const end = last + 1 < starts.length ? (starts[last + 1] ?? len) : len;
       out.push({ start, end });
     }
     return out;
@@ -416,7 +430,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
     const start = new Date(ts.startedAt);
     const end = new Date(ts.endedAt);
-    const words = activeRef.current.text.split(/\s+/).filter(Boolean).length;
+    const words = computeTextMetrics(activeRef.current.text).words;
     const minutes = (end.getTime() - start.getTime()) / 1000 / 60;
     const wpm = minutes > 0 ? Math.round((ts.correct / 5) / minutes) : 0;
     const accuracy = ts.total === 0 ? 100 : Math.round((ts.correct / ts.total) * 100);
@@ -680,7 +694,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
       downloadShareCard({
         mode: 'quote',
         timeSec: startTime && endTime ? (endTime.getTime() - startTime.getTime()) / 1000 : 0,
-        words: activeQuote.split(/\s+/).filter(Boolean).length,
+        words: computeTextMetrics(activeQuote).words,
         wpm: wpmValue,
         accuracy: accuracyValue,
         ...(completion?.streak ? { streak: completion.streak } : {}),
