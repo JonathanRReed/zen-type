@@ -37,3 +37,7 @@
 ## 2026-10-13 - Sentence scanning without split arrays
 **Learning:** `checkGrammar` split the document into sentence arrays and each sentence into word arrays. It also lowercased the full document before a case-insensitive passive-voice match, which could shift source offsets when Unicode lowercasing expanded a character.
 **Action:** Count words over source ranges and advance past complete punctuation runs. Match passive voice against the original text. This removes split arrays and the lowercase copy; regex matches and issue objects still allocate. No performance percentage has been measured. Regression tests cover source offsets, word-count boundaries, whitespace and repeated calls.
+
+## 2026-10-14 - Gate search item mapping and Fuse indexing on modal visibility
+**Learning:** `CommandPalette.tsx` computed `searchItems` (mapping heading/line objects) and instantiated `new Fuse(searchItems, ...)` on every keystroke in the editor when mounted, even when `isOpen` was `false`.
+**Action:** Gate `useMemo` derivations inside child modal components on `isOpen` so closed components return empty arrays/null in O(1) time without building search index structures or allocating search item objects.

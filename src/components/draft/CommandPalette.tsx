@@ -28,7 +28,11 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Performance optimization: Gate search item generation and Fuse index creation on `isOpen`.
+  // When CommandPalette is closed, returning early in O(1) time avoids mapping search items,
+  // instantiating new Fuse instances, and building search index structures on every keystroke.
   const searchItems = useMemo<SearchItem[]>(() => {
+    if (!isOpen) return [];
     const items: SearchItem[] = [];
 
     outlineItems.forEach(item => {
@@ -48,24 +52,25 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
     });
 
     return items;
-  }, [outlineItems, recentLines]);
+  }, [isOpen, outlineItems, recentLines]);
 
-  const fuse = useMemo(
-    () =>
-      new Fuse(searchItems, {
-        keys: ['text'],
-        threshold: 0.3,
-        includeScore: true,
-      }),
-    [searchItems]
-  );
+  const fuse = useMemo(() => {
+    if (!isOpen || searchItems.length === 0) return null;
+    return new Fuse(searchItems, {
+      keys: ['text'],
+      threshold: 0.3,
+      includeScore: true,
+    });
+  }, [isOpen, searchItems]);
 
   const filteredItems = useMemo(() => {
+    if (!isOpen) return [];
     if (!query.trim()) {
       return searchItems.slice(0, 10);
     }
+    if (!fuse) return [];
     return fuse.search(query).map(result => result.item).slice(0, 10);
-  }, [query, fuse, searchItems]);
+  }, [isOpen, query, fuse, searchItems]);
 
   useEffect(() => {
     if (!isOpen || !inputRef.current) {
