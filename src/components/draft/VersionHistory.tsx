@@ -12,6 +12,11 @@ interface VersionHistoryProps {
   onRestore: (snapshotId: string) => void;
 }
 
+const formatTimestamp = (ts: number) => {
+  const date = new Date(ts);
+  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
 const VersionHistory: React.FC<VersionHistoryProps> = ({
   isOpen,
   onClose,
@@ -31,8 +36,15 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
     return reversed.map((snapshot, index) => {
       const prevSnapshot = index < reversed.length - 1 ? reversed[index + 1] : null;
       const diff = prevSnapshot ? diffLines(prevSnapshot.body, snapshot.body) : null;
-      const addedLines = diff ? diff.filter(d => d.added).length : 0;
-      const removedLines = diff ? diff.filter(d => d.removed).length : 0;
+      let addedLines = 0;
+      let removedLines = 0;
+      if (diff) {
+        for (let i = 0; i < diff.length; i++) {
+          const d = diff[i];
+          if (d?.added) addedLines++;
+          else if (d?.removed) removedLines++;
+        }
+      }
       // Single-pass word count calculation using computeTextMetrics avoids split(/\s+/) string array allocations
       const words = computeTextMetrics(snapshot.body).words;
       return {
@@ -45,11 +57,6 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
   }, [isOpen, snapshots]);
 
   if (!isOpen) return null;
-
-  const formatTimestamp = (ts: number) => {
-    const date = new Date(ts);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
 
   const handleRestore = (snapshot: DraftSnapshot) => {
     setSelectedSnapshot(snapshot);

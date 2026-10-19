@@ -37,3 +37,7 @@
 ## 2026-10-13 - Sentence scanning without split arrays
 **Learning:** `checkGrammar` split the document into sentence arrays and each sentence into word arrays. It also lowercased the full document before a case-insensitive passive-voice match, which could shift source offsets when Unicode lowercasing expanded a character.
 **Action:** Count words over source ranges and advance past complete punctuation runs. Match passive voice against the original text. This removes split arrays and the lowercase copy; regex matches and issue objects still allocate. No performance percentage has been measured. Regression tests cover source offsets, word-count boundaries, whitespace and repeated calls.
+
+## 2026-10-14 - Single-pass diff hunk counting in VersionHistory
+**Learning:** In `VersionHistory.tsx`, `snapshotItems` executed `diff.filter(d => d.added).length` and `diff.filter(d => d.removed).length` for every snapshot item, creating 2 temporary array allocations per snapshot (100 array allocations for 50 snapshots).
+**Action:** Replace double `.filter()` array creations with a single `for` loop over `diff` hunks to count added and removed line blocks in $O(N)$ time with zero array allocations. Move `formatTimestamp` outside the component to prevent function re-creation on render.
