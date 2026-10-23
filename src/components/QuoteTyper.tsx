@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
+import { markInteractiveReady } from '../utils/interactiveReady';
 import {
   recordSession,
   getSettings,
@@ -630,8 +631,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
   }, []);
   const showTapHint = touchIdle && cursor === 0 && !isComplete;
 
-  useEffect(() => () => {
-    if (progressTimeoutRef.current !== null) window.clearTimeout(progressTimeoutRef.current);
+  useEffect(() => {
+    const releaseReady = markInteractiveReady('typing');
+    return () => {
+      releaseReady();
+      if (progressTimeoutRef.current !== null) window.clearTimeout(progressTimeoutRef.current);
+    };
   }, []);
 
   const focusInput = () => {

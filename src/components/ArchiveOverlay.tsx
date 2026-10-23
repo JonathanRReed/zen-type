@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import SimpleDrafts from './SimpleDrafts';
+import { markInteractiveReady } from '../utils/interactiveReady';
 
 // Overlay that shows the local drafts viewer.
 // Opens/closes via `toggleArchive` CustomEvent or the global helper.
@@ -67,7 +68,11 @@ const ArchiveOverlay: React.FC = () => {
       clearPendingFlag();
     };
     window.addEventListener('toggleArchive', handler as EventListener);
-    return () => window.removeEventListener('toggleArchive', handler as EventListener);
+    const releaseReady = markInteractiveReady('archive');
+    return () => {
+      releaseReady();
+      window.removeEventListener('toggleArchive', handler as EventListener);
+    };
   }, [openOverlay, closeOverlay, clearPendingFlag]);
 
   return (
