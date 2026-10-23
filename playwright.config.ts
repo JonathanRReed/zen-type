@@ -10,7 +10,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 1,
-  workers: 4,
+  // Give real SwiftShader browsers the hosted runner's resources, not four competing pools.
+  workers: process.env.CI ? 1 : 4,
   reporter: [['list']],
   timeout: 45_000,
   expect: { timeout: 8_000 },

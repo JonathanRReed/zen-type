@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: '24.22.1'
           package-manager-cache: false
+      - name: Report runner CPU and memory allocation
+        run: |
+          node -e 'const os = require("node:os"); console.log(JSON.stringify({ availableParallelism: os.availableParallelism(), totalMemoryGiB: Math.round(os.totalmem() / 2 ** 30) }));'
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: '1.4.4'
