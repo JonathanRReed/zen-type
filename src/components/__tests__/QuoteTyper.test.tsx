@@ -125,3 +125,82 @@ describe('QuoteTyper sitting totals', () => {
     expect(pacer1).not.toBe(pacer2);
   });
 });
+
+describe('QuoteTyper chunk boundaries', () => {
+  let host: HTMLDivElement;
+  let root: Root;
+  beforeEach(() => {
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    updateSettings({ reducedMotion: true, autoAdvanceQuotes: false, soundEnabled: false });
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    root = createRoot(host);
+  });
+  afterEach(() => {
+    act(() => root.unmount());
+    host.remove();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+  async function render(quote: string) {
+    await act(async () => root.render(<QuoteTyper quote={quote} />));
+    return Array.from(host.querySelectorAll('.quote-line'), line => line.textContent);
+  }
+
+  it('scans without splitting quote words into temporary strings', async () => {
+    const quote = 'once upon a time once upon a time once upon a time';
+    const split = vi.spyOn(String.prototype, 'split');
+    const chunks = await render(quote);
+    expect(chunks.join('')).toBe(quote.replaceAll(' ', '\u00a0'));
+    const quoteSplits = split.mock.contexts.filter(context => String(context) === quote);
+    expect(quoteSplits).toHaveLength(0);
+  });
+
+  it('preserves UTF-16 offsets around astral characters and Unicode whitespace', async () => {
+    const quote = '😀alpha\u00a0beta\u1680gamma\u2000delta\u2028epsilon\u202fzeta\u205feta\u3000theta\ufeffiota\tκόσμε\nlast';
+    const chunks = await render(quote);
+    expect(chunks).toEqual([
+      '😀alpha\u00a0beta\u1680gamma\u2000delta\u2028epsilon\u202fzeta\u205feta\u3000theta\ufeff',
+      'iota\tκόσμε\nlast',
+    ]);
+  });
+
+  it.each([0x0009, 0x000a, 0x000b, 0x000c, 0x000d, 0x0020, 0x00a0,
+    0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006,
+    0x2007, 0x2008, 0x2009, 0x200a, 0x2028, 0x2029, 0x202f, 0x205f,
+    0x3000, 0xfeff])('uses ECMAScript whitespace U+%s as a chunk boundary', async code => {
+    const separator = String.fromCharCode(code);
+    const quote = ['😀a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'].join(separator);
+    const displayedSeparator = separator === ' ' ? '\u00a0' : separator;
+    expect(await render(quote)).toEqual([
+      ['😀a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''].join(displayedSeparator),
+      ['i', 'j', 'k'].join(displayedSeparator),
+    ]);
+  });
+
+  it('keeps substring words and non-whitespace Unicode unchanged', async () => {
+    const quote = '  catcat cat a aa aaa aaaa aaaaa aaaaaa aaaaaaa aaaaaaaa aaaaaaaaa aaaaaaaaaa  ';
+    expect(await render(quote)).toEqual([
+      'catcat\u00a0cat\u00a0a\u00a0aa\u00a0aaa\u00a0aaaa\u00a0aaaaa\u00a0aaaaaa\u00a0',
+      'aaaaaaa\u00a0aaaaaaaa\u00a0aaaaaaaaa\u00a0aaaaaaaaaa\u00a0\u00a0',
+    ]);
+    // New quotes are delivered through the same custom event as the app.
+    await act(async () => window.dispatchEvent(new CustomEvent('newQuote', { detail: { quote: 'x\u0085y\u180ez\u200bw' } })));
+    expect(Array.from(host.querySelectorAll('.quote-line'), line => line.textContent)).toEqual(['x\u0085y\u180ez\u200bw']);
+  });
+});
+
+describe('QuoteTyper empty chunk inputs', () => {
+  it.each(['', ' \t\n\u00a0\ufeff'])('does not create a line for %j', async quote => {
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    const host = document.createElement('div');
+    const root = createRoot(host);
+    try {
+      await act(async () => root.render(<QuoteTyper quote={quote} />));
+      expect(host.querySelectorAll('.quote-line')).toHaveLength(0);
+    } finally {
+      act(() => root.unmount());
+      vi.unstubAllGlobals();
+    }
+  });
+});

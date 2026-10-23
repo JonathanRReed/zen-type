@@ -2,6 +2,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { diffLines } from 'diff';
+import type * as DiffModule from 'diff';
 import VersionHistory from '../VersionHistory';
 import type { DraftSnapshot } from '../../../lib/draftStore';
 
@@ -204,4 +205,26 @@ it('opens confirm dialog on restore button click and calls onRestore on confirma
 
   expect(onRestore).toHaveBeenCalledWith('snap_2');
   expect(onClose).toHaveBeenCalled();
+});
+
+it('counts multi-line added and removed hunks without changing their displayed meaning', () => {
+  const items = [
+    { id: 'old', body: 'keep\nold one\nold two\n', ts: 1700000000000 },
+    { id: 'new', body: 'keep\nnew one\nnew two\nnew three\n', ts: 1700000100000 },
+  ];
+  renderHistory(true, items);
+  expect(host.textContent).toContain('+1 lines');
+  expect(host.textContent).toContain('-1 lines');
+  expect(host.textContent).not.toContain('+3 lines');
+  expect(items.map(item => item.id)).toEqual(['old', 'new']);
+});
+
+it('does not allocate filtered copies of each real diff to count hunks', async () => {
+  const actual = await vi.importActual<typeof DiffModule>('diff');
+  const diff = actual.diffLines(snapshots[0].body, snapshots[1].body);
+  const filter = vi.spyOn(diff, 'filter');
+  vi.mocked(diffLines).mockReturnValueOnce(diff);
+  renderHistory(true);
+  expect(host.textContent).toContain('+1 lines');
+  expect(filter).not.toHaveBeenCalled();
 });

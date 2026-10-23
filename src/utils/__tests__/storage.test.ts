@@ -247,3 +247,41 @@ describe('hints', () => {
     expect(getHints().audio).toBeUndefined();
   });
 });
+
+describe('history read consistency', () => {
+  it('returns detached records on every read', () => {
+    const record = session(0, { errors: { slip: 1, skip: 2, extra: 3 } });
+    const first = getHistory();
+    first[0]!.words = 999;
+    first[0]!.errors!.slip = 999;
+    first.push({ ...record, id: 'not-saved' });
+    expect(getHistory()).toEqual([record]);
+  });
+
+  it('observes same-tab replacements, removal and clear without a storage event', () => {
+    const record = session(0);
+    expect(getHistory()).toHaveLength(1);
+    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify([{ ...record, id: 'replacement' }]));
+    expect(getHistory().map(item => item.id)).toEqual(['replacement']);
+    localStorage.removeItem(STORAGE_KEYS.HISTORY);
+    expect(getHistory()).toEqual([]);
+    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify([record]));
+    expect(getHistory()).toHaveLength(1);
+    localStorage.clear();
+    expect(getHistory()).toEqual([]);
+  });
+
+  it('does not expose unsaved history after a write failure', () => {
+    session(0);
+    getHistory();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const write = vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('quota'); });
+    try {
+      session(0);
+      expect(getHistory()).toEqual([]);
+    } finally {
+      write.mockRestore();
+      error.mockRestore();
+    }
+  });
+});
