@@ -54,7 +54,7 @@ Verification runs type checks, lint, unit tests, and browser tests. Playwright b
 
 Set `E2E_SKIP_BUILD=1` only to test an existing `dist/`. `bun run health` adds dependency audits, Knip, oxlint, and React Doctor.
 
-There is no CI. Run verification before pushing; pushes to `main` deploy.
+The Verify GitHub Actions workflow runs full and production dependency audits plus these checks on pull requests and pushes to `main`, using pinned Node and Bun versions. Run verification before pushing too; pushes to `main` deploy.
 
 ## Code guide
 

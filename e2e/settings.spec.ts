@@ -10,7 +10,11 @@ async function openSettings(page: Page) {
   await page.keyboard.press('Escape');
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  await dialog.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(dialog.getByRole('heading', { name: 'Paused', exact: true })).toBeVisible();
+  const settingsButton = dialog.getByRole('button', { name: 'Settings', exact: true });
+  await expect(settingsButton).toBeEnabled();
+  // Keep the normal stability/hit-testing checks; never force this click.
+  await settingsButton.click();
   await expect(dialog.getByRole('heading', { name: 'Settings' })).toBeVisible();
   return dialog;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getSettings, applySettingsSideEffects } from '../utils/storage';
 import { deferModule, useDeferredModule, primeOnFirstInteraction } from '../utils/deferOverlay';
+import { markInteractiveReady } from '../utils/interactiveReady';
 
 // The pause menu is closed on arrival on every page, but it used to be the
 // single heaviest thing in the initial download: Radix select, switch,
@@ -107,7 +108,11 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ mode }) => {
       }
     };
     window.addEventListener('togglePause', handler as EventListener);
-    return () => window.removeEventListener('togglePause', handler as EventListener);
+    const releaseReady = markInteractiveReady('pause');
+    return () => {
+      releaseReady();
+      window.removeEventListener('togglePause', handler as EventListener);
+    };
   }, []);
 
   if (!everOpened) return null;

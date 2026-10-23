@@ -16,7 +16,9 @@ export default defineConfig({
   expect: { timeout: 8_000 },
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
-    trace: 'retain-on-failure',
+    // Keep the failed attempt and first retry, even when the retry passes.
+    trace: 'retain-on-failure-and-retries',
+    screenshot: 'only-on-failure',
     // Headless Chromium draws WebGL through SwiftShader, so the ambient
     // layer is exercised for real rather than skipped.
     launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },

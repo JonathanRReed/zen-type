@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { deferModule, useDeferredModule, primeOnFirstInteraction } from '../utils/deferOverlay';
+import { markInteractiveReady } from '../utils/interactiveReady';
 
 // Same split as the pause menu. The sheet is closed on arrival on every page,
 // so its markup sits behind a dynamic import and only the two things that have
@@ -70,7 +71,11 @@ const HelpSheet = React.memo((props: HelpSheetProps) => {
       }
     };
     window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
+    const releaseReady = markInteractiveReady('help');
+    return () => {
+      releaseReady();
+      window.removeEventListener('keydown', onKey, true);
+    };
   }, [close, setOpenState]);
 
   if (!everOpened) return null;

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { markInteractiveReady } from '../utils/interactiveReady';
 import { Button } from '@/components/ui/button';
 import {
   getSettings,
@@ -701,7 +702,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
 
   useEffect(() => {
     inputRef.current?.focus();
+    const releaseReady = markInteractiveReady('typing');
     return () => {
+      releaseReady();
       if (commitPulseTimerRef.current !== null) window.clearTimeout(commitPulseTimerRef.current);
     };
   }, []);
