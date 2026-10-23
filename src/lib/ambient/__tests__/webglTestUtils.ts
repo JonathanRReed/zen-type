@@ -17,8 +17,15 @@ export function installWebGLHarness() {
   let time = 0;
   let theme = 0;
   let base: number[] = [];
+  let gpuBusy = false;
+  const fences = new Set<object>();
   const gl = {
     VERTEX_SHADER: 1, FRAGMENT_SHADER: 2, COMPILE_STATUS: 3, LINK_STATUS: 4, TRIANGLES: 5,
+    SYNC_GPU_COMMANDS_COMPLETE: 6, TIMEOUT_EXPIRED: 7, CONDITION_SATISFIED: 8, WAIT_FAILED: 9,
+    fenceSync: vi.fn((): object | null => { const fence = {}; fences.add(fence); return fence; }),
+    clientWaitSync: vi.fn((_sync: object, _flags: number, _timeout: number): number => gpuBusy ? 7 : 8),
+    deleteSync: vi.fn((fence: object) => { fences.delete(fence); }),
+    flush: vi.fn(),
     createShader: () => ({}), shaderSource: () => {}, compileShader: () => {},
     getShaderParameter: () => true, createProgram: () => ({}), attachShader: () => {},
     linkProgram: () => {}, deleteShader: () => {}, getProgramParameter: () => true,
@@ -45,6 +52,9 @@ export function installWebGLHarness() {
     draws,
     frames,
     requestFrame,
+    gl,
+    fences,
+    setGpuBusy(value: boolean) { gpuBusy = value; },
     runFrame(now: number) {
       const pending = [...frames.values()];
       frames.clear();
