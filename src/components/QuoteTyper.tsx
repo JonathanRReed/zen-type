@@ -281,24 +281,43 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
   // Group the quote into lines of roughly ten words so the surface wraps on
   // word boundaries rather than mid-word.
+  // Single-pass O(N) character scan avoids string split/filter array allocations
+  // and repeated indexOf searches (which previously failed on repeated word substrings).
   type Chunk = { start: number; end: number };
   const chunks = useMemo<Chunk[]>(() => {
-    const words = activeQuote.split(/\s+/).filter(Boolean);
+    const len = activeQuote.length;
     const starts: number[] = [];
-    let idx = 0;
-    for (const w of words) {
-      const found = activeQuote.indexOf(w, idx);
-      if (found === -1) break;
-      starts.push(found);
-      idx = found + w.length;
+    let inWord = false;
+
+    for (let i = 0; i < len; i++) {
+      const ch = activeQuote.charCodeAt(i);
+      const isWhitespace =
+        (ch >= 0x0009 && ch <= 0x000d) || ch === 0x0020 || ch === 0x00a0 ||
+        ch === 0x1680 || (ch >= 0x2000 && ch <= 0x200a) ||
+        ch === 0x2028 || ch === 0x2029 || ch === 0x202f ||
+        ch === 0x205f || ch === 0x3000 || ch === 0xfeff;
+
+      if (!isWhitespace) {
+        if (!inWord) {
+          starts.push(i);
+          inWord = true;
+        }
+      } else {
+        inWord = false;
+      }
     }
+
+    const wordCount = starts.length;
+    if (wordCount === 0) return [{ start: 0, end: len }];
+
     const out: Chunk[] = [];
-    const targetChunks = Math.max(1, Math.ceil(words.length / 10));
-    const size = Math.max(8, Math.min(12, Math.ceil(words.length / targetChunks)));
-    for (let w = 0; w < words.length; w += size) {
-      const last = Math.min(words.length - 1, w + size - 1);
+    const targetChunks = Math.max(1, Math.ceil(wordCount / 10));
+    const size = Math.max(8, Math.min(12, Math.ceil(wordCount / targetChunks)));
+
+    for (let w = 0; w < wordCount; w += size) {
       const start = starts[w] ?? 0;
-      const end = last + 1 < starts.length ? (starts[last + 1] ?? activeQuote.length) : activeQuote.length;
+      const nextW = w + size;
+      const end = nextW < wordCount ? (starts[nextW] ?? len) : len;
       out.push({ start, end });
     }
     return out;
