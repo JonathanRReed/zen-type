@@ -37,3 +37,7 @@
 ## 2026-10-13 - Sentence scanning without split arrays
 **Learning:** `checkGrammar` split the document into sentence arrays and each sentence into word arrays. It also lowercased the full document before a case-insensitive passive-voice match, which could shift source offsets when Unicode lowercasing expanded a character.
 **Action:** Count words over source ranges and advance past complete punctuation runs. Match passive voice against the original text. This removes split arrays and the lowercase copy; regex matches and issue objects still allocate. No performance percentage has been measured. Regression tests cover source offsets, word-count boundaries, whitespace and repeated calls.
+
+## 2026-10-14 - In-memory caching for session history storage reads
+**Learning:** `getHistory` in `src/utils/storage.ts` was executing `localStorage.getItem` and `JSON.parse` on up to 500 session records on every streak, practice days, or history query (such as when opening ProgressOverlay or completing quotes).
+**Action:** Maintain an in-memory `_historyCache` variable in `src/utils/storage.ts` that gets populated on first read and synchronized/invalidated during writes or cross-tab `storage` events, turning history lookups into O(1) memory references.

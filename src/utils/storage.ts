@@ -52,6 +52,9 @@ export function setJSON(key: string, value: unknown): void {
   if (!isStorageAccessible() || storagePersistenceDisabled) {
     return;
   }
+  if (key === STORAGE_KEYS.HISTORY) {
+    _historyCache = null;
+  }
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
@@ -67,6 +70,7 @@ export function getStoragePersistenceErrorEvent(): string {
 export function __resetStoragePersistenceStateForTests(): void {
   storagePersistenceDisabled = false;
   _settingsCache = null;
+  _historyCache = null;
 }
 
 // ---------------------------------------------------------------------------
@@ -361,12 +365,18 @@ export function normalizeSettings(raw: unknown): Settings {
 let _settingsCache: Settings | null = null;
 const settingsListeners = new Set<(settings: Settings) => void>();
 
+// In-memory cache so getHistory() avoids JSON parsing up to 500 records on every streak/history read.
+let _historyCache: SessionRecord[] | null = null;
+
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {
     if (e.key === STORAGE_KEYS.SETTINGS || e.key === null) {
       _settingsCache = null;
       const next = getSettings();
       for (const listener of settingsListeners) listener(next);
+    }
+    if (e.key === STORAGE_KEYS.HISTORY || e.key === null) {
+      _historyCache = null;
     }
   });
 }
@@ -469,9 +479,11 @@ const shiftDay = (key: string, delta: number): string => {
 };
 
 export function getHistory(): SessionRecord[] {
+  if (_historyCache) return _historyCache;
   const list = getJSON<unknown>(STORAGE_KEYS.HISTORY, null);
   if (Array.isArray(list) && list.length > 0) {
-    return list.filter((r): r is SessionRecord => !!r && typeof r === 'object' && typeof (r as SessionRecord).date === 'string');
+    _historyCache = list.filter((r): r is SessionRecord => !!r && typeof r === 'object' && typeof (r as SessionRecord).date === 'string');
+    return _historyCache;
   }
   // First read on an existing install: lift the old 10-entry telemetry log
   // into the history so nothing that was tracked is lost.
@@ -489,15 +501,17 @@ export function getHistory(): SessionRecord[] {
         ...(e.wpm !== undefined ? { wpm: Number(e.wpm) || 0 } : {}),
         ...(e.accuracy !== undefined ? { accuracy: Number(e.accuracy) || 0 } : {}),
       }));
-    setJSON(STORAGE_KEYS.HISTORY, migrated);
+    saveHistory(migrated);
     return migrated;
   }
-  return [];
+  _historyCache = [];
+  return _historyCache;
 }
 
 function saveHistory(list: SessionRecord[]): void {
   const trimmed = list.length > HISTORY_LIMIT ? list.slice(list.length - HISTORY_LIMIT) : list;
   setJSON(STORAGE_KEYS.HISTORY, trimmed);
+  _historyCache = trimmed;
 }
 
 /** Distinct calendar days with at least one recorded session, newest last. */
@@ -603,7 +617,7 @@ export function recordSession(summary: SessionSummary): SessionRecord {
 export function resetAllData(): void {
   setJSON(STORAGE_KEYS.STATS, DEFAULT_STATS);
   setJSON(STORAGE_KEYS.TELEMETRY, []);
-  setJSON(STORAGE_KEYS.HISTORY, []);
+  saveHistory([]);
   setJSON(STORAGE_KEYS.STREAK, 0);
   if (isStorageAccessible()) {
     try { localStorage.removeItem(STORAGE_KEYS.LAST_SESSION); } catch { /* ignore */ }
