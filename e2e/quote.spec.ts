@@ -55,7 +55,13 @@ test('new quote loads a different quote and the target pace marker shows when se
   await page.getByRole('button', { name: 'New quote' }).click();
   await expect.poll(() => readQuote(page)).not.toBe(first);
   const text = await readQuote(page);
+  // Assert the application's focus contract; do not focus it here and mask a race.
+  await expect(page.getByRole('textbox', { name: 'Type the quote shown here' })).toBeFocused();
   await typeQuote(page, text.slice(0, 2));
+  await expect(page.locator('.quote-char.correct')).toHaveCount(2);
+  // Separate lost input / clock-start failures from a missing pace marker.
+  const stats = page.getByRole('region', { name: 'Quote session statistics' });
+  await expect(stats.getByText(/^\d+:\d{2}$/)).not.toHaveText('0:00', { timeout: 4000 });
   await expect(page.locator('.quote-char.ghost-pacer')).toHaveCount(1, { timeout: 4000 });
 });
 

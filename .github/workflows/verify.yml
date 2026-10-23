@@ -37,3 +37,12 @@ jobs:
       - run: bun audit --production
       - run: bunx playwright install --with-deps chromium
       - run: bun run verify
+      # CI browser contexts contain synthetic fixtures, not a user profile.
+      - name: Retain browser failure and retry evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: playwright-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
