@@ -176,6 +176,73 @@ const QuoteChar = React.memo<QuoteCharProps>(({ char, typedChar, state, isGhostP
 });
 QuoteChar.displayName = 'QuoteChar';
 
+interface QuoteWordProps {
+  start: number;
+  end: number;
+  activeQuote: string;
+  cursor: number;
+  ghostCursor: number;
+  typedChars: string[];
+  errors: ReadonlySet<number>;
+}
+
+// Memoized word wrapper component. Prevents re-rendering unchanged words and reconstructing
+// character JSX elements across keystrokes during quote typing.
+/* eslint-disable react/prop-types */
+const QuoteWord = React.memo<QuoteWordProps>(function QuoteWord({ start, end, activeQuote, cursor, ghostCursor, typedChars, errors }) {
+  const chars: React.ReactNode[] = [];
+  for (let i = start; i < end; i++) {
+    const ch = activeQuote[i] ?? '';
+    const isTyped = i < cursor;
+    const isCurrent = i === cursor;
+    const hasError = errors.has(i);
+    let state: 'pending' | 'current' | 'correct' | 'error' = 'pending';
+    if (isCurrent) state = 'current';
+    else if (isTyped) state = hasError ? 'error' : 'correct';
+
+    const isGhostPacer = i === ghostCursor && i > cursor;
+
+    chars.push(
+      <QuoteChar
+        key={`qc_${i}`}
+        char={ch === ' ' ? ' ' : ch}
+        typedChar={typedChars[i]}
+        state={state}
+        isGhostPacer={isGhostPacer}
+      />
+    );
+  }
+  return <span className="quote-word">{chars}</span>;
+}, (prev, next) => {
+  if (
+    prev.start !== next.start ||
+    prev.end !== next.end ||
+    prev.activeQuote !== next.activeQuote
+  ) {
+    return false;
+  }
+  // Re-render if cursor or ghostCursor is inside or adjacent to this word range
+  const affectsPrev = (prev.cursor >= prev.start && prev.cursor <= prev.end) || (prev.ghostCursor >= prev.start && prev.ghostCursor < prev.end);
+  const affectsNext = (next.cursor >= next.start && next.cursor <= next.end) || (next.ghostCursor >= next.start && next.ghostCursor < next.end);
+  if (affectsPrev || affectsNext) {
+    return false;
+  }
+  // Check if errors or typedChars in this word range changed
+  if (prev.errors !== next.errors) {
+    for (let i = prev.start; i < prev.end; i++) {
+      if (prev.errors.has(i) !== next.errors.has(i)) return false;
+    }
+  }
+  if (prev.typedChars !== next.typedChars) {
+    for (let i = prev.start; i < prev.end; i++) {
+      if (prev.typedChars[i] !== next.typedChars[i]) return false;
+    }
+  }
+  return true;
+});
+QuoteWord.displayName = 'QuoteWord';
+/* eslint-enable react/prop-types */
+
 const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onComplete }) => {
   const settings = useSettings();
   const [active, setActive] = useState<ActiveQuote>({ text: quote, ...(author ? { author } : {}), ...(quoteId ? { id: quoteId } : {}) });
@@ -648,42 +715,39 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
   const renderRange = (start: number, end: number): React.ReactNode[] => {
     const nodes: React.ReactNode[] = [];
-    let word: React.ReactNode[] = [];
-    let wordKey = start;
-    const flush = () => {
-      if (word.length) {
-        nodes.push(<span key={`w${wordKey}`} className="quote-word">{word}</span>);
-        word = [];
-      }
-    };
-    // A space rides along with the word before it, so the unit that wraps is
-    // "word " and a trailing space can never sit alone on a line of its own
-    // (which read as a blank line between chunks).
+    let wordStart = start;
     for (let i = start; i < end; i++) {
-      const ch = activeQuote[i] ?? '';
-      if (word.length === 0) wordKey = i;
-
-      const isTyped = i < cursor;
-      const isCurrent = i === cursor;
-      const hasError = errors.has(i);
-      let state: 'pending' | 'current' | 'correct' | 'error' = 'pending';
-      if (isCurrent) state = 'current';
-      else if (isTyped) state = hasError ? 'error' : 'correct';
-
-      const isGhostPacer = i === ghostCursor && i > cursor;
-
-      word.push(
-        <QuoteChar
-          key={`qc_${i}`}
-          char={ch === ' ' ? ' ' : ch}
-          typedChar={typedChars[i]}
-          state={state}
-          isGhostPacer={isGhostPacer}
+      if (activeQuote[i] === ' ') {
+        const wordEnd = i + 1;
+        nodes.push(
+          <QuoteWord
+            key={`w_${wordStart}`}
+            start={wordStart}
+            end={wordEnd}
+            activeQuote={activeQuote}
+            cursor={cursor}
+            ghostCursor={ghostCursor}
+            typedChars={typedChars}
+            errors={errors}
+          />
+        );
+        wordStart = wordEnd;
+      }
+    }
+    if (wordStart < end) {
+      nodes.push(
+        <QuoteWord
+          key={`w_${wordStart}`}
+          start={wordStart}
+          end={end}
+          activeQuote={activeQuote}
+          cursor={cursor}
+          ghostCursor={ghostCursor}
+          typedChars={typedChars}
+          errors={errors}
         />
       );
-      if (ch === ' ') flush();
     }
-    flush();
     return nodes;
   };
 
