@@ -145,8 +145,24 @@ export interface OutlineItem {
   startIndex: number;
 }
 
-// Scan document lines incrementally when outline is enabled, avoiding a
-// document-wide line array on each editor update.
+function isWhitespaceCode(ch: number): boolean {
+  return (
+    (ch >= 0x0009 && ch <= 0x000d) ||
+    ch === 0x0020 ||
+    ch === 0x00a0 ||
+    ch === 0x1680 ||
+    (ch >= 0x2000 && ch <= 0x200a) ||
+    ch === 0x2028 ||
+    ch === 0x2029 ||
+    ch === 0x202f ||
+    ch === 0x205f ||
+    ch === 0x3000 ||
+    ch === 0xfeff
+  );
+}
+
+// Scan document lines incrementally when outline is enabled, using character code boundary
+// scanning to eliminate intermediate line slice, trim, and regex string allocations for non-heading lines.
 export function extractOutline(text: string): OutlineItem[] {
   if (!text) return [];
   const outline: OutlineItem[] = [];
@@ -159,43 +175,65 @@ export function extractOutline(text: string): OutlineItem[] {
       lineEnd = len;
     }
 
-    const line = text.slice(lineStart, lineEnd);
-    const trimmed = line.trim();
+    let start = lineStart;
+    let end = lineEnd;
 
-    // Markdown-style headings
-    let matchedHeading = false;
-    if (trimmed.startsWith('#')) {
-      const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
-      if (headingMatch) {
-        matchedHeading = true;
-        outline.push({
-          text: headingMatch[2] || '',
-          level: headingMatch[1]?.length || 1,
-          startIndex: lineStart,
-        });
-      }
+    while (start < end && isWhitespaceCode(text.charCodeAt(start))) {
+      start++;
+    }
+    while (end > start && isWhitespaceCode(text.charCodeAt(end - 1))) {
+      end--;
     }
 
-    if (!matchedHeading && trimmed.endsWith('.') && trimmed.length > 10 && trimmed.length < 100) {
-      // First sentence of paragraphs (if next line is blank)
-      let isNextBlank = true;
-      if (lineEnd < len) {
-        const nextLineStart = lineEnd + 1;
-        let nextLineEnd = text.indexOf('\n', nextLineStart);
-        if (nextLineEnd === -1) nextLineEnd = len;
-
-        const nextLine = text.slice(nextLineStart, nextLineEnd);
-        if (nextLine.trim().length > 0) {
-          isNextBlank = false;
+    let matchedHeading = false;
+    if (start < end) {
+      // Markdown-style headings: #{1,6}\s+(.+)
+      if (text.charCodeAt(start) === 35) {
+        let level = 0;
+        while (start + level < end && text.charCodeAt(start + level) === 35) {
+          level++;
+        }
+        if (level >= 1 && level <= 6 && start + level < end && isWhitespaceCode(text.charCodeAt(start + level))) {
+          let contentStart = start + level;
+          while (contentStart < end && isWhitespaceCode(text.charCodeAt(contentStart))) {
+            contentStart++;
+          }
+          if (contentStart < end) {
+            matchedHeading = true;
+            outline.push({
+              text: text.slice(contentStart, end),
+              level,
+              startIndex: lineStart,
+            });
+          }
         }
       }
 
-      if (isNextBlank) {
-        outline.push({
-          text: trimmed,
-          level: 0,
-          startIndex: lineStart,
-        });
+      if (!matchedHeading && text.charCodeAt(end - 1) === 46) {
+        const trimmedLen = end - start;
+        if (trimmedLen > 10 && trimmedLen < 100) {
+          let isNextBlank = true;
+          if (lineEnd < len) {
+            const nextLineStart = lineEnd + 1;
+            let nextLineEnd = text.indexOf('\n', nextLineStart);
+            if (nextLineEnd === -1) nextLineEnd = len;
+
+            for (let j = nextLineStart; j < nextLineEnd; j++) {
+              if (!isWhitespaceCode(text.charCodeAt(j))) {
+                isNextBlank = false;
+                break;
+              }
+            }
+          }
+
+          if (isNextBlank) {
+            outline.push({
+              text: text.slice(start, end),
+              level: 0,
+              startIndex: lineStart,
+            });
+          }
+        }
       }
     }
 
