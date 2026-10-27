@@ -189,7 +189,7 @@ interface QuoteWordProps {
 // Memoized word span component. Wraps individual character spans for a single word.
 // The custom areEqual comparator skips re-rendering words outside the active typing
 // and ghost pacer window, eliminating React VDOM reconciliation across unchanged words.
-// eslint-disable-next-line react/prop-types
+/* eslint-disable react/prop-types */
 const QuoteWord = React.memo<QuoteWordProps>(
   ({ wordStart, wordEnd, activeQuote, cursor, ghostCursor, typedChars, errors }) => {
     const chars: React.ReactNode[] = [];
