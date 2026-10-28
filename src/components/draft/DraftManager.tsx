@@ -409,6 +409,11 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
     return draftBody && prefs.keywordHighlighter ? getKeywordFrequencies(draftBody) : [];
   }, [draftBody, prefs.keywordHighlighter]);
 
+  // Memoize highlightedWords Set to avoid creating a new Set instance on every render pass
+  const highlightedWords = useMemo(() => {
+    return new Set(keywordFrequencies.map(kf => kf.word));
+  }, [keywordFrequencies]);
+
   const searchMatches = useMemo(() => {
     if (!draftBody || !searchQuery.trim()) return [];
     return findInText(draftBody, searchQuery, searchCaseSensitive);
@@ -773,7 +778,7 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
                   grammarIssues={grammarIssues}
                   searchMatches={searchMatches}
                   currentMatchIndex={currentSearchIndex}
-                  highlightedWords={new Set(keywordFrequencies.map(kf => kf.word))}
+                  highlightedWords={highlightedWords}
                 />
               </div>
 
