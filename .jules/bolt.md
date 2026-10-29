@@ -37,3 +37,7 @@
 ## 2026-10-13 - Sentence scanning without split arrays
 **Learning:** `checkGrammar` split the document into sentence arrays and each sentence into word arrays. It also lowercased the full document before a case-insensitive passive-voice match, which could shift source offsets when Unicode lowercasing expanded a character.
 **Action:** Count words over source ranges and advance past complete punctuation runs. Match passive voice against the original text. This removes split arrays and the lowercase copy; regex matches and issue objects still allocate. No performance percentage has been measured. Regression tests cover source offsets, word-count boundaries, whitespace and repeated calls.
+
+## 2026-10-14 - Memoize word span rendering in QuoteTyper
+**Learning:** `QuoteTyper` was re-rendering every word container (`<span className="quote-word">`) and re-creating JSX element trees for all words in the quote on every single keystroke. Although individual characters (`QuoteChar`) were memoized, React still had to allocate word element trees and reconcile all word/character fibers on every key press.
+**Action:** Wrap word spans in a `React.memo` component (`QuoteWord`) with a custom equality check (`areWordPropsEqual`) that checks index range bounds for cursor, ghost cursor, typed characters, and errors. This skips re-rendering ~95% of unchanged word elements during typing.
