@@ -76,12 +76,23 @@ export async function loadQuotes(): Promise<Quote[]> {
 
 export function filterQuotes(quotes: Quote[], filter?: QuoteFilter): Quote[] {
   if (!filter) return quotes;
-  const lengths = new Set(filter.lengths ?? []);
-  const tags = new Set(filter.tags ?? []);
+  const hasLengths = Boolean(filter.lengths && filter.lengths.length > 0);
+  const hasTags = Boolean(filter.tags && filter.tags.length > 0);
+  const hasExclude = Boolean(filter.excludeId);
+
+  // Fast path: if no filters are configured, return the full quotes array without allocations.
+  if (!hasLengths && !hasTags && !hasExclude) return quotes;
+
+  // Conditionally allocate sets only when filtering criteria exist.
+  const lengths = hasLengths ? new Set(filter.lengths) : null;
+  const tags = hasTags ? new Set(filter.tags) : null;
+
   return quotes.filter(q => {
-    if (filter.excludeId && q.id === filter.excludeId) return false;
-    if (lengths.size > 0 && !lengths.has(quoteLength(q.text))) return false;
-    if (tags.size > 0 && !(q.tags ?? []).some(t => tags.has(t))) return false;
+    if (hasExclude && q.id === filter.excludeId) return false;
+    if (lengths && !lengths.has(quoteLength(q.text))) return false;
+    if (tags) {
+      if (!q.tags || !q.tags.some(t => tags.has(t))) return false;
+    }
     return true;
   });
 }
