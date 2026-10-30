@@ -176,6 +176,83 @@ const QuoteChar = React.memo<QuoteCharProps>(({ char, typedChar, state, isGhostP
 });
 QuoteChar.displayName = 'QuoteChar';
 
+interface QuoteWordProps {
+  wordStart: number;
+  wordEnd: number;
+  activeQuote: string;
+  cursor: number;
+  ghostCursor: number;
+  typedChars: string[];
+  errors: ReadonlySet<number>;
+}
+
+// Memoized word span component. Wraps individual character spans for a single word.
+// The custom areEqual comparator skips re-rendering words outside the active typing
+// and ghost pacer window, eliminating React VDOM reconciliation across unchanged words.
+/* eslint-disable react/prop-types */
+const QuoteWord = React.memo<QuoteWordProps>(
+  ({ wordStart, wordEnd, activeQuote, cursor, ghostCursor, typedChars, errors }) => {
+    const chars: React.ReactNode[] = [];
+    for (let i = wordStart; i < wordEnd; i++) {
+      const ch = activeQuote[i] ?? '';
+      const isTyped = i < cursor;
+      const isCurrent = i === cursor;
+      const hasError = errors.has(i);
+      let state: 'pending' | 'current' | 'correct' | 'error' = 'pending';
+      if (isCurrent) state = 'current';
+      else if (isTyped) state = hasError ? 'error' : 'correct';
+
+      const isGhostPacer = i === ghostCursor && i > cursor;
+
+      chars.push(
+        <QuoteChar
+          key={`qc_${i}`}
+          char={ch === ' ' ? ' ' : ch}
+          typedChar={typedChars[i]}
+          state={state}
+          isGhostPacer={isGhostPacer}
+        />
+      );
+    }
+    return <span className="quote-word">{chars}</span>;
+  },
+  (prev, next) => {
+    if (prev.activeQuote !== next.activeQuote) return false;
+    if (prev.wordStart !== next.wordStart || prev.wordEnd !== next.wordEnd) return false;
+
+    const start = prev.wordStart;
+    const end = prev.wordEnd;
+
+    // Check if cursor was or is inside or adjacent to this word
+    const prevInWord = prev.cursor >= start && prev.cursor <= end;
+    const nextInWord = next.cursor >= start && next.cursor <= end;
+    if (prevInWord || nextInWord) return false;
+
+    // Check if ghost cursor was or is inside this word
+    const prevGhostInWord = prev.ghostCursor >= start && prev.ghostCursor < end;
+    const nextGhostInWord = next.ghostCursor >= start && next.ghostCursor < end;
+    if (prevGhostInWord || nextGhostInWord) return false;
+
+    // Word is fully typed in both passes (cursor > end).
+    // Verify typed characters and error states for this word's range haven't changed.
+    if (prev.cursor > end && next.cursor > end) {
+      for (let i = start; i < end; i++) {
+        if (prev.typedChars[i] !== next.typedChars[i]) return false;
+        if (prev.errors.has(i) !== next.errors.has(i)) return false;
+      }
+      return true;
+    }
+
+    // Word is fully pending in both passes (cursor < start).
+    if (prev.cursor < start && next.cursor < start) {
+      return true;
+    }
+
+    return false;
+  }
+);
+QuoteWord.displayName = 'QuoteWord';
+
 const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onComplete }) => {
   const settings = useSettings();
   const [active, setActive] = useState<ActiveQuote>({ text: quote, ...(author ? { author } : {}), ...(quoteId ? { id: quoteId } : {}) });
@@ -648,42 +725,40 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
   const renderRange = (start: number, end: number): React.ReactNode[] => {
     const nodes: React.ReactNode[] = [];
-    let word: React.ReactNode[] = [];
-    let wordKey = start;
-    const flush = () => {
-      if (word.length) {
-        nodes.push(<span key={`w${wordKey}`} className="quote-word">{word}</span>);
-        word = [];
-      }
-    };
-    // A space rides along with the word before it, so the unit that wraps is
-    // "word " and a trailing space can never sit alone on a line of its own
-    // (which read as a blank line between chunks).
+    let wordStart = -1;
     for (let i = start; i < end; i++) {
-      const ch = activeQuote[i] ?? '';
-      if (word.length === 0) wordKey = i;
-
-      const isTyped = i < cursor;
-      const isCurrent = i === cursor;
-      const hasError = errors.has(i);
-      let state: 'pending' | 'current' | 'correct' | 'error' = 'pending';
-      if (isCurrent) state = 'current';
-      else if (isTyped) state = hasError ? 'error' : 'correct';
-
-      const isGhostPacer = i === ghostCursor && i > cursor;
-
-      word.push(
-        <QuoteChar
-          key={`qc_${i}`}
-          char={ch === ' ' ? ' ' : ch}
-          typedChar={typedChars[i]}
-          state={state}
-          isGhostPacer={isGhostPacer}
+      if (wordStart === -1) wordStart = i;
+      if (activeQuote[i] === ' ') {
+        const wordEnd = i + 1;
+        nodes.push(
+          <QuoteWord
+            key={`w${wordStart}`}
+            wordStart={wordStart}
+            wordEnd={wordEnd}
+            activeQuote={activeQuote}
+            cursor={cursor}
+            ghostCursor={ghostCursor}
+            typedChars={typedChars}
+            errors={errors}
+          />
+        );
+        wordStart = -1;
+      }
+    }
+    if (wordStart !== -1) {
+      nodes.push(
+        <QuoteWord
+          key={`w${wordStart}`}
+          wordStart={wordStart}
+          wordEnd={end}
+          activeQuote={activeQuote}
+          cursor={cursor}
+          ghostCursor={ghostCursor}
+          typedChars={typedChars}
+          errors={errors}
         />
       );
-      if (ch === ' ') flush();
     }
-    flush();
     return nodes;
   };
 
