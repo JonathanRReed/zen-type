@@ -4,6 +4,7 @@
   "type": "module",
   "version": "1.0.0",
   "license": "MIT",
+  "packageManager": "bun@1.4.4",
   "reactDoctor": {
     "rules": {
       "react-doctor/react-compiler-no-manual-memoization": "off",
