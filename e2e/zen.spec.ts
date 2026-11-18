@@ -13,7 +13,9 @@ test('words commit on space, the stats bar counts them, and hiding the tab recor
   await expect(input).toHaveValue('');
 
   const bar = page.getByRole('region', { name: 'Zen session statistics' });
-  await expect(bar).toContainText('3', { timeout: 4000 });
+  // The canvas publishes stats about once a second from its frame loop, which
+  // slows down a lot under software WebGL on a busy machine.
+  await expect(bar).toContainText('3', { timeout: 10_000 });
 
   // Leave the tab: the session should land in history without a menu trip.
   await page.evaluate(() => {

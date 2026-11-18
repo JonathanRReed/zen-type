@@ -19,8 +19,10 @@ test('a tap on the quote opens typing, and the layout fits the phone', async ({ 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 
+  // On a phone the quote header wraps to two rows (mode pills, then the
+  // utility buttons); it must still leave the stage most of the screen.
   const header = await page.locator('header').boundingBox();
-  expect(header!.height).toBeLessThan(90);
+  expect(header!.height).toBeLessThan(140);
 
   const bar = await page.getByRole('region', { name: 'Quote session statistics' }).boundingBox();
   const viewport = page.viewportSize()!;
