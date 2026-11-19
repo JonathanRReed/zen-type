@@ -1,6 +1,6 @@
 import { useEffect, type FC } from 'react';
 import { getSettings, updateSettings } from '../utils/storage';
-import { armAudio } from '../utils/audioBridge';
+import { armAudio } from '../utils/audio';
 
 // The Ctrl/Cmd shortcuts documented in the help sheet: Notes & Drafts, mute,
 // and the progress view. A tiny client:only island so they fire even while a

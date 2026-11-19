@@ -1,0 +1,50 @@
+---
+import { loadQuotes, splitSource } from "../utils/quotes";
+
+// The library the quotes come from, built from quotes.json at build time so
+// the page can never disagree with what the app actually serves.
+const quotes = await loadQuotes();
+
+interface Entry {
+	author: string;
+	works: Map<string, string>;
+	count: number;
+}
+
+const byAuthor = new Map<string, Entry>();
+for (const q of quotes) {
+	const key = q.author === "Proverb" ? "Proverbs and sayings" : q.author;
+	const entry = byAuthor.get(key) ?? { author: key, works: new Map(), count: 0 };
+	entry.count += 1;
+	const { title, detail } = splitSource(q.source);
+	if (title && q.author !== "Proverb" && !entry.works.has(title)) entry.works.set(title, detail);
+	byAuthor.set(key, entry);
+}
+
+const entries = [...byAuthor.values()].sort((a, b) => {
+	if (a.author === "Proverbs and sayings") return 1;
+	if (b.author === "Proverbs and sayings") return -1;
+	return b.count - a.count || a.author.localeCompare(b.author);
+});
+---
+
+<ol class="shelf">
+	{
+		entries.map((entry) => (
+			<li>
+				<span class="shelf-author">{entry.author}</span>
+				<span class="shelf-works">
+					{[...entry.works.entries()].map(([title, detail], i) => (
+						<Fragment>
+							{i > 0 && "; "}
+							<cite>{title}</cite>
+							{detail && <span class="shelf-detail"> {detail}</span>}
+						</Fragment>
+					))}
+					{entry.works.size === 0 && <span class="shelf-detail">Chinese, Japanese, Tibetan, Arabic, and Zen</span>}
+				</span>
+				<span class="shelf-count">{entry.count}</span>
+			</li>
+		))
+	}
+</ol>

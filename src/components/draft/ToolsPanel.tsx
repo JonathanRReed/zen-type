@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import type { DraftPrefs } from '../../lib/draftStore';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useModal } from '../../hooks/useModal';
+import { IconClose } from '../icons';
 
 interface ToolsPanelProps {
   isOpen: boolean;
@@ -10,13 +10,46 @@ interface ToolsPanelProps {
   onPrefsChange: (prefs: Partial<DraftPrefs>) => void;
 }
 
-const SHORTCUTS = {
-  tools: 'T',
-  quickJump: '⌘K',
-  search: '⌘F',
-  outline: '⌘1',
-  scratchpad: '⌘2',
-  save: '⌘S',
+const PRESETS: ReadonlyArray<{ id: DraftPrefs['preset']; label: string }> = [
+  { id: 'minimal', label: 'Just the page' },
+  { id: 'structural', label: 'Page and structure' },
+  { id: 'editor-pro', label: 'Everything' },
+];
+
+const PRESET_PREFS: Record<DraftPrefs['preset'], Partial<DraftPrefs>> = {
+  minimal: {
+    counters: true,
+    readTime: false,
+    outline: false,
+    quickJump: false,
+    search: false,
+    tags: false,
+    scratchpad: false,
+    keywordHighlighter: false,
+    grammar: false,
+  },
+  structural: {
+    counters: true,
+    readTime: true,
+    outline: true,
+    quickJump: true,
+    search: true,
+    tags: false,
+    scratchpad: false,
+    keywordHighlighter: false,
+    grammar: false,
+  },
+  'editor-pro': {
+    counters: true,
+    readTime: true,
+    outline: true,
+    quickJump: true,
+    search: true,
+    tags: true,
+    scratchpad: true,
+    keywordHighlighter: true,
+    grammar: true,
+  },
 };
 
 const ToolsPanel: React.FC<ToolsPanelProps> = ({
@@ -25,225 +58,127 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
   prefs,
   onPrefsChange,
 }) => {
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useModal(backdropRef, onClose, isOpen);
+
+  useEffect(() => {
+    if (isOpen) closeRef.current?.focus();
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const togglePref = (key: keyof DraftPrefs) => {
-    onPrefsChange({ [key]: !prefs[key] });
-  };
-
-  const applyPreset = (preset: DraftPrefs['preset']) => {
-    const presets: Record<DraftPrefs['preset'], Partial<DraftPrefs>> = {
-      minimal: {
-        preset,
-        counters: true,
-        readTime: false,
-        outline: false,
-        quickJump: false,
-        search: false,
-        tags: false,
-        scratchpad: false,
-        keywordHighlighter: false,
-        grammar: false,
-      },
-      structural: {
-        preset,
-        counters: true,
-        readTime: true,
-        outline: true,
-        quickJump: true,
-        search: true,
-        tags: false,
-        scratchpad: false,
-        keywordHighlighter: false,
-        grammar: false,
-      },
-      'editor-pro': {
-        preset,
-        counters: true,
-        readTime: true,
-        outline: true,
-        quickJump: true,
-        search: true,
-        tags: true,
-        scratchpad: true,
-        keywordHighlighter: true,
-        grammar: true,
-      },
-    };
-    onPrefsChange(presets[preset]);
-  };
+  const set = (key: keyof DraftPrefs) => (checked: boolean) => onPrefsChange({ [key]: checked });
 
   return (
-    <div
-      className="fixed inset-y-0 right-0 w-96 max-w-[calc(100vw-2rem)] bg-surface/90 backdrop-blur-md border-l border-muted/20 flex flex-col z-[1001] shadow-xl"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Tools panel"
-    >
-      <div className="p-4 border-b border-muted/20 flex items-center justify-between sticky top-0 bg-surface/95 backdrop-blur-sm z-10">
-        <Button
-          onClick={onClose}
-          variant="ghost"
-          size="icon"
-          className="text-muted hover:text-text transition-colors"
-          aria-label="Close tools panel"
-        >
-          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </Button>
-      </div>
+    <div ref={backdropRef} className="overlay-backdrop" role="dialog" aria-modal="true" aria-labelledby="draft-tools-title">
+      <div className="overlay-dismiss" aria-hidden="true" onClick={onClose} />
+      <div className="overlay-card sheet sheet-md">
+        <div className="sheet-head">
+          <h2 id="draft-tools-title" className="sheet-title">Writing tools</h2>
+          <button ref={closeRef} type="button" className="sheet-close" onClick={onClose} aria-label="Close writing tools">
+            <IconClose />
+          </button>
+        </div>
 
-      <div className="p-4 space-y-6">
-        {/* Presets */}
-        <section>
-          <h3 className="text-sm font-semibold text-text/80 mb-3">Presets</h3>
-          <div className="space-y-2">
-            {(['minimal', 'structural', 'editor-pro'] as const).map(preset => (
-              <Button
-                key={preset}
-                onClick={() => applyPreset(preset)}
-                variant={prefs.preset === preset ? 'default' : 'outline'}
-                className={`w-full justify-start text-sm ${
-                  prefs.preset === preset
-                    ? 'bg-iris/20 border-iris/40 text-iris'
-                    : 'bg-overlay/40 border-transparent hover:bg-overlay/60 text-text/80'
-                }`}
+        <section className="settings-group" aria-labelledby="draft-tools-presets">
+          <h3 id="draft-tools-presets">How much to show</h3>
+          <div className="chips preset-chips">
+            {PRESETS.map(preset => (
+              <button
+                key={preset.id}
+                type="button"
+                className="chip"
+                aria-pressed={prefs.preset === preset.id}
+                onClick={() => onPrefsChange({ preset: preset.id, ...PRESET_PREFS[preset.id] })}
               >
-                {preset === 'minimal' && 'Minimal'}
-                {preset === 'structural' && 'Structural'}
-                {preset === 'editor-pro' && 'Editor Pro'}
-              </Button>
+                {preset.label}
+              </button>
             ))}
           </div>
+          <p className="setting-note" style={{ marginTop: '0.5rem' }}>A starting point. Each switch below still works on its own.</p>
         </section>
 
-        {/* Core Features */}
-        <section>
-          <h3 className="text-sm font-semibold text-text/80 mb-3">Core</h3>
-          <div className="space-y-2">
-            <ToggleItem
-              label="Word & Character Counters"
-              checked={prefs.counters}
-              onChange={() => togglePref('counters')}
-            />
-            <ToggleItem
-              label="Estimated Read Time"
-              checked={prefs.readTime}
-              onChange={() => togglePref('readTime')}
-            />
-          </div>
+        <section className="settings-group">
+          <h3>Counts</h3>
+          <Toggle label="Words and characters" checked={prefs.counters} onChange={set('counters')} />
+          <Toggle label="Reading time" checked={prefs.readTime} onChange={set('readTime')} />
         </section>
 
-        {/* Navigation */}
-        <section>
-          <h3 className="text-sm font-semibold text-text/80 mb-3">Navigation</h3>
-          <div className="space-y-2">
-            <ToggleItem
-              label="Outline Panel"
-              shortcut={SHORTCUTS.outline}
-              checked={prefs.outline}
-              onChange={() => togglePref('outline')}
-            />
-            <ToggleItem
-              label="Quick Jump Palette"
-              shortcut={SHORTCUTS.quickJump}
-              checked={prefs.quickJump}
-              onChange={() => togglePref('quickJump')}
-            />
-            <ToggleItem
-              label="Search in Draft"
-              shortcut={SHORTCUTS.search}
-              checked={prefs.search}
-              onChange={() => togglePref('search')}
-            />
-          </div>
+        <section className="settings-group">
+          <h3>Getting around</h3>
+          <Toggle label="Outline" keys={['Ctrl', '1']} checked={prefs.outline} onChange={set('outline')} />
+          <Toggle label="Jump to a heading or line" keys={['Ctrl', 'K']} checked={prefs.quickJump} onChange={set('quickJump')} />
+          <Toggle label="Find in draft" keys={['Ctrl', 'F']} checked={prefs.search} onChange={set('search')} />
         </section>
 
-        {/* Text Insights */}
-        <section>
-          <h3 className="text-sm font-semibold text-text/80 mb-3">Text Insights</h3>
-          <div className="space-y-2">
-            <ToggleItem
-              label="Keyword Highlighter"
-              checked={prefs.keywordHighlighter}
-              onChange={() => togglePref('keywordHighlighter')}
-            />
-            <ToggleItem
-              label="Grammar & Clarity Checker"
-              checked={prefs.grammar}
-              onChange={() => togglePref('grammar')}
-            />
-          </div>
+        <section className="settings-group">
+          <h3>Checks</h3>
+          <Toggle
+            label="Repeated words"
+            note="Lists the words you use most, under the page."
+            checked={prefs.keywordHighlighter}
+            onChange={set('keywordHighlighter')}
+          />
+          <Toggle
+            label="Writing notes"
+            note="Long sentences, doubled words, passive voice and stray spaces."
+            checked={prefs.grammar}
+            onChange={set('grammar')}
+          />
         </section>
 
-        {/* Organization */}
-        <section>
-          <h3 className="text-sm font-semibold text-text/80 mb-3">Organization</h3>
-          <div className="space-y-2">
-            <ToggleItem
-              label="Tags"
-              checked={prefs.tags}
-              onChange={() => togglePref('tags')}
-            />
-            <ToggleItem
-              label="Scratchpad"
-              shortcut={SHORTCUTS.scratchpad}
-              checked={prefs.scratchpad}
-              onChange={() => togglePref('scratchpad')}
-            />
-          </div>
+        <section className="settings-group">
+          <h3>Organising</h3>
+          <Toggle label="Tags" checked={prefs.tags} onChange={set('tags')} />
+          <Toggle label="Scratchpad" keys={['Ctrl', '2']} checked={prefs.scratchpad} onChange={set('scratchpad')} />
         </section>
 
-        {/* Keyboard Shortcuts */}
-        <section className="pt-4 border-t border-muted/20">
-          <h3 className="text-sm font-semibold text-text/80 mb-3">Keyboard Shortcuts</h3>
-          <div className="space-y-2 text-xs text-muted">
-            <div className="flex justify-between">
-              <span>Toggle Tools</span>
-              <kbd className="px-2 py-1 bg-overlay/40 rounded">{SHORTCUTS.tools}</kbd>
-            </div>
-            <div className="flex justify-between">
-              <span>Quick Jump</span>
-              <kbd className="px-2 py-1 bg-overlay/40 rounded">{SHORTCUTS.quickJump}</kbd>
-            </div>
-            <div className="flex justify-between">
-              <span>Search</span>
-              <kbd className="px-2 py-1 bg-overlay/40 rounded">{SHORTCUTS.search}</kbd>
-            </div>
-            <div className="flex justify-between">
-              <span>Save Snapshot</span>
-              <kbd className="px-2 py-1 bg-overlay/40 rounded">{SHORTCUTS.save}</kbd>
-            </div>
-          </div>
+        <section className="settings-group">
+          <h3>Keys</h3>
+          <ul className="keys">
+            <li><span>Open or close these tools</span><span className="keys-combo"><kbd>T</kbd></span></li>
+            <li><span>Save a version now</span><span className="keys-combo"><kbd>Ctrl</kbd><kbd>S</kbd></span></li>
+            <li><span>Close notes and drafts</span><span className="keys-combo"><kbd>Esc</kbd></span></li>
+          </ul>
+          <p className="setting-note" style={{ marginTop: '0.75rem' }}>On a Mac, use Cmd in place of Ctrl.</p>
         </section>
       </div>
     </div>
   );
 };
 
-interface ToggleItemProps {
+interface ToggleProps {
   label: string;
-  shortcut?: string;
+  note?: string;
+  keys?: string[];
   checked: boolean;
-  onChange: () => void;
+  onChange: (checked: boolean) => void;
 }
 
-const ToggleItem: React.FC<ToggleItemProps> = ({ label, shortcut, checked, onChange }) => (
-  <label className="flex items-center justify-between p-2 rounded-lg hover:bg-overlay/30 cursor-pointer group">
-    <div className="flex items-center gap-2 flex-1">
-      <Checkbox
+const Toggle: React.FC<ToggleProps> = ({ label, note, keys, checked, onChange }) => {
+  const id = useId();
+  return (
+    <div className="setting">
+      <label htmlFor={id} className="setting-label setting-label-row">
+        {label}
+        {keys && (
+          <span className="keys-combo" aria-hidden="true">
+            {keys.map(k => <kbd key={k}>{k}</kbd>)}
+          </span>
+        )}
+      </label>
+      <input
+        id={id}
+        type="checkbox"
+        role="switch"
+        className="switch"
         checked={checked}
-        onCheckedChange={() => onChange()}
-        className="h-4 w-4 border-muted/40"
+        onChange={(e) => onChange(e.target.checked)}
       />
-      <span className="text-sm text-text/90">{label}</span>
+      {note && <p className="setting-note">{note}</p>}
     </div>
-    {shortcut && (
-      <kbd className="text-xs text-muted/60 px-2 py-0.5 bg-overlay/30 rounded">{shortcut}</kbd>
-    )}
-  </label>
-);
+  );
+};
 
 export default ToolsPanel;

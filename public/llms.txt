@@ -6,11 +6,12 @@ Zen Typer is built and maintained by Jonathan R. Reed. It is meant for typing pr
 
 ## What it does
 
-- Quote Mode: 322 quotes from 22 writers, every one from a public-domain edition with its source named. The clock starts on the first keystroke and stops on the last character. Backspace rewinds to the earliest uncorrected mistake. The result shows WPM, accuracy, and mistakes grouped as wrong keys, skips, and extras. The pool can be filtered by length and by tag, and custom text can be pasted in.
-- Zen Mode: free-flow typing where each finished word drifts up the canvas. Everything typed is saved as a draft that can be reopened, copied, or exported as Markdown. An optional timed flow of 5 to 60 minutes ends with a summary.
+- Quote Mode: 322 passages from 21 writers and a few proverbs, every one from a public-domain edition, shown with its book, translator, and year. The clock starts on the first keystroke and stops on the last character. Backspace rewinds to the earliest uncorrected mistake, and Enter brings the next quote. The result shows WPM, accuracy, time, and mistakes grouped as wrong keys, early spaces, and missed spaces. The pool can be filtered by length and by subject, a target pace can be set, and custom text can be pasted in.
+- Zen Mode: free-flow typing where each finished word drifts up the canvas. Everything typed is saved as a draft that can be reopened, copied, or exported as Markdown. An optional timer of 3, 5, or 10 minutes ends with a summary.
 - Progress: a calendar of practice days, the current streak, best WPM, average accuracy, and the last 500 sessions.
 - Sound, off by default: six synthesized keyboard switch profiles and four ambient beds (rain, wind, fire, drone), generated with Web Audio at runtime. No audio files are downloaded.
-- Themes: Void, Cosmic, Aurora, Ocean, Glacier, Forest, Ember, Sakura, built on the Rosé Pine palette. Each has a WebGL2 ambient scene that freezes under reduced motion.
+- Themes: Void, Cosmic, Aurora, Ocean, Glacier, Forest, Ember, and Sakura, built on the Rosé Pine palette, and Washi, a light theme (ink on paper). Each has a WebGL2 ambient scene that freezes under reduced motion.
+- Type: the passage is set in Newsreader; the typing font can be changed to Literata, Hanken Grotesk, Atkinson Hyperlegible, JetBrains Mono, or the system font. All fonts are served from the site itself.
 - Backups: one JSON file exports settings, stats, history, and drafts; the same file restores them on another device. Stats can be reset and all data deleted from settings.
 - Phones: Quote Mode works with on-screen keyboards and composed input.
 
@@ -29,7 +30,7 @@ Zen Typer is built and maintained by Jonathan R. Reed. It is meant for typing pr
 
 ## How it is built
 
-Astro 7 renders static pages. The interactive parts are React 19 islands. Styling is Tailwind over CSS variables holding the Rosé Pine tokens. Settings and stats are in localStorage; drafts are in IndexedDB through Dexie. The source is on GitHub under the MIT license.
+Astro 7 renders static pages. The interactive parts are React 19 islands. Styling is plain CSS over Tailwind 4, with every color held in CSS variables. Settings and stats are in localStorage; drafts are in IndexedDB through Dexie. The source is on GitHub under the MIT license.
 
 - [Astro](https://docs.astro.build/)
 - [React](https://react.dev/)

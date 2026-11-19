@@ -1,62 +1,39 @@
 ---
-import "../styles/globals.css";
-import SEO from "../components/SEO.astro";
+import PageLayout from "../layouts/PageLayout.astro";
 
 const siteUrl = "https://zentype.jonathanrreed.com";
 const contactUrl = `${siteUrl}/contact/`;
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<SEO
-			title="Zen Typer Feedback and Support"
-			description="Contact Jonathan R. Reed about Zen Typer feedback, accessibility issues, typing practice improvements, privacy questions, or project details."
-			canonical={contactUrl}
-			keywords={[
-				"Zen Typer contact",
-				"typing practice feedback",
-				"mindful typing support",
-				"Jonathan R. Reed contact",
-			]}
-			breadcrumbItems={[
-				{ name: "Mindful typing test", url: `${siteUrl}/` },
-				{ name: "Contact Zen Typer", url: contactUrl },
-			]}
-		/>
-	</head>
-	<body>
-		<main class="content-page px-6 pb-32 pt-16 text-text">
-			<div class="mx-auto max-w-3xl space-y-8">
-				<nav aria-label="Primary" class="content-nav">
-					<a href="/">Home</a>
-					<a href="/quote/">Quote mode</a>
-					<a href="/zen/">Zen mode</a>
-					<a href="/about/">About</a>
-					<a href="/privacy/">Privacy</a>
-					<a href="/subprocessors/">Subprocessors</a>
-				</nav>
+<PageLayout
+	title="Contact Zen Typer"
+	seo={{
+		title: "Zen Typer Feedback and Support",
+		description: "Contact Jonathan R. Reed about Zen Typer feedback, accessibility issues, typing practice improvements, privacy questions, or project details.",
+		canonical: contactUrl,
+		keywords: [
+			"Zen Typer contact",
+			"typing practice feedback",
+			"mindful typing support",
+			"Jonathan R. Reed contact",
+		],
+		breadcrumbItems: [
+			{ name: "Mindful typing test", url: `${siteUrl}/` },
+			{ name: "Contact Zen Typer", url: contactUrl },
+		],
+	}}
+>
+	<p slot="lede" class="prose-lede">
+		Reach Jonathan R. Reed at <a href="https://jonathanrreed.com" target="_blank" rel="noopener noreferrer">jonathanrreed.com</a> or on Bluesky at <a href="https://bsky.app/profile/thereedy.bsky.social" target="_blank" rel="noopener noreferrer">@thereedy.bsky.social</a>. Related work lives on the <a href="https://jonathanrreed.com/projects/" target="_blank" rel="noopener noreferrer">projects page</a>.
+	</p>
 
-				<article class="glass content-prose rounded-2xl p-8 md:p-10 space-y-8 stagger-fade-in">
-					<header class="space-y-4 border-b border-iris/15 pb-7">
-						<p class="eyebrow text-sm font-medium uppercase tracking-[0.28em]">Contact</p>
-						<h1>Contact Zen Typer</h1>
-						<p class="!text-lg !leading-8">
-							Reach Jonathan R. Reed at <a href="https://jonathanrreed.com" target="_blank" rel="noopener noreferrer">jonathanrreed.com</a> or on Bluesky at <a href="https://bsky.app/profile/thereedy.bsky.social" target="_blank" rel="noopener noreferrer">@thereedy.bsky.social</a>. Related work lives on the <a href="https://jonathanrreed.com/projects/" target="_blank" rel="noopener noreferrer">projects page</a>.
-						</p>
-					</header>
-
-					<section class="space-y-4">
-						<h2>What to include</h2>
-						<p>
-							Specific beats general. Say which mode you were in, whether reduced motion was on, and what the app did instead of what you expected. For accessibility, the control name, keyboard step, or screen reader behavior that got in the way. For a quote suggestion, the quote and the author.
-						</p>
-						<p>
-							The whole app is supposed to work without a mouse, so anything that breaks that is worth sending.
-						</p>
-					</section>
-				</article>
-			</div>
-		</main>
-	</body>
-</html>
+	<section>
+		<h2>What to include</h2>
+		<p>
+			Specific beats general. Say which mode you were in, whether reduced motion was on, and what the app did instead of what you expected. For accessibility, the control name, keyboard step, or screen reader behavior that got in the way. For a quote suggestion, the quote and the author.
+		</p>
+		<p>
+			The whole app is supposed to work without a mouse, so anything that breaks that is worth sending.
+		</p>
+	</section>
+</PageLayout>

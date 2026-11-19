@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import '../../styles/drafts.css';
 import {
   getAllDrafts,
   getDraft,
@@ -16,15 +15,16 @@ import {
   type Draft,
   type DraftPrefs,
 } from '../../lib/draftStore';
-import { computeTextMetrics, extractOutline, getKeywordFrequencies, findInText } from '../../lib/textMetrics';
+import { computeTextMetrics, extractOutline, getKeywordFrequencies, findInText, type SearchMatch } from '../../lib/textMetrics';
 import { checkGrammar } from '../../lib/grammar';
 import Editor from './Editor';
 import ToolsPanel from './ToolsPanel';
 import ResizableOutline from './ResizableOutline';
-import CommandPalette from './CommandPalette';
+import CommandPalette, { type DraftLine } from './CommandPalette';
 import SearchBox from './SearchBox';
 import VersionHistory from './VersionHistory';
 import Scratchpad from './Scratchpad';
+import { IconCheck, IconClose, IconCopy, IconDownload, IconHistory, IconPlus, IconSearch, IconSliders } from '../icons';
 
 interface DraftManagerProps {
   isOpen: boolean;
@@ -59,7 +59,7 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
   const overlayRef = useRef<HTMLDivElement | null>(null);
 
   const flagPersistError = useCallback(() => {
-    setPersistError('Could not save — browser storage is blocked or full. Your text is still on screen, so copy it somewhere safe.');
+    setPersistError('Could not save. This browser is blocking storage, or it is full. Your text is still on screen, so copy it somewhere safe.');
   }, []);
 
   const loadDrafts = useCallback(async () => {
@@ -119,7 +119,9 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
     ].join(',');
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab' || !overlay) return;
+      // A sheet open on top (tools, history) traps Tab itself and has already
+      // moved focus; do not move it a second time.
+      if (e.key !== 'Tab' || !overlay || e.defaultPrevented) return;
       const items = Array.from(overlay.querySelectorAll<HTMLElement>(FOCUSABLE))
         .filter(el => el.getClientRects().length > 0);
       const first = items[0];
@@ -184,11 +186,14 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const handleCreateDraft = async () => {
-    const draft = await createDraft('New Draft');
+    const draft = await createDraft('');
     setDrafts(prev => [draft, ...prev]);
     setCurrentDraft(draft);
     // Set this as the active draft for zen mode
     setActiveDraftId(draft.id);
+    window.setTimeout(() => {
+      overlayRef.current?.querySelector<HTMLInputElement>('input[aria-label="Draft title"]')?.focus();
+    }, 0);
   };
 
   const handleExportAll = () => {
@@ -228,7 +233,7 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
 
   const handleClearAll = async () => {
     if (drafts.length === 0) return;
-    if (!confirm(`This will permanently delete all ${drafts.length} drafts. This action cannot be undone. Continue?`)) return;
+    if (!confirm(`Delete all ${drafts.length} ${drafts.length === 1 ? 'draft' : 'drafts'}? This cannot be undone.`)) return;
     
     // Delete all drafts
     await Promise.all(drafts.map(draft => deleteDraft(draft.id)));
@@ -308,74 +313,6 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
       });
   }, [currentDraft, flagPersistError]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const userAgent = navigator.userAgent?.toLowerCase() ?? '';
-      const isMac = userAgent.includes('mac');
-      const mod = isMac ? e.metaKey : e.ctrlKey;
-
-      if (e.key === 'Escape') {
-        // The command palette and search box close themselves on Escape, so
-        // let those win first. Otherwise close the drafts overlay and stop the
-        // event: the page-level Escape handler would otherwise open the pause
-        // menu on top of the still-open overlay instead of dismissing it.
-        if (commandPaletteOpen || searchOpen) return;
-        e.preventDefault();
-        e.stopPropagation();
-        if (versionHistoryOpen) {
-          setVersionHistoryOpen(false);
-        } else if (toolsPanelOpen) {
-          setToolsPanelOpen(false);
-        } else {
-          onClose();
-        }
-        return;
-      }
-
-      if (e.key === 't' && !mod && !e.shiftKey && !e.altKey) {
-        const target = e.target as HTMLElement;
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          setToolsPanelOpen(prev => !prev);
-        }
-      }
-
-      if (mod && e.key === 'k' && prefs.quickJump) {
-        e.preventDefault();
-        setCommandPaletteOpen(true);
-      }
-
-      if (mod && e.key === 'f' && prefs.search) {
-        e.preventDefault();
-        setSearchOpen(prev => !prev);
-      }
-
-      if (mod && e.key === '1') {
-        e.preventDefault();
-        setPrefs(prev => ({ ...prev, outline: !prev.outline }));
-      }
-
-      if (mod && e.key === '2') {
-        e.preventDefault();
-        setPrefs(prev => ({ ...prev, scratchpad: !prev.scratchpad }));
-      }
-
-      if (mod && e.key === 's') {
-        e.preventDefault();
-        handleManualSnapshot();
-      }
-    };
-
-    // Capture phase: the page-level Escape handler is bound on `document`, so a
-    // bubble-phase listener here would run after it and could not stop the
-    // pause menu from opening behind the overlay.
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isOpen, handleManualSnapshot, commandPaletteOpen, searchOpen, versionHistoryOpen, toolsPanelOpen, onClose, prefs.quickJump, prefs.search]);
-
   // Update preferences
   const handlePrefsChange = useCallback((updates: Partial<DraftPrefs>) => {
     setPrefs(prev => {
@@ -402,6 +339,8 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
   const keywordFrequencies = useMemo(() => {
     return currentDraft && prefs.keywordHighlighter ? getKeywordFrequencies(currentDraft.body) : [];
   }, [currentDraft, prefs.keywordHighlighter]);
+
+  const highlightedWords = useMemo(() => new Set(keywordFrequencies.map(kf => kf.word)), [keywordFrequencies]);
 
   const searchMatches = useMemo(() => {
     if (!currentDraft || !searchQuery.trim()) return [];
@@ -467,382 +406,357 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
     updateDraft(currentDraft.id, { scratchpad }).catch(() => flagPersistError());
   }, [currentDraft, flagPersistError]);
 
-  const recentLines = useMemo(() => {
+  const recentLines = useMemo<DraftLine[]>(() => {
     if (!currentDraft) return [];
-    return currentDraft.body
-      .split('\n')
-      .filter(line => line.trim().length > 10)
-      .slice(-50);
+    const lines: DraftLine[] = [];
+    let offset = 0;
+    for (const line of currentDraft.body.split('\n')) {
+      if (line.trim().length > 10) lines.push({ text: line, index: offset });
+      offset += line.length + 1;
+    }
+    return lines.slice(-50);
   }, [currentDraft]);
+
+  const closeTools = useCallback(() => setToolsPanelOpen(false), []);
+  const closeHistory = useCallback(() => setVersionHistoryOpen(false), []);
+  const closeCommandPalette = useCallback(() => setCommandPaletteOpen(false), []);
+
+  // Closing the find bar hands the page back with the current match
+  // selected, so you land where you were looking.
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
+    const match = searchMatches[currentSearchIndex];
+    if (match) {
+      window.dispatchEvent(new CustomEvent('draftJumpTo', { detail: { index: match.index, length: match.length } }));
+    } else {
+      overlayRef.current?.querySelector<HTMLTextAreaElement>('textarea[aria-label="Draft editor"]')?.focus();
+    }
+  }, [searchMatches, currentSearchIndex]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const userAgent = navigator.userAgent?.toLowerCase() ?? '';
+      const isMac = userAgent.includes('mac');
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+
+      if (e.key === 'Escape') {
+        // Escape closes the topmost thing: the jump palette, version history,
+        // the tools, the find bar, and only then the drafts screen. Stop the
+        // event either way: the page-level Escape handler would otherwise
+        // open the pause menu on top of the still-open screen. (The palette
+        // and find bar used to be left to close themselves, which only worked
+        // while their own field had focus; anywhere else Escape did nothing.)
+        e.preventDefault();
+        e.stopPropagation();
+        if (commandPaletteOpen) {
+          closeCommandPalette();
+        } else if (versionHistoryOpen) {
+          setVersionHistoryOpen(false);
+        } else if (toolsPanelOpen) {
+          setToolsPanelOpen(false);
+        } else if (searchOpen) {
+          closeSearch();
+        } else {
+          onClose();
+        }
+        return;
+      }
+
+      if (e.key === 't' && !mod && !e.shiftKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          setToolsPanelOpen(prev => !prev);
+        }
+      }
+
+      if (mod && e.key === 'k' && prefs.quickJump) {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+
+      if (mod && e.key === 'f' && prefs.search) {
+        e.preventDefault();
+        if (searchOpen) closeSearch();
+        else setSearchOpen(true);
+      }
+
+      if (mod && e.key === '1') {
+        e.preventDefault();
+        setPrefs(prev => ({ ...prev, outline: !prev.outline }));
+      }
+
+      if (mod && e.key === '2') {
+        e.preventDefault();
+        setPrefs(prev => ({ ...prev, scratchpad: !prev.scratchpad }));
+      }
+
+      if (mod && e.key === 's') {
+        e.preventDefault();
+        handleManualSnapshot();
+      }
+    };
+
+    // Capture phase: the page-level Escape handler is bound on `document`, so a
+    // bubble-phase listener here would run after it and could not stop the
+    // pause menu from opening behind the overlay.
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen, handleManualSnapshot, commandPaletteOpen, searchOpen, versionHistoryOpen, toolsPanelOpen, onClose, closeSearch, closeCommandPalette, prefs.quickJump, prefs.search]);
+
 
   if (!isOpen) return null;
 
+  const listDate = (ts: number) => {
+    const d = new Date(ts);
+    const sameYear = d.getFullYear() === new Date().getFullYear();
+    const day = d.toLocaleDateString(undefined, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
+    const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return `${day}, ${time}`;
+  };
+
+  const showNotes = (prefs.grammar && grammarIssues.length > 0) || (prefs.keywordHighlighter && keywordFrequencies.length > 0);
+
   return (
-    <div ref={overlayRef} tabIndex={-1} className="overlay-backdrop fixed inset-0 z-[1000] glass-theme" role="dialog" aria-modal="true" aria-label="Drafts Manager">
-      <div className="pointer-events-none fixed inset-0 z-0 theme-layer">
-        <div className="forest-rays" aria-hidden="true" />
-        <div className="ocean-lights" aria-hidden="true" />
-      </div>
-      <div className="relative z-10 flex h-full flex-col md:flex-row">
-        {/* Sidebar */}
-        <div className="w-full md:w-72 shrink-0 bg-surface/40 backdrop-blur-sm border-b md:border-b-0 md:border-r border-muted/20 flex flex-col">
-        <div className="p-4 border-b border-muted/20 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-sans text-foam">Drafts</h2>
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="icon"
-              className="text-muted hover:text-text transition-colors"
-              aria-label="Close drafts"
-            >
-              <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </Button>
+    <div ref={overlayRef} tabIndex={-1} className="drafts-screen" role="dialog" aria-modal="true" aria-labelledby="drafts-title">
+      <div className="drafts-layout">
+        {/* The list of drafts */}
+        <div className="drafts-side">
+          <div className="drafts-side-head">
+            <h2 id="drafts-title" className="drafts-side-title">Notes and drafts</h2>
+            <button type="button" className="sheet-close" onClick={onClose} aria-label="Close notes and drafts">
+              <IconClose />
+            </button>
           </div>
-          <Button
-            onClick={handleCreateDraft}
-            variant="ghost"
-            className="w-full justify-center rounded-xl border border-foam/40 bg-transparent text-foam text-sm font-medium hover:bg-foam/10 transition-colors"
-          >
-            + New Draft
-          </Button>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[32vh] md:max-h-none">
+          <button type="button" className="btn btn-outline btn-block drafts-new" onClick={handleCreateDraft}>
+            <IconPlus />
+            New draft
+          </button>
+
           {drafts.length === 0 ? (
-            <p className="text-muted text-center py-8 text-sm">No drafts yet. Use New Draft to start one.</p>
+            <p className="drafts-empty">Nothing here yet. Words you type in Zen mode are kept here, or start a new draft.</p>
           ) : (
-            drafts.map(draft => {
-              const isActive = currentDraft?.id === draft.id;
-              const updatedAt = new Date(draft.updatedAt);
-              const dateLabel = updatedAt.toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              });
-              const timeLabel = updatedAt.toLocaleTimeString(undefined, {
-                hour: 'numeric',
-                minute: '2-digit',
-              });
-              const displayTitle = (draft.title && draft.title.trim().length > 0)
-                ? draft.title.trim()
-                : `Zen Session: ${updatedAt.toLocaleString()}`;
-              const previewLine = draft.body
-                .split('\n')
-                .map(line => line.trim())
-                .find(line => line.length > 0);
-              const previewText = previewLine
-                ? previewLine.length > 140
-                  ? `${previewLine.slice(0, 140).trim()}…`
-                  : previewLine
-                : '';
-              const tagsToShow = draft.tags.slice(0, 2);
+            <ul className="drafts-list" aria-label="Drafts">
+              {drafts.map(draft => {
+                const isActive = currentDraft?.id === draft.id;
+                const displayTitle = draft.title.trim() || 'Untitled';
+                const previewLine = draft.body
+                  .split('\n')
+                  .map(line => line.trim())
+                  .find(line => line.length > 0);
+                const previewText = previewLine
+                  ? previewLine.length > 140
+                    ? `${previewLine.slice(0, 140).trim()}…`
+                    : previewLine
+                  : '';
+                const tagsToShow = draft.tags.slice(0, 2);
 
-              return (
-                <button
-                  key={draft.id}
-                  type="button"
-                  onClick={() => handleSelectDraft(draft.id)}
-                  className={cn(
-                    'group relative w-full text-left px-5 py-4 rounded-xl border transition-all bg-surface/45 flex flex-col items-stretch justify-start whitespace-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris/45 focus-visible:ring-offset-2 focus-visible:ring-offset-surface/60',
-                    isActive
-                      ? 'border-iris/55 bg-iris/20 shadow-[0_12px_28px_rgba(26,12,48,0.38)]'
-                      : 'border-muted/25 hover:border-iris/45 hover:bg-surface/60 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(26,12,48,0.32)]'
-                  )}
-                >
-                  <div className="flex w-full flex-col gap-2">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p
-                          title={displayTitle}
-                          className="text-[15px] font-semibold text-text leading-[1.45] overflow-hidden line-clamp-2 break-words"
-                        >
-                          {displayTitle}
-                        </p>
-                      </div>
-                      <div className="shrink-0">
-                        <span
-                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-[0.18em] uppercase ${
-                            isActive
-                              ? 'border-iris/40 bg-iris/10 text-iris'
-                              : 'border-muted/30 bg-transparent text-muted/70'
-                          }`}
-                        >
-                          {isActive ? 'Active' : 'Draft'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {previewText && (
-                      <p className="text-sm text-muted/90 leading-relaxed line-clamp-2">
-                        {previewText}
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted/80">
-                      <span className="flex items-center gap-1">
-                        <svg
-                          className="h-3.5 w-3.5 text-muted/70"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                          <line x1="16" y1="2" x2="16" y2="6" />
-                          <line x1="8" y1="2" x2="8" y2="6" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        <span>{dateLabel}</span>
+                return (
+                  <li key={draft.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDraft(draft.id)}
+                      className="draft-item"
+                      aria-current={isActive ? 'true' : undefined}
+                    >
+                      <span className="draft-item-title" title={displayTitle}>{displayTitle}</span>
+                      {previewText && <span className="draft-item-preview">{previewText}</span>}
+                      <span className="draft-item-meta">
+                        {listDate(draft.updatedAt)}
+                        {tagsToShow.length > 0 && `, tagged ${tagsToShow.join(', ')}`}
                       </span>
-                      <span className="text-muted/60">•</span>
-                      <span>{timeLabel}</span>
-                      {tagsToShow.length > 0 && (
-                        <span className="text-muted/60">•</span>
-                      )}
-                      {tagsToShow.map(tag => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-iris/40 bg-iris/10 px-2 py-0.5 text-[11px] font-medium text-iris"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </button>
-              );
-            })
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           )}
+
+          <div className="drafts-side-foot">
+            <button type="button" className="btn" onClick={handleExportAll} disabled={drafts.length === 0}>
+              Export all
+            </button>
+            <button type="button" className="btn btn-danger" onClick={handleClearAll} disabled={drafts.length === 0}>
+              Delete all drafts
+            </button>
+            <p className="sheet-meta">{drafts.length} {drafts.length === 1 ? 'draft' : 'drafts'}</p>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="p-4 border-t border-muted/20 space-y-2">
-          <Button
-            onClick={handleExportAll}
-            variant="ghost"
-            className="w-full justify-center rounded-lg border border-muted/25 bg-surface/40 text-sm text-text hover:bg-surface/55"
-            disabled={drafts.length === 0}
-          >
-            Export All Drafts
-          </Button>
-          <Button
-            onClick={handleClearAll}
-            variant="ghost"
-            className="w-full justify-center rounded-lg border border-love/40 bg-love/15 text-sm text-love hover:bg-love/25"
-            disabled={drafts.length === 0}
-          >
-            Clear All Drafts
-          </Button>
-          <p className="text-xs text-muted text-center pt-1">
-            {drafts.length} draft{drafts.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        </div>
+        {/* The page */}
+        <div className="drafts-main">
+          {currentDraft ? (
+            <>
+              <div className="drafts-bar">
+                {prefs.counters && metrics ? (
+                  <p className="drafts-count">
+                    <b>{metrics.words.toLocaleString()}</b> {metrics.words === 1 ? 'word' : 'words'}
+                    <span className="drafts-count-more">, <b>{metrics.chars.toLocaleString()}</b> characters</span>
+                    {prefs.readTime && metrics.words > 0 && (
+                      <span className="drafts-count-more">, <b>{metrics.readTimeMinutes}</b> min to read</span>
+                    )}
+                  </p>
+                ) : <span />}
+                <div className="drafts-actions">
+                  {prefs.search && (
+                    <button
+                      type="button"
+                      className="act"
+                      onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
+                      aria-pressed={searchOpen}
+                      title="Find in draft (Ctrl+F)"
+                    >
+                      <IconSearch />
+                      <span>Find</span>
+                    </button>
+                  )}
+                  <button type="button" className="act" onClick={handleCopyDraft} title="Copy the text of this draft">
+                    {copied ? <IconCheck /> : <IconCopy />}
+                    <span>{copied ? 'Copied' : 'Copy'}</span>
+                  </button>
+                  <button type="button" className="act" onClick={handleExportDraft} title="Download as a Markdown file">
+                    <IconDownload />
+                    <span>Download</span>
+                  </button>
+                  <button type="button" className="act" onClick={() => setVersionHistoryOpen(true)} title="Earlier versions of this draft">
+                    <IconHistory />
+                    <span>History</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="act"
+                    onClick={() => setToolsPanelOpen(true)}
+                    aria-label="Writing tools"
+                    title="Writing tools (T)"
+                  >
+                    <IconSliders />
+                    <span>Tools</span>
+                  </button>
+                </div>
+              </div>
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col min-h-0">
-        {currentDraft ? (
-          <>
-            {/* Header */}
-            <div className="p-4 border-b border-muted/20 flex items-center justify-between bg-surface/30">
-              <div className="flex-1 mr-4">
-                <input
-                  type="text"
-                  aria-label="Draft title"
-                  value={currentDraft.title}
-                  onChange={e => handleTitleChange(e.target.value)}
-                  className="draft-focusable w-full bg-transparent text-2xl font-bold text-text placeholder-muted"
-                  placeholder="Untitled"
-                />
-                {prefs.tags && (
-                  <div className="flex items-center gap-2 mt-3 flex-wrap">
-                    {currentDraft.tags.map(tag => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 bg-iris/20 text-iris text-xs rounded flex items-center gap-1.5"
-                      >
-                        {tag}
-                        <Button
-                          onClick={() => handleRemoveTag(tag)}
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 min-h-6 min-w-6 p-0 hover:text-love"
-                          aria-label={`Remove tag ${tag}`}
-                        >
-                          ×
-                        </Button>
-                      </span>
-                    ))}
+              {/* Storage failure: drafts look saved by default, so a failed
+                  write must say so out loud. */}
+              {persistError && (
+                <div role="alert" className="drafts-alert">
+                  <p>{persistError}</p>
+                  <button type="button" className="sheet-close" onClick={() => setPersistError(null)} aria-label="Dismiss">
+                    <IconClose />
+                  </button>
+                </div>
+              )}
+
+              <div className="drafts-body">
+                {prefs.outline && (
+                  <ResizableOutline
+                    items={outline}
+                    onItemClick={handleJumpTo}
+                    onClose={() => handlePrefsChange({ outline: false })}
+                  />
+                )}
+
+                <div className="draft-column">
+                  <div className="draft-head">
                     <input
                       type="text"
-                      aria-label="Add tag"
-                      value={newTagInput}
-                      onChange={e => setNewTagInput(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleAddTag()}
-                      placeholder="Add tag..."
-                      className="px-2 py-1 bg-overlay/30 text-xs rounded focus:outline-none focus:ring-1 focus:ring-iris/40"
+                      aria-label="Draft title"
+                      value={currentDraft.title}
+                      onChange={e => handleTitleChange(e.target.value)}
+                      className="draft-title"
+                      placeholder="Untitled"
                     />
+                    {prefs.tags && (
+                      <div className="draft-tags">
+                        {currentDraft.tags.map(tag => (
+                          <span key={tag} className="draft-tag">
+                            {tag}
+                            <button type="button" onClick={() => handleRemoveTag(tag)} aria-label={`Remove tag ${tag}`}>
+                              <IconClose />
+                            </button>
+                          </span>
+                        ))}
+                        <input
+                          type="text"
+                          aria-label="Add a tag"
+                          value={newTagInput}
+                          onChange={e => setNewTagInput(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleAddTag()}
+                          placeholder="Add a tag"
+                          enterKeyHint="done"
+                          className="draft-tag-input"
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="flex items-center gap-4">
-                {prefs.counters && metrics && (
-                  <div className="flex items-center gap-4 text-sm text-muted">
-                    <span className="font-medium">{metrics.words} words</span>
-                    <span>{metrics.chars} chars</span>
-                    {prefs.readTime && <span>{metrics.readTimeMinutes} min read</span>}
-                  </div>
-                )}
-                <Button
-                  onClick={handleCopyDraft}
-                  variant="ghost"
-                  className="px-3 py-2 rounded-lg border border-overlay/40 bg-overlay/30 text-sm font-medium hover:bg-overlay/45 text-text"
-                  title="Copy draft text to clipboard"
-                >
-                  {copied ? 'Copied!' : 'Copy'}
-                </Button>
-                <Button
-                  onClick={handleExportDraft}
-                  variant="ghost"
-                  className="px-3 py-2 rounded-lg border border-overlay/40 bg-overlay/30 text-sm font-medium hover:bg-overlay/45 text-text"
-                  title="Export draft as Markdown (.md)"
-                >
-                  Export .md
-                </Button>
-                <Button
-                  onClick={() => setVersionHistoryOpen(true)}
-                  variant="ghost"
-                  className="px-4 py-2 rounded-lg border border-overlay/40 bg-overlay/30 text-sm font-medium hover:bg-overlay/45"
-                  title="Version history"
-                >
-                  History
-                </Button>
-                <Button
-                  onClick={() => setToolsPanelOpen(true)}
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-lg border border-overlay/40 bg-overlay/30 hover:bg-overlay/50 transition-colors"
-                  aria-label="Open tools panel"
-                  title="Tools (T)"
-                >
-                  <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
-                    <path d="M9.67 5h4.67l.82 2.32a1.33 1.33 0 0 0 .82.82l2.32.82v4.67l-2.32.82a1.33 1.33 0 0 0-.82.82l-.82 2.32H9.67l-.82-2.32a1.33 1.33 0 0 0-.82-.82l-2.32-.82V9.66l2.32-.82a1.33 1.33 0 0 0 .82-.82Z" />
-                    <circle cx="12" cy="12" r="2.5" />
-                  </svg>
-                </Button>
-              </div>
-            </div>
 
-            {/* Storage failure banner: drafts look saved by default, so a
-                failed write must say so out loud. */}
-            {persistError && (
-              <div
-                role="alert"
-                className="px-4 py-2 text-xs bg-love/15 border-b border-love/30 text-love flex items-center justify-between gap-3"
-              >
-                <span>{persistError}</span>
-                <Button
-                  onClick={() => setPersistError(null)}
-                  variant="ghost"
-                  size="sm"
-                  className="shrink-0 text-love/80 hover:text-love underline"
-                >
-                  Dismiss
-                </Button>
-              </div>
-            )}
+                  <Editor
+                    draft={currentDraft}
+                    onChange={handleBodyChange}
+                    grammarIssues={grammarIssues}
+                    searchMatches={searchOpen ? searchMatches : NO_MATCHES}
+                    currentMatchIndex={currentSearchIndex}
+                    highlightedWords={highlightedWords}
+                  />
 
-            {/* Editor area */}
-            <div className="flex-1 flex overflow-hidden min-h-0">
-              {/* Outline sidebar */}
-              {prefs.outline && (
-                <ResizableOutline
-                  items={outline}
-                  onItemClick={handleJumpTo}
-                  onClose={() => handlePrefsChange({ outline: false })}
-                />
-              )}
-
-              {/* Editor */}
-              <div className="flex-1 overflow-hidden">
-                <Editor
-                  draft={currentDraft}
-                  onChange={handleBodyChange}
-                  grammarIssues={grammarIssues}
-                  searchMatches={searchMatches}
-                  currentMatchIndex={currentSearchIndex}
-                  highlightedWords={new Set(keywordFrequencies.map(kf => kf.word))}
-                />
-              </div>
-
-              {/* Scratchpad */}
-              {prefs.scratchpad && (
-                <Scratchpad
-                  value={currentDraft.scratchpad || ''}
-                  onChange={handleScratchpadChange}
-                  onClose={() => handlePrefsChange({ scratchpad: false })}
-                />
-              )}
-            </div>
-
-            {/* Grammar/Keyword panel */}
-            {(prefs.grammar || prefs.keywordHighlighter) && (grammarIssues.length > 0 || keywordFrequencies.length > 0) && (
-              <div className="border-t border-muted/20 bg-surface/30 p-4 max-h-48 overflow-y-auto">
-                {prefs.grammar && grammarIssues.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-semibold text-text mb-2">Writing Issues</h3>
-                    <div className="space-y-1">
-                      {grammarIssues.slice(0, 5).map((issue) => (
-                        <div key={`${issue.startIndex}_${issue.message}`} className="text-xs text-muted bg-overlay/30 rounded px-2 py-1">
-                          {issue.message}
-                        </div>
-                      ))}
+                  {showNotes && (
+                    <div className="draft-notes">
+                      <div className="draft-notes-inner">
+                        {prefs.grammar && grammarIssues.length > 0 && (
+                          <section aria-labelledby="draft-notes-writing">
+                            <h3 id="draft-notes-writing">Writing notes</h3>
+                            <ul>
+                              {grammarIssues.slice(0, 5).map(issue => (
+                                <li key={`${issue.startIndex}_${issue.message}`}>{issue.message}</li>
+                              ))}
+                            </ul>
+                          </section>
+                        )}
+                        {prefs.keywordHighlighter && keywordFrequencies.length > 0 && (
+                          <section aria-labelledby="draft-notes-repeated">
+                            <h3 id="draft-notes-repeated">Repeated words</h3>
+                            <ul className="repeated-words">
+                              {keywordFrequencies.map(kf => (
+                                <li key={kf.word}>
+                                  {kf.word}
+                                  <b>{kf.count}<span className="sr-only"> times</span></b>
+                                </li>
+                              ))}
+                            </ul>
+                          </section>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {prefs.keywordHighlighter && keywordFrequencies.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-text mb-2">Repeated Words</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {keywordFrequencies.map(kf => (
-                        <span key={kf.word} className="text-xs bg-gold/20 text-gold px-2 py-1 rounded">
-                          {kf.word} ({kf.count})
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  )}
+                </div>
+
+                {prefs.scratchpad && (
+                  <Scratchpad
+                    value={currentDraft.scratchpad || ''}
+                    onChange={handleScratchpadChange}
+                    onClose={() => handlePrefsChange({ scratchpad: false })}
+                  />
                 )}
               </div>
-            )}
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-muted">
-            <div className="text-center">
-              <p className="mb-4">No draft selected</p>
-              <Button
-                onClick={handleCreateDraft}
-                variant="ghost"
-                className="px-4 py-2 rounded-lg border border-foam/40 bg-foam/15 text-sm text-foam hover:bg-foam/25"
-              >
-                Create First Draft
-              </Button>
+            </>
+          ) : (
+            <div className="drafts-blank">
+              <p>{drafts.length === 0 ? 'A blank page.' : 'Pick a draft from the list, or start a new one.'}</p>
+              <button type="button" className="btn btn-primary" onClick={handleCreateDraft}>
+                <IconPlus />
+                New draft
+              </button>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
 
-      {/* Modals */}
       <ToolsPanel
         isOpen={toolsPanelOpen}
-        onClose={() => setToolsPanelOpen(false)}
+        onClose={closeTools}
         prefs={prefs}
         onPrefsChange={handlePrefsChange}
       />
@@ -850,7 +764,7 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
       {prefs.quickJump && (
         <CommandPalette
           isOpen={commandPaletteOpen}
-          onClose={() => setCommandPaletteOpen(false)}
+          onClose={closeCommandPalette}
           outlineItems={outline}
           recentLines={recentLines}
           onJumpTo={handleJumpTo}
@@ -860,7 +774,7 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
       {prefs.search && (
         <SearchBox
           isOpen={searchOpen}
-          onClose={() => setSearchOpen(false)}
+          onClose={closeSearch}
           onSearch={handleSearch}
           onNext={handleNextMatch}
           onPrevious={handlePreviousMatch}
@@ -871,8 +785,11 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
 
       {currentDraft && (
         <VersionHistory
+          // A fresh instance per opening, so a half-finished restore does not
+          // greet you the next time.
+          key={versionHistoryOpen ? 'open' : 'closed'}
           isOpen={versionHistoryOpen}
-          onClose={() => setVersionHistoryOpen(false)}
+          onClose={closeHistory}
           snapshots={currentDraft.snapshots}
           currentBody={currentDraft.body}
           onRestore={handleRestoreSnapshot}
@@ -881,5 +798,8 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
     </div>
   );
 };
+
+const NO_MATCHES: SearchMatch[] = [];
+
 
 export default DraftManager;

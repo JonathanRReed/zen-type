@@ -74,49 +74,62 @@ export function __resetStoragePersistenceStateForTests(): void {
 // ---------------------------------------------------------------------------
 
 export const FONT_OPTIONS = [
-  'Nebula Sans',
+  'Newsreader',
+  'Literata',
+  'Hanken Grotesk',
+  'Atkinson Hyperlegible',
   'JetBrains Mono',
-  'Fira Code',
-  'IBM Plex Mono',
-  'Source Code Pro',
-  'Inter',
-  'Manrope',
-  'Space Grotesk',
-  'Roboto',
-  'Lato'
+  'System',
 ] as const;
 export type FontOption = typeof FONT_OPTIONS[number];
 
-const FONT_STACKS: Record<FontOption, string> = {
-  'Nebula Sans': "'Nebula Sans', 'Inter', 'Helvetica Neue', Arial, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  'JetBrains Mono': "'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  'Fira Code': "'Fira Code', 'JetBrains Mono', 'IBM Plex Mono', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  'IBM Plex Mono': "'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  'Source Code Pro': "'Source Code Pro', 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  'Inter': "'Inter', 'Manrope', 'Space Grotesk', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-  'Manrope': "'Manrope', 'Inter', 'Space Grotesk', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-  'Space Grotesk': "'Space Grotesk', 'Manrope', 'Inter', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-  'Roboto': "'Roboto', 'Inter', 'Manrope', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-  'Lato': "'Lato', 'Inter', 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+/** How each font is named in Settings. */
+export const FONT_LABELS: Record<FontOption, string> = {
+  'Newsreader': 'Newsreader, a book serif',
+  'Literata': 'Literata, a sturdier serif',
+  'Hanken Grotesk': 'Hanken Grotesk, a plain sans',
+  'Atkinson Hyperlegible': 'Atkinson Hyperlegible, built for clarity',
+  'JetBrains Mono': 'JetBrains Mono, fixed width',
+  'System': 'Your system font',
 };
 
-function getFontStack(font: FontOption): string {
-  return FONT_STACKS[font] ?? FONT_STACKS['Nebula Sans'];
-}
+// Every family here is self-hosted (see src/styles/tokens.css); the browser
+// fetches a file only when its family is actually used.
+const SERIF_FALLBACK = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif";
+const SANS_FALLBACK = "'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif";
+const FONT_STACKS: Record<FontOption, { stack: string; tracking: string }> = {
+  'Newsreader': { stack: `'Newsreader', 'Newsreader Fallback', ${SERIF_FALLBACK}`, tracking: '-0.005em' },
+  'Literata': { stack: `'Literata', ${SERIF_FALLBACK}`, tracking: '-0.01em' },
+  'Hanken Grotesk': { stack: `'Hanken Grotesk', ${SANS_FALLBACK}`, tracking: '0em' },
+  'Atkinson Hyperlegible': { stack: `'Atkinson Hyperlegible Next', ${SANS_FALLBACK}`, tracking: '0em' },
+  'JetBrains Mono': { stack: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", tracking: '-0.02em' },
+  'System': { stack: 'system-ui, -apple-system, \'Segoe UI\', sans-serif', tracking: '0em' },
+};
 
+/**
+ * Fonts offered before 1.1. None of them were ever shipped with the site, so
+ * a stored choice only worked for visitors who happened to have the font
+ * installed. Each maps to the nearest font that is.
+ */
+const LEGACY_FONTS: Readonly<Record<string, FontOption>> = {
+  'Nebula Sans': 'Newsreader',
+  'Inter': 'Hanken Grotesk',
+  'Manrope': 'Hanken Grotesk',
+  'Space Grotesk': 'Hanken Grotesk',
+  'Roboto': 'Hanken Grotesk',
+  'Lato': 'Hanken Grotesk',
+  'Fira Code': 'JetBrains Mono',
+  'IBM Plex Mono': 'JetBrains Mono',
+  'Source Code Pro': 'JetBrains Mono',
+};
+
+/** Point the typing surfaces at the chosen family. The interface font stays put. */
 export function syncTypingFont(font: FontOption): void {
   if (typeof document === 'undefined') return;
-  const stack = getFontStack(font);
-  document.documentElement.style.setProperty('--typing-font', stack);
-  document.documentElement.style.setProperty('--ui-font', stack);
-
-  const fonts = (document as Document & { fonts?: { load?: (spec: string) => Promise<unknown> } }).fonts;
-  if (fonts?.load) {
-    const family = font.replace(/"/g, '\\"');
-    for (const weight of ['400', '500', '600', '700']) {
-      void fonts.load(`${weight} 1rem "${family}"`).catch(() => {});
-    }
-  }
+  const choice = FONT_STACKS[font] ?? FONT_STACKS[FONT_OPTIONS[0]];
+  const root = document.documentElement;
+  root.style.setProperty('--typing-font', choice.stack);
+  root.style.setProperty('--typing-tracking', choice.tracking);
 }
 
 // ---------------------------------------------------------------------------
@@ -132,8 +145,21 @@ export const DEFAULT_STATS_BAR_METRICS: Readonly<Record<'zen' | 'quote', StatsBa
 
 const ALLOWED_STATS_BAR_METRICS: readonly StatsBarMetricKey[] = ['time', 'words', 'wpm', 'accuracy', 'streak'];
 
-export type ThemeName = 'Void' | 'Forest' | 'Ocean' | 'Cosmic' | 'Ember' | 'Sakura' | 'Aurora' | 'Glacier';
-const THEME_NAMES: readonly ThemeName[] = ['Void', 'Cosmic', 'Aurora', 'Ocean', 'Glacier', 'Forest', 'Ember', 'Sakura'];
+export type ThemeName = 'Void' | 'Forest' | 'Ocean' | 'Cosmic' | 'Ember' | 'Sakura' | 'Aurora' | 'Glacier' | 'Washi';
+/** Every theme, in picker order. */
+export const THEME_NAMES: readonly ThemeName[] = ['Void', 'Cosmic', 'Aurora', 'Ocean', 'Glacier', 'Forest', 'Ember', 'Sakura', 'Washi'];
+/** The colour at the top of each scene, for the browser's own chrome on phones. */
+export const THEME_COLORS: Readonly<Record<ThemeName, string>> = {
+  Void: '#17132c',
+  Cosmic: '#130b2b',
+  Aurora: '#0a1628',
+  Ocean: '#0f3a50',
+  Glacier: '#1f4a5c',
+  Forest: '#102b21',
+  Ember: '#2a120c',
+  Sakura: '#2a1b30',
+  Washi: '#f3eee2',
+};
 
 type CaretStyle = 'line' | 'block' | 'underline' | 'glow';
 export type SwitchSoundProfile = 'none' | 'thock' | 'cream' | 'raindrop' | 'typewriter' | 'holy-panda' | 'clicky';
@@ -310,6 +336,8 @@ export function normalizeSettings(raw: unknown): Settings {
   if ((input.theme as string | undefined) === 'Plain') normalized.theme = 'Void';
   if (!THEME_NAMES.includes(normalized.theme)) normalized.theme = 'Void';
 
+  const legacyFont = LEGACY_FONTS[String(input.fontFamily)];
+  if (legacyFont) normalized.fontFamily = legacyFont;
   if (!normalized.fontFamily || !FONT_OPTIONS.includes(normalized.fontFamily)) {
     normalized.fontFamily = DEFAULT_SETTINGS.fontFamily!;
   }
@@ -399,14 +427,8 @@ export function applySettingsSideEffects(patch: Partial<Settings>, next: Setting
       window.dispatchEvent(new CustomEvent('fontChanged', { detail: patch.fontFamily }));
     }
   }
-  if ('reducedMotion' in patch) {
-    root.classList.toggle('reduce-motion', !!next.reducedMotion);
-  }
   if ('highContrast' in patch) {
     root.classList.toggle('high-contrast', !!next.highContrast);
-  }
-  if ('showStats' in patch && broadcast) {
-    window.dispatchEvent(new CustomEvent('toggleStats', { detail: !!next.showStats }));
   }
   if ('performanceMode' in patch) {
     root.classList.toggle('perf-mode', !!next.performanceMode);

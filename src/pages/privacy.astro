@@ -1,75 +1,52 @@
 ---
-import "../styles/globals.css";
-import SEO from "../components/SEO.astro";
+import PageLayout from "../layouts/PageLayout.astro";
 
 const siteUrl = "https://zentype.jonathanrreed.com";
 const privacyUrl = `${siteUrl}/privacy/`;
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<SEO
-			title="Zen Typer Local Storage and Privacy Notice"
-			description="Read the Zen Typer privacy notice for local storage, drafts, typing stats, account-free use, and contact options."
-			canonical={privacyUrl}
-			keywords={[
-				"Zen Typer privacy",
-				"typing app privacy",
-				"local storage typing app",
-				"mindful typing privacy",
-			]}
-			breadcrumbItems={[
-				{ name: "Mindful typing test", url: `${siteUrl}/` },
-				{ name: "Zen Typer Privacy", url: privacyUrl },
-			]}
-		/>
-	</head>
-	<body>
-		<main class="content-page px-6 pb-32 pt-16 text-text">
-			<div class="mx-auto max-w-3xl space-y-8">
-				<nav aria-label="Primary" class="content-nav">
-					<a href="/">Home</a>
-					<a href="/quote/">Quote mode</a>
-					<a href="/zen/">Zen mode</a>
-					<a href="/about/">About</a>
-					<a href="/contact/">Contact</a>
-					<a href="/subprocessors/">Subprocessors</a>
-				</nav>
+<PageLayout
+	title="Zen Typer Privacy"
+	seo={{
+		title: "Zen Typer Local Storage and Privacy Notice",
+		description: "Read the Zen Typer privacy notice for local storage, drafts, typing stats, account-free use, and contact options.",
+		canonical: privacyUrl,
+		keywords: [
+			"Zen Typer privacy",
+			"typing app privacy",
+			"local storage typing app",
+			"mindful typing privacy",
+		],
+		breadcrumbItems: [
+			{ name: "Mindful typing test", url: `${siteUrl}/` },
+			{ name: "Zen Typer Privacy", url: privacyUrl },
+		],
+	}}
+>
+	<p slot="lede" class="prose-lede">
+		Zen Typer has no accounts and no server of its own. Everything it remembers about you is stored in your browser, on your device.
+	</p>
 
-				<article class="glass content-prose rounded-2xl p-8 md:p-10 space-y-8 stagger-fade-in">
-					<header class="space-y-4 border-b border-iris/15 pb-7">
-						<p class="eyebrow text-sm font-medium uppercase tracking-[0.28em]">Privacy</p>
-						<h1>Zen Typer Privacy</h1>
-						<p class="!text-lg !leading-8">
-							Zen Typer has no accounts and no server of its own. Everything it remembers about you is stored in your browser, on your device.
-						</p>
-					</header>
+	<section>
+		<h2>What the app stores</h2>
+		<p>
+			Settings, typing stats, the day streak, a history of your last 500 sessions, and which one-time hints you have seen are kept in localStorage. Zen Mode drafts are kept in IndexedDB. Nothing is sent anywhere. Clearing site data for this domain removes all of it, and so does the delete-everything button in settings. There is also a reset button that clears stats and history but keeps your settings.
+		</p>
+		<p>
+			Settings has a backup button that writes all of the above to one JSON file on your machine, and a restore button that reads it back. That is the only way data moves between devices.
+		</p>
+		<p>
+			The app never asks for a login, a password, a payment method, or a profile. Drafts are plain text on your own disk, so treat Zen Mode like any other local notes app and keep anything confidential out of it if other people use the same browser profile.
+		</p>
+	</section>
 
-					<section class="space-y-4">
-						<h2>What the app stores</h2>
-						<p>
-							Settings, typing stats, the day streak, a history of your last 500 sessions, and which one-time hints you have seen are kept in localStorage. Zen Mode drafts are kept in IndexedDB. Nothing is sent anywhere. Clearing site data for this domain removes all of it, and so does the delete-everything button in settings. There is also a reset button that clears stats and history but keeps your settings.
-						</p>
-						<p>
-							Settings has a backup button that writes all of the above to one JSON file on your machine, and a restore button that reads it back. That is the only way data moves between devices.
-						</p>
-						<p>
-							The app never asks for a login, a password, a payment method, or a profile. Drafts are plain text on your own disk, so treat Zen Mode like any other local notes app and keep anything confidential out of it if other people use the same browser profile.
-						</p>
-					</section>
-
-					<section class="space-y-4">
-						<h2>Analytics and third parties</h2>
-						<p>
-							There is no analytics script on this site and no third-party embed. The pages are served by Cloudflare Pages, which sees the same request metadata any web host sees (IP address, user agent, time of request) in order to deliver and protect the site. The <a href="/subprocessors/">subprocessor disclosure</a> lists that in full. Links to other sites, including Jonathan R. Reed's own, leave this one and are covered by whatever those sites do.
-						</p>
-						<p>
-							Questions about privacy, accessibility, or data handling go through the <a href="/contact/">contact page</a>. This notice was last updated on September 4, 2026.
-						</p>
-					</section>
-				</article>
-			</div>
-		</main>
-	</body>
-</html>
+	<section>
+		<h2>Analytics and third parties</h2>
+		<p>
+			There is no analytics script on this site and no third-party embed. The pages are served by Cloudflare Pages, which sees the same request metadata any web host sees (IP address, user agent, time of request) in order to deliver and protect the site. The <a href="/subprocessors/">subprocessor disclosure</a> lists that in full. Links to other sites, including Jonathan R. Reed's own, leave this one and are covered by whatever those sites do.
+		</p>
+		<p>
+			Questions about privacy, accessibility, or data handling go through the <a href="/contact/">contact page</a>. This notice was last updated on September 4, 2026.
+		</p>
+	</section>
+</PageLayout>

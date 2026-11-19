@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { quoteLength, filterQuotes, pickQuote, getFallbackQuotes, QUOTE_TAGS, type Quote } from '../quotes';
+import { quoteLength, filterQuotes, pickQuote, getFallbackQuotes, splitSource, normalizeCustomText, CUSTOM_TEXT_MAX, QUOTE_TAGS, type Quote } from '../quotes';
 
 const corpus = JSON.parse(readFileSync(join(process.cwd(), 'public', 'quotes.json'), 'utf-8')) as Quote[];
 
@@ -101,5 +101,48 @@ describe('quotes.json', () => {
       expect(q.tags?.length).toBeGreaterThan(0);
       expect(q.source).toBeTruthy();
     }
+  });
+});
+
+describe('splitSource', () => {
+  it('separates the work from its translator and year', () => {
+    expect(splitSource('Meditations, trans. Meric Casaubon (1634)')).toEqual({ title: 'Meditations', detail: 'tr. Meric Casaubon, 1634' });
+    expect(splitSource('Walden (1854)')).toEqual({ title: 'Walden', detail: '1854' });
+    expect(splitSource('Essays, trans. Charles Cotton')).toEqual({ title: 'Essays', detail: 'tr. Charles Cotton' });
+    expect(splitSource('The Enchiridion')).toEqual({ title: 'The Enchiridion', detail: '' });
+    expect(splitSource('Bushido: The Soul of Japan (1900)')).toEqual({ title: 'Bushido: The Soul of Japan', detail: '1900' });
+  });
+
+  it('copes with a missing source', () => {
+    expect(splitSource(undefined)).toEqual({ title: '', detail: '' });
+    expect(splitSource('  ')).toEqual({ title: '', detail: '' });
+  });
+
+  it('gives every quote in the shipped pool a title', () => {
+    for (const q of corpus) {
+      const { title } = splitSource(q.source);
+      expect(title.length, q.id).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('normalizeCustomText', () => {
+  it('turns line breaks and runs of whitespace into single spaces', () => {
+    expect(normalizeCustomText('  one\n\ntwo\t three  ')).toBe('one two three');
+  });
+
+  it('swaps typographic characters for the ones on a keyboard', () => {
+    expect(normalizeCustomText('“Wait” — it’s here…')).toBe('"Wait" - it\'s here...');
+  });
+
+  it('caps the length and never ends on a space', () => {
+    const long = 'word '.repeat(400);
+    const out = normalizeCustomText(long);
+    expect(out.length).toBeLessThanOrEqual(CUSTOM_TEXT_MAX);
+    expect(out.endsWith(' ')).toBe(false);
+  });
+
+  it('leaves the shipped quotes untouched, so they stay typeable as written', () => {
+    for (const q of corpus) expect(normalizeCustomText(q.text), q.id).toBe(q.text);
   });
 });

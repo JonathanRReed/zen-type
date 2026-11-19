@@ -1,6 +1,9 @@
 ---
 import { ClientRouter } from "astro:transitions";
 import { pageModifiedDate } from "../utils/page-dates";
+import { THEME_NAMES, THEME_COLORS } from "../utils/storage";
+import voiceFontUrl from "../assets/fonts/newsreader-latin-wght-normal.woff2?url";
+import uiFontUrl from "../assets/fonts/hanken-grotesk-latin-wght-normal.woff2?url";
 
 export interface Props {
   title: string;
@@ -27,9 +30,9 @@ const {
   description,
   canonical,
   ogType = "website",
-  // Raster PNG: X/LinkedIn/Slack scrapers overwhelmingly require raster for
-  // large-image cards and render the SVG as blank. Generated from
-  // public/og-image.svg at exactly 1200x630 (see public/og-image.png).
+  // Raster PNG: X, LinkedIn and Slack scrapers want a raster image for large
+  // cards. Rendered at exactly 1200x630 from scripts/og/og.html by
+  // scripts/og/render.ts.
   ogImage = "/og-image.png",
   ogImageAlt = "Zen Typer mindful typing test and practice interface",
   twitterCard = "summary_large_image",
@@ -128,6 +131,11 @@ const pageJsonLd: JsonLdNode = {
     : {}),
 };
 
+// The pre-paint script below is inline, so it gets the theme list as data
+// rather than importing it.
+const themeClasses = THEME_NAMES.map((name) => `theme-${name.toLowerCase()}`);
+const themeColors = Object.fromEntries(THEME_NAMES.map((name) => [name.toLowerCase(), THEME_COLORS[name]]));
+
 const customJsonLd = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
 const structuredData = [
   creatorJsonLd,
@@ -140,6 +148,7 @@ const structuredData = [
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content={THEME_COLORS.Void} />
 <meta name="generator" content={Astro.generator} />
 <meta name="application-name" content="Zen Typer" />
 <meta name="apple-mobile-web-app-title" content="Zen Typer" />
@@ -152,10 +161,9 @@ const structuredData = [
   Void-default → chosen-theme "pop-in" on initial load and after a
   ClientRouter navigation.
 -->
-<script is:inline>
+<script is:inline define:vars={{ themeClasses, themeColors }}>
   (function () {
     try {
-      var themeClasses = ["theme-void", "theme-forest", "theme-ocean", "theme-cosmic", "theme-ember", "theme-sakura", "theme-aurora", "theme-glacier"];
       var root = document.documentElement;
 
       var raw = null;
@@ -182,6 +190,10 @@ const structuredData = [
       for (var i = 0; i < themeClasses.length; i++) root.classList.remove(themeClasses[i]);
       root.classList.add("theme-" + theme);
 
+      // The address bar on phones takes the colour of the scene.
+      var themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta && themeColors[theme]) themeMeta.setAttribute("content", themeColors[theme]);
+
       // Motion preference: data-motion="on" | "off"
       var motion = (parsed && parsed.reducedMotion) ? "off" : "on";
       var prefersReduced = false;
@@ -206,6 +218,10 @@ const structuredData = [
     }
   })();
 </script>
+
+<!-- The two fonts every page uses, fetched alongside the CSS rather than after it. -->
+<link rel="preload" as="font" type="font/woff2" href={voiceFontUrl} crossorigin />
+<link rel="preload" as="font" type="font/woff2" href={uiFontUrl} crossorigin />
 
 <title>{title}</title>
 <meta name="description" content={description} />
@@ -233,17 +249,6 @@ const structuredData = [
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={fullOgImage} />
 <meta name="twitter:image:alt" content={ogImageAlt} />
-
-<meta
-  name="theme-color"
-  content="#191724"
-  media="(prefers-color-scheme: dark)"
-/>
-<meta
-  name="theme-color"
-  content="#faf4ed"
-  media="(prefers-color-scheme: light)"
-/>
 
 <script
   type="application/ld+json"

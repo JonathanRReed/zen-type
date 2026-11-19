@@ -1,0 +1,594 @@
+/* ==========================================================================
+   Form controls and the menu / settings sheets.
+   Native elements, styled: a select is a select and a switch is a checkbox,
+   so phones get their own pickers and nothing here needs a library.
+   ========================================================================== */
+
+@layer components {
+  /* ---------- select ------------------------------------------------------ */
+
+  .select {
+    appearance: none;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 2.25rem 0 0.85rem;
+    border: 1px solid var(--ink-line);
+    border-radius: 0.65rem;
+    background-color: color-mix(in oklab, var(--scene-floor) 45%, transparent);
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-faint) 50%), linear-gradient(135deg, var(--ink-faint) 50%, transparent 50%);
+    background-position: calc(100% - 1.05rem) 50%, calc(100% - 0.75rem) 50%;
+    background-size: 0.3rem 0.3rem;
+    background-repeat: no-repeat;
+    color: var(--ink);
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: border-color 0.2s var(--ease-out);
+  }
+
+  .select:hover {
+    border-color: color-mix(in oklab, var(--ink) 36%, transparent);
+  }
+
+  .select:disabled,
+  .range:disabled,
+  .switch:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .select option {
+    background: var(--sheet);
+    color: var(--ink);
+  }
+
+  /* ---------- switch ------------------------------------------------------ */
+
+  .switch {
+    appearance: none;
+    position: relative;
+    flex: none;
+    width: 2.75rem;
+    height: 1.625rem;
+    margin: 0;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--ink) 18%, transparent);
+    cursor: pointer;
+    transition: background-color 0.2s var(--ease-out);
+  }
+
+  .switch::before {
+    content: '';
+    position: absolute;
+    top: 0.1875rem;
+    left: 0.1875rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background: var(--ink);
+    transition: transform 0.2s var(--ease-out);
+  }
+
+  .switch:checked {
+    background: var(--theme-accent);
+  }
+
+  .switch:checked::before {
+    background: var(--ink-inverse);
+    transform: translateX(1.125rem);
+  }
+
+  /* ---------- range ------------------------------------------------------- */
+
+  .range {
+    appearance: none;
+    width: 100%;
+    height: 1.75rem;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    --range-fill: 50%;
+  }
+
+  .range::-webkit-slider-runnable-track {
+    height: 2px;
+    border-radius: 1px;
+    background: linear-gradient(to right, var(--theme-accent) var(--range-fill), var(--ink-line) var(--range-fill));
+  }
+
+  .range::-moz-range-track {
+    height: 2px;
+    border-radius: 1px;
+    background: var(--ink-line);
+  }
+
+  .range::-moz-range-progress {
+    height: 2px;
+    border-radius: 1px;
+    background: var(--theme-accent);
+  }
+
+  .range::-webkit-slider-thumb {
+    appearance: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: calc(-0.5625rem + 1px);
+    border: 0;
+    border-radius: 50%;
+    background: var(--ink);
+    box-shadow: 0 0 0 4px var(--sheet);
+  }
+
+  .range::-moz-range-thumb {
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ink);
+    box-shadow: 0 0 0 4px var(--sheet);
+  }
+
+  /* ---------- chips ------------------------------------------------------- */
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: 0 0.85rem;
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    color: var(--ink-soft);
+    transition: color 0.15s var(--ease-out), background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
+  }
+
+  .chip:hover {
+    color: var(--ink);
+    border-color: color-mix(in oklab, var(--ink) 42%, transparent);
+  }
+
+  .chip[aria-pressed='true'] {
+    color: var(--ink-inverse);
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+
+  .chip:disabled {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  /* ---------- menu -------------------------------------------------------- */
+
+  .menu-rows {
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--ink-ghost);
+  }
+
+  .menu-rows li {
+    border-bottom: 1px solid var(--ink-ghost);
+  }
+
+  .menu-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0 0.25rem;
+    font-size: 1rem;
+    text-align: left;
+    color: var(--ink);
+    transition: padding 0.2s var(--ease-out), color 0.2s var(--ease-out);
+  }
+
+  .menu-row:hover {
+    padding-left: 0.6rem;
+    color: var(--theme-accent);
+  }
+
+  .menu-row kbd {
+    color: var(--ink-faint);
+  }
+
+  .menu-row-danger {
+    color: var(--rp-love);
+  }
+
+  .menu-row-danger:hover {
+    color: var(--rp-love);
+  }
+
+  .menu-toggles {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 1rem;
+  }
+
+  .menu-sofar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.75rem;
+    margin: 1.25rem 0 0;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--ink-ghost);
+  }
+
+  .menu-sofar > div {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+
+  .menu-sofar dd {
+    margin: 0;
+    font-family: var(--voice-font);
+    font-size: 1.25rem;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: var(--ink);
+  }
+
+  .menu-sofar dt {
+    font-size: 0.8125rem;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- settings ---------------------------------------------------- */
+
+  .tabs {
+    display: flex;
+    gap: 0.125rem;
+    margin: 0 -0.35rem 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--ink-ghost);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    position: relative;
+    flex: none;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+    border-radius: 0.6rem;
+    font-size: 0.9375rem;
+    color: var(--ink-faint);
+    transition: color 0.2s var(--ease-out);
+  }
+
+  .tab:hover {
+    color: var(--ink);
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--ink);
+  }
+
+  .tab[aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: calc(-0.5rem - 1px);
+    height: 1px;
+    background: var(--theme-accent);
+  }
+
+  .settings-group + .settings-group {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--ink-ghost);
+  }
+
+  .settings-group > h3 {
+    margin: 0 0 0.5rem;
+    font-family: var(--voice-font);
+    font-size: 1.25rem;
+    font-weight: 400;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+
+  .setting {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.15rem 1rem;
+    min-height: 3rem;
+    padding: 0.35rem 0;
+  }
+
+  .setting-wide {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 13.5rem);
+  }
+
+  .setting-stack {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .setting-stack > .range,
+  .setting-stack > .chips,
+  .setting-stack > .theme-swatches,
+  .setting-stack > .caret-preview {
+    grid-column: 1 / -1;
+  }
+
+  .setting-label {
+    font-size: 0.9375rem;
+    color: var(--ink);
+  }
+
+  .setting-value {
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+  }
+
+  .setting-note {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    text-wrap: pretty;
+  }
+
+  .theme-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr));
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+  }
+
+  .theme-swatch {
+    display: grid;
+    justify-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.25rem 0.5rem;
+    border-radius: 0.65rem;
+    font-size: 0.8125rem;
+    color: var(--ink-soft);
+    transition: background-color 0.15s var(--ease-out), color 0.15s var(--ease-out);
+  }
+
+  .theme-swatch:hover {
+    color: var(--ink);
+    background: var(--ink-wash);
+  }
+
+  .theme-swatch .swatch {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .theme-swatch[aria-pressed='true'] {
+    color: var(--ink);
+  }
+
+  .theme-swatch[aria-pressed='true'] .swatch {
+    box-shadow: 0 0 0 2px var(--sheet), 0 0 0 3.5px var(--theme-accent);
+  }
+
+  .caret-preview {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    min-height: 3.25rem;
+    margin-top: 0.35rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 0.65rem;
+    background: color-mix(in oklab, var(--scene-floor) 45%, transparent);
+    font-family: var(--typing-font);
+    font-size: 1.5rem;
+    line-height: 1.4;
+    color: var(--ink-faint);
+  }
+
+  .caret-preview .passage-caret {
+    opacity: 1;
+  }
+
+  .settings-data {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .settings-status {
+    margin: 0.75rem 0 0;
+    font-size: 0.875rem;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- shortcuts --------------------------------------------------- */
+
+  .keys {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .keys li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 2.75rem;
+    border-bottom: 1px solid var(--ink-ghost);
+    font-size: 0.9375rem;
+    color: var(--ink-soft);
+  }
+
+  .keys li:last-child {
+    border-bottom: 0;
+  }
+
+  .keys kbd {
+    color: var(--ink);
+  }
+
+  .keys-combo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: none;
+  }
+}
+
+@layer components {
+  .sheet-prose {
+    font-family: var(--voice-font);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  .sheet-prose p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  .sheet-prose p + p {
+    margin-top: 0.85rem;
+  }
+
+  .sheet-prose a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--theme-accent) 70%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+  }
+
+  .sheet-prose a:hover {
+    color: var(--theme-accent);
+  }
+}
+
+/* ---------- progress ------------------------------------------------------ */
+
+@layer components {
+  .result-figures dd.is-streak {
+    color: var(--rp-gold);
+  }
+
+  .progress-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .progress-head h3 {
+    margin: 0;
+    font-family: var(--voice-font);
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  .progress-head span {
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+  }
+
+  .progress-grid {
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .progress-months,
+  .progress-weeks {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 3px;
+    min-width: 18rem;
+  }
+
+  .progress-months {
+    margin-bottom: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+  }
+
+  .progress-week {
+    display: grid;
+    grid-template-rows: repeat(7, 1fr);
+    gap: 3px;
+  }
+
+  .progress-cell {
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: color-mix(in oklab, var(--ink) 7%, transparent);
+  }
+
+  .progress-cell.is-future { opacity: 0.35; }
+  .progress-cell.level-1 { background: color-mix(in oklab, var(--theme-accent) 30%, transparent); }
+  .progress-cell.level-2 { background: color-mix(in oklab, var(--theme-accent) 50%, transparent); }
+  .progress-cell.level-3 { background: color-mix(in oklab, var(--theme-accent) 72%, transparent); }
+  .progress-cell.level-4 { background: var(--theme-accent); }
+
+  .sparkline {
+    display: block;
+    width: 100%;
+    height: 4.5rem;
+  }
+
+  .progress-recent {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .progress-recent li {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 0.75rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--ink-ghost);
+    font-size: 0.9375rem;
+  }
+
+  .progress-recent li:last-child {
+    border-bottom: 0;
+  }
+
+  .progress-recent-day {
+    color: var(--ink-faint);
+  }
+
+  .progress-recent-what {
+    color: var(--ink-soft);
+  }
+
+  .progress-recent-score {
+    font-family: var(--voice-font);
+    font-size: 1.0625rem;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: var(--ink);
+  }
+}

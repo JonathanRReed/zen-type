@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { getHistory, getStats, getStreak, getPracticeDays, type SessionRecord } from '../utils/storage';
 import { useSettings } from '../hooks/useSettings';
+import { useModal } from '../hooks/useModal';
+import { IconClose } from './icons';
 
 // Progress, built only from what this browser has recorded. Opens from the
 // pause menu, the completion card, or Ctrl/Cmd+P. When the stats bar is
@@ -94,16 +95,16 @@ function Sparkline({ values, best }: { values: number[]; best?: number }) {
   const area = `${path} L${pts[pts.length - 1]![0].toFixed(1)},${h} L${pts[0]![0].toFixed(1)},${h} Z`;
   const last = pts[pts.length - 1]!;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-[72px]" aria-hidden="true">
+    <svg viewBox={`0 0 ${w} ${h}`} className="sparkline" preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--theme-accent)" stopOpacity="0.35" />
+          <stop offset="0%" stopColor="var(--theme-accent)" stopOpacity="0.22" />
           <stop offset="100%" stopColor="var(--theme-accent)" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={area} fill="url(#spark-fill)" />
-      <path d={path} fill="none" stroke="var(--theme-accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={last[0]} cy={last[1]} r="3.5" fill="var(--theme-accent)" />
+      <path d={path} fill="none" stroke="var(--theme-accent)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={last[0]} cy={last[1]} r="3" fill="var(--theme-accent)" />
     </svg>
   );
 }
@@ -153,91 +154,54 @@ const ProgressBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     };
   }, [tick]);
 
-  // Focus in, trap Tab, hand focus back on close.
+  useModal(backdropRef, onClose);
   useEffect(() => {
-    const backdrop = backdropRef.current;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
     cardRef.current?.focus();
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        onClose();
-        return;
-      }
-      if (e.key !== 'Tab' || !backdrop) return;
-      const items = Array.from(backdrop.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'))
-        .filter(el => el.getClientRects().length > 0);
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (!first || !last) return;
-      const active = document.activeElement;
-      if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKeyDown, true);
-      document.body.style.overflow = prevOverflow;
-      if (previouslyFocused && previouslyFocused.isConnected && previouslyFocused !== document.body) previouslyFocused.focus();
-    };
-  }, [onClose]);
+  }, []);
 
   const maxWords = Math.max(1, ...data.grid.weeks.flat().map(c => c.words));
   const empty = data.history.length === 0;
 
   return (
-    <div
-      ref={backdropRef}
-      className="overlay-backdrop fixed inset-0 z-[2100] flex items-center justify-center bg-base/80 backdrop-blur-md p-3"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="progress-title"
-    >
-      <div className="absolute inset-0" aria-hidden="true" onClick={onClose} />
-      <div
-        ref={cardRef}
-        tabIndex={-1}
-        className="overlay-card glass relative z-10 w-full max-w-2xl max-h-[88vh] overflow-y-auto overscroll-contain rounded-2xl p-6 sm:p-8"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 id="progress-title" className="text-2xl font-sans text-tint">Progress</h2>
-          <Button onClick={onClose} variant="ghost" size="icon" aria-label="Close progress" className="text-muted hover:text-text">
-            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </Button>
+    <div ref={backdropRef} className="overlay-backdrop" role="dialog" aria-modal="true" aria-labelledby="progress-title">
+      <div className="overlay-dismiss" aria-hidden="true" onClick={onClose} />
+      <div ref={cardRef} tabIndex={-1} className="overlay-card sheet sheet-lg">
+        <div className="sheet-head">
+          <h2 id="progress-title" className="sheet-title">Progress</h2>
+          <button type="button" className="sheet-close" onClick={onClose} aria-label="Close progress">
+            <IconClose />
+          </button>
         </div>
 
         {empty ? (
-          <p className="text-muted leading-7">
+          <p className="sheet-lede">
             Nothing here yet. Finish a quote or write for a while in Zen mode, and this fills in. Everything stays in this browser.
           </p>
         ) : (
-          <div className="space-y-7">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-xl border border-tint/15 bg-surface/40 p-4">
-                <div className="text-[11px] uppercase tracking-widest text-muted/80 mb-1">Days practiced</div>
-                <div className="text-3xl font-mono text-tint tabular-nums">{data.days.length}</div>
+          <>
+            <dl className="result-figures result-figures-sm">
+              <div>
+                <dt>Days practiced</dt>
+                <dd>{data.days.length}</dd>
               </div>
-              <div className="rounded-xl border border-tint/15 bg-surface/40 p-4">
-                <div className="text-[11px] uppercase tracking-widest text-muted/80 mb-1">In a row</div>
-                <div className="text-3xl font-mono text-gold tabular-nums">{data.streak}</div>
+              <div>
+                <dt>In a row</dt>
+                <dd className="is-streak">{data.streak}</dd>
               </div>
-              <div className="rounded-xl border border-tint/15 bg-surface/40 p-4">
-                <div className="text-[11px] uppercase tracking-widest text-muted/80 mb-1">Words</div>
-                <div className="text-3xl font-mono text-tint2 tabular-nums">{data.stats.totalWords.toLocaleString()}</div>
+              <div>
+                <dt>Words</dt>
+                <dd>{data.stats.totalWords.toLocaleString()}</dd>
               </div>
-              <div className="rounded-xl border border-tint/15 bg-surface/40 p-4">
-                <div className="text-[11px] uppercase tracking-widest text-muted/80 mb-1">Time</div>
-                <div className="text-3xl font-mono text-text tabular-nums">{formatDuration(data.totalTime)}</div>
+              <div>
+                <dt>Time</dt>
+                <dd>{formatDuration(data.totalTime)}</dd>
               </div>
-            </div>
+            </dl>
 
-            <section aria-label="Practice calendar">
-              <div className="flex items-baseline justify-between mb-2">
-                <h3 className="text-sm text-muted">Last sixteen weeks</h3>
-                <span className="text-xs text-muted/70">{data.history.length} sessions</span>
+            <section className="settings-group" aria-label="Practice calendar">
+              <div className="progress-head">
+                <h3>Last sixteen weeks</h3>
+                <span>{data.history.length} {data.history.length === 1 ? 'session' : 'sessions'}</span>
               </div>
               <div className="progress-grid" role="img" aria-label={`Practice calendar: ${data.days.length} days with at least one session`}>
                 <div className="progress-months">
@@ -265,18 +229,18 @@ const ProgressBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             </section>
 
             {!quiet && data.recentQuotes.length >= 2 && (
-              <section aria-label="Speed">
-                <div className="flex items-baseline justify-between mb-1">
-                  <h3 className="text-sm text-muted">Words per minute, last {data.recentQuotes.length} quotes</h3>
-                  <div className="text-xs text-muted/70 flex gap-3">
-                    <span>best <span className="font-mono text-gold">{data.stats.bestWpm}</span></span>
-                    {data.avgWpm !== null && <span>average <span className="font-mono text-tint">{data.avgWpm}</span></span>}
-                    {data.avgAccuracy !== null && <span>accuracy <span className="font-mono text-tint2">{data.avgAccuracy}%</span></span>}
-                  </div>
+              <section className="settings-group" aria-label="Speed">
+                <div className="progress-head">
+                  <h3>Words a minute, last {data.recentQuotes.length} quotes</h3>
+                  <span>
+                    best {data.stats.bestWpm}
+                    {data.avgWpm !== null && <>, average {data.avgWpm}</>}
+                    {data.avgAccuracy !== null && <>, accuracy {data.avgAccuracy}%</>}
+                  </span>
                 </div>
                 <Sparkline values={data.recentQuotes.map(r => r.wpm ?? 0)} best={data.stats.bestWpm} />
                 {data.earlierWpm !== null && data.avgWpm !== null && (
-                  <p className="text-xs text-muted/80 mt-1">
+                  <p className="setting-note">
                     {data.avgWpm > data.earlierWpm
                       ? `Up ${data.avgWpm - data.earlierWpm} from the thirty before.`
                       : data.avgWpm < data.earlierWpm
@@ -288,25 +252,25 @@ const ProgressBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             )}
 
             {data.zen.length > 0 && (
-              <section aria-label="Zen sessions">
-                <h3 className="text-sm text-muted mb-2">Zen mode</h3>
-                <p className="text-sm text-text/85 leading-6">
+              <section className="settings-group" aria-label="Zen sessions">
+                <h3>Zen mode</h3>
+                <p className="sheet-prose">
                   {data.zen.length} session{data.zen.length === 1 ? '' : 's'}, {data.zen.reduce((a, r) => a + r.words, 0).toLocaleString()} words written,
-                  {' '}{formatDuration(data.zen.reduce((a, r) => a + r.timeSec, 0))} in the flow.
+                  {' '}{formatDuration(data.zen.reduce((a, r) => a + r.timeSec, 0))} at the page.
                 </p>
               </section>
             )}
 
-            <section aria-label="Recent sessions">
-              <h3 className="text-sm text-muted mb-2">Recent</h3>
-              <ul className="divide-y divide-muted/15 text-sm">
+            <section className="settings-group" aria-label="Recent sessions">
+              <h3>Recent</h3>
+              <ul className="progress-recent">
                 {data.recent.map(r => (
-                  <li key={r.id} className="flex items-center justify-between py-2 gap-3">
-                    <span className="text-muted w-24 shrink-0">{relativeDay(r.date)}</span>
-                    <span className="text-text/85 flex-1">{r.mode === 'quote' ? 'Quote' : 'Zen'} · {formatDuration(r.timeSec)}</span>
-                    <span className="font-mono text-tint tabular-nums">
+                  <li key={r.id}>
+                    <span className="progress-recent-day">{relativeDay(r.date)}</span>
+                    <span className="progress-recent-what">{r.mode === 'quote' ? 'Quote' : 'Zen'}, {formatDuration(r.timeSec)}</span>
+                    <span className="progress-recent-score">
                       {r.mode === 'quote' && !quiet && r.wpm !== undefined
-                        ? `${r.wpm} wpm${r.accuracy !== undefined ? ` · ${r.accuracy}%` : ''}`
+                        ? `${r.wpm} wpm${r.accuracy !== undefined ? `, ${r.accuracy}%` : ''}`
                         : `${r.words} words`}
                     </span>
                   </li>
@@ -314,10 +278,10 @@ const ProgressBody: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               </ul>
             </section>
 
-            <p className="text-xs text-muted/70">
+            <p className="sheet-meta" style={{ marginTop: '1.25rem' }}>
               Kept in this browser only. Back it up from Settings if you want to take it with you.
             </p>
-          </div>
+          </>
         )}
       </div>
     </div>

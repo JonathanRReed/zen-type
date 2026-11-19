@@ -11,156 +11,58 @@ import {
   type StorageFailureDetail,
 } from '../utils/storage';
 import { useSettings } from '../hooks/useSettings';
-import { loadQuotes, pickQuote, getFallbackQuotes, type Quote } from '../utils/quotes';
-import { Button } from '@/components/ui/button';
-import AnimatedNumber from './AnimatedNumber';
-import { audioEngine } from '../utils/audioEngine';
+import { useGlidingCaret } from '../hooks/useGlidingCaret';
+import { loadQuotes, pickQuote, getFallbackQuotes, splitSource, type Quote } from '../utils/quotes';
+import QuoteResult from './QuoteResult';
+import CustomTextDialog from './CustomTextDialog';
+import { audio } from '../utils/audio';
 import { publishLiveStats, resetLiveStats } from '../utils/liveStats';
 import { downloadShareCard } from '../utils/shareCard';
+import { markTyping, clearTyping } from '../utils/focusMode';
+import { INITIAL_TYPING, typingReducer, typedRuns, describeMistakes } from '../utils/typingEngine';
 
 const STATIC_FALLBACK_QUOTES = getFallbackQuotes();
-
-type ErrorKind = 'slip' | 'skip' | 'extra';
 
 interface QuoteTyperProps {
   quote: string;
   author?: string;
+  source?: string;
   quoteId?: string;
-  onComplete?: (summary: {
-    mode: 'quote';
-    startedAt: Date;
-    endedAt: Date;
-    wordsTyped: number;
-    charactersTyped: number;
-    wpm: number;
-    accuracy: number;
-  }) => void;
 }
 
 interface ActiveQuote {
   id?: string;
   text: string;
   author?: string;
-}
-
-// ---------------------------------------------------------------------------
-// The typing engine is a reducer. Every keystroke dispatches an action that
-// is applied against the latest state, so a burst of keydown events (key
-// repeat, a composed word from a phone keyboard, a very fast typist) can never
-// read a stale cursor and land on the same character.
-// ---------------------------------------------------------------------------
-
-interface TypingState {
-  cursor: number;
-  typed: string[];
-  errors: ReadonlySet<number>;
-  correct: number;
-  total: number;
-  counts: { slip: number; skip: number; extra: number };
-  startedAt: number | null;
-  endedAt: number | null;
-  complete: boolean;
-  lastChar: string;
-  lastTs: number;
-}
-
-type TypingAction =
-  | { type: 'type'; ch: string; ts: number; quote: string; debounceMs: number }
-  | { type: 'backspace' }
-  | { type: 'reset' };
-
-const INITIAL_TYPING: TypingState = {
-  cursor: 0,
-  typed: [],
-  errors: new Set<number>(),
-  correct: 0,
-  total: 0,
-  counts: { slip: 0, skip: 0, extra: 0 },
-  startedAt: null,
-  endedAt: null,
-  complete: false,
-  lastChar: '',
-  lastTs: 0,
-};
-
-function typingReducer(state: TypingState, action: TypingAction): TypingState {
-  switch (action.type) {
-    case 'reset':
-      return { ...INITIAL_TYPING, errors: new Set<number>() };
-    case 'backspace': {
-      if (state.complete || state.cursor === 0) return state;
-      // Smart rewind: jump back to the earliest uncorrected mistake.
-      let target = state.cursor - 1;
-      for (let i = state.cursor - 1; i >= 0; i--) {
-        if (state.errors.has(i)) { target = i; break; }
-      }
-      const typed = state.typed.slice(0, target);
-      const errors = new Set(state.errors);
-      errors.delete(target);
-      return { ...state, cursor: target, typed, errors };
-    }
-    case 'type': {
-      const { ch, ts, quote, debounceMs } = action;
-      if (state.complete || ch.length !== 1 || state.cursor >= quote.length) return state;
-      if (debounceMs > 0 && ch === state.lastChar && ts - state.lastTs < debounceMs) return state;
-      const index = state.cursor;
-      const expected = quote[index];
-      const isCorrect = ch === expected;
-      const typed = state.typed.slice();
-      typed[index] = ch;
-      const errors = new Set(state.errors);
-      const counts = { ...state.counts };
-      if (isCorrect) {
-        errors.delete(index);
-      } else {
-        // Mistake counts are cumulative for the quote. Backspace rewinds to
-        // the mistake so it can be fixed, but the fact that it happened stays
-        // counted; otherwise every finished quote would report no mistakes.
-        errors.add(index);
-        const typedIsWs = /\s/.test(ch);
-        const expectedIsWs = expected ? /\s/.test(expected) : false;
-        const kind: ErrorKind = typedIsWs && !expectedIsWs ? 'skip' : !typedIsWs && expectedIsWs ? 'extra' : 'slip';
-        counts[kind] += 1;
-      }
-      const cursor = index + 1;
-      const complete = cursor === quote.length && isCorrect;
-      return {
-        ...state,
-        cursor,
-        typed,
-        errors,
-        counts,
-        correct: state.correct + (isCorrect ? 1 : 0),
-        total: state.total + 1,
-        startedAt: state.startedAt ?? Date.now(),
-        endedAt: complete ? Date.now() : state.endedAt,
-        complete,
-        lastChar: ch,
-        lastTs: ts,
-      };
-    }
-    default:
-      return state;
-  }
+  source?: string;
 }
 
 const isTouchDevice = (): boolean =>
   typeof window !== 'undefined' && (('ontouchstart' in window) || navigator.maxTouchPoints > 0);
 
-const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onComplete }) => {
+/** Longer texts step the type down so a pasted paragraph still fits a screen. */
+const sizeFor = (length: number): 'display' | 'long' | 'longer' =>
+  length > 420 ? 'longer' : length > 190 ? 'long' : 'display';
+
+const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, source, quoteId }) => {
   const settings = useSettings();
-  const [active, setActive] = useState<ActiveQuote>({ text: quote, ...(author ? { author } : {}), ...(quoteId ? { id: quoteId } : {}) });
+  const [active, setActive] = useState<ActiveQuote>({
+    text: quote,
+    ...(author ? { author } : {}),
+    ...(source ? { source } : {}),
+    ...(quoteId ? { id: quoteId } : {}),
+  });
   const activeQuote = active.text;
   const [ts, dispatch] = useReducer(typingReducer, INITIAL_TYPING);
-  const { cursor, typed: typedChars, errors, correct: correctChars, total: totalTyped, counts: errorCounts, complete: isComplete } = ts;
-  const startTime = useMemo(() => (ts.startedAt ? new Date(ts.startedAt) : null), [ts.startedAt]);
-  const endTime = useMemo(() => (ts.endedAt ? new Date(ts.endedAt) : null), [ts.endedAt]);
+  const { cursor, errors, correct: correctChars, total: totalTyped, counts: errorCounts, complete: isComplete } = ts;
 
   const [completion, setCompletion] = useState<{ streak: number; personalBest: boolean } | null>(null);
   const [showAudioHint, setShowAudioHint] = useState(false);
   const [touchIdle, setTouchIdle] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
+  // False for the passage that came with the page, true for every one after.
+  const [replaced, setReplaced] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
   const lastAnnouncedProgress = useRef(0);
   const composingRef = useRef(false);
   const handledKeydownAtRef = useRef(0);
@@ -181,10 +83,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
   // Target-WPM pacer: a marker that moves through the quote at the chosen pace.
   useEffect(() => {
-    if (!startTime || isComplete) return;
+    if (!ts.startedAt || isComplete) return;
     const targetWpm = settings.targetWpm || 0;
     if (targetWpm <= 0) return;
-    const startMs = startTime.getTime();
+    const startMs = ts.startedAt;
     const interval = window.setInterval(() => {
       const elapsedSec = (Date.now() - startMs) / 1000;
       const targetCps = (targetWpm * 5) / 60;
@@ -194,7 +96,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
       window.clearInterval(interval);
       setGhostCursor(-1);
     };
-  }, [startTime, isComplete, activeQuote.length, settings.targetWpm]);
+  }, [ts.startedAt, isComplete, activeQuote.length, settings.targetWpm]);
 
   const handleReset = useCallback(() => {
     dispatch({ type: 'reset' });
@@ -210,23 +112,10 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     inputRef.current?.focus();
   }, []);
 
-  const wpmValue = useMemo(() => {
-    if (!startTime || !endTime) return 0;
-    const minutes = (endTime.getTime() - startTime.getTime()) / 1000 / 60;
-    if (minutes === 0) return 0;
-    return Math.round((correctChars / 5) / minutes);
-  }, [startTime, endTime, correctChars]);
-
-  const accuracyValue = useMemo(() => {
-    if (totalTyped === 0) return 100;
-    return Math.round((correctChars / totalTyped) * 100);
-  }, [correctChars, totalTyped]);
-
+  const elapsedSec = ts.startedAt && ts.endedAt ? (ts.endedAt - ts.startedAt) / 1000 : 0;
+  const wpmValue = elapsedSec > 0 ? Math.round((correctChars / 5) / (elapsedSec / 60)) : 0;
+  const accuracyValue = totalTyped === 0 ? 100 : Math.round((correctChars / totalTyped) * 100);
   const progressPct = Math.max(0, Math.min(100, Math.round((cursor / Math.max(1, activeQuote.length)) * 100)));
-
-  const toggleAutoAdvance = useCallback((enabled: boolean) => {
-    updateSettings({ autoAdvanceQuotes: enabled });
-  }, []);
 
   const nextQuote = useCallback((pool: Quote[]): Quote => {
     const s = getSettings();
@@ -238,49 +127,30 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
   }, []);
 
   const loadNext = useCallback((next: Quote) => {
-    const value: ActiveQuote = { id: next.id, text: next.text, ...(next.author ? { author: next.author } : {}) };
+    const value: ActiveQuote = {
+      id: next.id,
+      text: next.text,
+      ...(next.author ? { author: next.author } : {}),
+      ...(next.source ? { source: next.source } : {}),
+    };
     activeRef.current = value;
     setActive(value);
+    setReplaced(true);
     handleReset();
   }, [handleReset]);
 
-  // Group the quote into lines of roughly ten words so the surface wraps on
-  // word boundaries rather than mid-word.
-  type Chunk = { start: number; end: number };
-  const chunks = useMemo<Chunk[]>(() => {
-    const words = activeQuote.split(/\s+/).filter(Boolean);
-    const starts: number[] = [];
-    let idx = 0;
-    for (const w of words) {
-      const found = activeQuote.indexOf(w, idx);
-      if (found === -1) break;
-      starts.push(found);
-      idx = found + w.length;
-    }
-    const out: Chunk[] = [];
-    const targetChunks = Math.max(1, Math.ceil(words.length / 10));
-    const size = Math.max(8, Math.min(12, Math.ceil(words.length / targetChunks)));
-    for (let w = 0; w < words.length; w += size) {
-      const last = Math.min(words.length - 1, w + size - 1);
-      const start = starts[w] ?? 0;
-      const end = last + 1 < starts.length ? (starts[last + 1] ?? activeQuote.length) : activeQuote.length;
-      out.push({ start, end });
-    }
-    return out;
-  }, [activeQuote]);
-
   useEffect(() => {
     let mounted = true;
-    loadQuotes()
-      .then(arr => { if (mounted) quotesRef.current = arr; })
-      .catch(err => console.error('Failed to load quotes', err));
+    // The first passage came with the page. The rest of the pool is only
+    // needed for the next one, so fetch it once the page has settled.
+    const preload = () => {
+      loadQuotes()
+        .then(arr => { if (mounted) quotesRef.current = arr; })
+        .catch(err => console.error('Failed to load quotes', err));
+    };
+    const preloadTimer = window.setTimeout(preload, 1500);
 
-    const onNew = async (e: Event) => {
-      const d = (e as CustomEvent).detail as { quote?: string; author?: string; id?: string } | undefined;
-      if (d?.quote) {
-        loadNext({ id: d.id ?? `custom-${Date.now()}`, text: d.quote, author: d.author ?? '' });
-        return;
-      }
+    const onNew = async () => {
       let pool = quotesRef.current;
       if (!pool.length) {
         try {
@@ -294,21 +164,23 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
       loadNext(nextQuote(pool));
     };
     const onCustomQuote = (e: Event) => {
-      const d = (e as CustomEvent).detail as { text: string; author?: string } | undefined;
+      const d = (e as CustomEvent).detail as { text: string } | undefined;
       const text = d?.text?.trim();
-      if (text) {
-        loadNext({ id: `custom-${Date.now()}`, text, author: d?.author?.trim() || 'Custom text' });
-      }
+      if (text) loadNext({ id: `custom-${Date.now()}`, text, author: 'Your own text' });
     };
+    const onOpenCustom = () => setCustomOpen(true);
     // Reset Session from the pause menu means "give me a fresh quote".
-    const onReset = () => { void onNew(new CustomEvent('newQuote')); };
-    window.addEventListener('newQuote', onNew as EventListener);
-    window.addEventListener('loadCustomQuote', onCustomQuote as EventListener);
+    const onReset = () => { void onNew(); };
+    window.addEventListener('newQuote', onNew);
+    window.addEventListener('loadCustomQuote', onCustomQuote);
+    window.addEventListener('openCustomText', onOpenCustom);
     window.addEventListener('resetSession', onReset);
     return () => {
       mounted = false;
-      window.removeEventListener('newQuote', onNew as EventListener);
-      window.removeEventListener('loadCustomQuote', onCustomQuote as EventListener);
+      window.clearTimeout(preloadTimer);
+      window.removeEventListener('newQuote', onNew);
+      window.removeEventListener('loadCustomQuote', onCustomQuote);
+      window.removeEventListener('openCustomText', onOpenCustom);
       window.removeEventListener('resetSession', onReset);
     };
   }, [loadNext, nextQuote]);
@@ -317,7 +189,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     const handleStorageError = (e: Event) => {
       const detail = (e as CustomEvent<StorageFailureDetail>).detail;
       if (detail.action === 'write') {
-        setStorageWarning('Local storage is disabled or full. Your stats will not be saved.');
+        setStorageWarning('This browser is not saving data right now, so stats from this visit will not be kept.');
       }
     };
     const eventName = getStoragePersistenceErrorEvent();
@@ -328,29 +200,34 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
   // Live numbers for the stats bar. Ticks once a second while the clock runs
   // and on every change while typing.
   useEffect(() => {
-    if (!startTime) return;
+    if (!ts.startedAt) return;
+    const startedAt = ts.startedAt;
+    // Once a finished quote has been added to the sitting totals it must not
+    // be counted again as the quote in progress. (It used to be: the bar
+    // showed double the time and words until the next quote began.)
+    const banked = ts.endedAt !== null && completedAtRef.current === ts.endedAt;
     const tick = () => {
-      const elapsedSec = Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000));
-      const totalSec = sittingTimeSec + elapsedSec;
+      const liveSec = banked ? 0 : Math.max(0, Math.floor(((ts.endedAt ?? Date.now()) - startedAt) / 1000));
+      const totalSec = sittingTimeSec + liveSec;
       const minutes = Math.max(1 / 60, totalSec / 60);
-      const aggCorrect = sittingCorrect + correctChars;
-      const aggTyped = sittingTotal + totalTyped;
+      const aggCorrect = sittingCorrect + (banked ? 0 : correctChars);
+      const aggTyped = sittingTotal + (banked ? 0 : totalTyped);
       publishLiveStats('quote', {
         time: totalSec,
         words: Math.floor(aggCorrect / 5),
         chars: aggCorrect,
         wpm: Math.round((aggCorrect / 5) / minutes),
         accuracy: aggTyped === 0 ? 100 : Math.round((aggCorrect / aggTyped) * 100),
-        startedAt: startTime.getTime(),
+        startedAt,
       });
     };
     tick();
     if (isComplete) return;
     const interval = window.setInterval(tick, 1000);
     return () => window.clearInterval(interval);
-  }, [startTime, isComplete, correctChars, totalTyped, sittingTimeSec, sittingCorrect, sittingTotal]);
+  }, [ts.startedAt, ts.endedAt, isComplete, correctChars, totalTyped, sittingTimeSec, sittingCorrect, sittingTotal]);
 
-  useEffect(() => () => resetLiveStats('quote'), []);
+  useEffect(() => () => { resetLiveStats('quote'); clearTyping(); }, []);
 
   const announceProgress = useCallback((percent: number) => {
     setProgressAnnouncement(`${percent}% complete`);
@@ -378,6 +255,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     if (!isComplete || !ts.startedAt || !ts.endedAt) return;
     if (completedAtRef.current === ts.endedAt) return;
     completedAtRef.current = ts.endedAt;
+    clearTyping();
 
     const start = new Date(ts.startedAt);
     const end = new Date(ts.endedAt);
@@ -408,7 +286,6 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     setCompletion({ streak, personalBest: wpm > previousBest && previousBest > 0 });
 
     window.dispatchEvent(new CustomEvent('quoteComplete', { detail: summary }));
-    onComplete?.(summary);
 
     const elapsed = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 1000));
     setSittingTimeSec(prev => prev + elapsed);
@@ -435,11 +312,14 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
       return () => window.clearTimeout(timer);
     }
     return undefined;
-  }, [isComplete, ts.startedAt, ts.endedAt, ts.correct, ts.total, ts.counts, onComplete, announceProgress, loadNext, nextQuote]);
+  }, [isComplete, ts.startedAt, ts.endedAt, ts.correct, ts.total, ts.counts, announceProgress, loadNext, nextQuote]);
+
+  const { box: textRef, target: nowRef, caret: caretRef } = useGlidingCaret<HTMLParagraphElement, HTMLSpanElement, HTMLSpanElement>([cursor, activeQuote, isComplete]);
 
   // -- input ----------------------------------------------------------------
 
   const typeCharacter = useCallback((ch: string, timeStamp: number) => {
+    markTyping();
     dispatch({ type: 'type', ch, ts: timeStamp, quote: activeRef.current.text, debounceMs: Math.max(0, getSettings().debounceMs || 0) });
   }, []);
 
@@ -453,26 +333,34 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     if (e.nativeEvent.isComposing || composingRef.current) return;
     if (e.key === 'Backspace') {
       e.preventDefault();
-      audioEngine.keyDown('Backspace', { repeat: e.repeat });
+      audio.keyDown('Backspace', { repeat: e.repeat });
       handledKeydownAtRef.current = e.timeStamp;
       backspace();
       return;
     }
-    if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'Escape') return;
+    if (e.key === 'Enter') {
+      // With the quote finished, Enter is "next quote". Mid-quote it does nothing.
+      if (isComplete && !e.repeat) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('newQuote'));
+      }
+      return;
+    }
+    if (e.key === 'Tab' || e.key === 'Escape') return;
     if (e.key.length === 1) {
       e.preventDefault();
-      audioEngine.keyDown(e.key, { repeat: e.repeat });
+      audio.keyDown(e.key, { repeat: e.repeat });
       handledKeydownAtRef.current = e.timeStamp;
       typeCharacter(e.key, e.timeStamp);
       return;
     }
     if (e.key === 'Shift' || e.key === 'CapsLock') {
-      audioEngine.keyDown(e.key, { repeat: e.repeat });
+      audio.keyDown(e.key, { repeat: e.repeat });
     }
   };
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    audioEngine.keyUp(e.key);
+    audio.keyUp(e.key);
   };
 
   // Mobile path: on-screen keyboards report most keys as "Unidentified" on
@@ -486,8 +374,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     for (const ch of chars) typeCharacter(ch, timeStamp);
     const first = chars[0];
     if (first) {
-      audioEngine.keyDown(first);
-      window.setTimeout(() => audioEngine.keyUp(first), 60);
+      audio.keyDown(first);
+      window.setTimeout(() => audio.keyUp(first), 60);
     }
   };
 
@@ -501,8 +389,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
     }
     if (type === 'deleteContentBackward' && !composingRef.current) {
       e.preventDefault();
-      audioEngine.keyDown('Backspace');
-      window.setTimeout(() => audioEngine.keyUp('Backspace'), 60);
+      audio.keyDown('Backspace');
+      window.setTimeout(() => audio.keyUp('Backspace'), 60);
       backspace();
       return;
     }
@@ -512,8 +400,8 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
       for (const ch of chars) typeCharacter(ch, e.timeStamp);
       const first = chars[0];
       if (first) {
-        audioEngine.keyDown(first);
-        window.setTimeout(() => audioEngine.keyUp(first), 60);
+        audio.keyDown(first);
+        window.setTimeout(() => audio.keyUp(first), 60);
       }
     }
   };
@@ -548,9 +436,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
         blurTimeout = null;
       }, 0);
     };
+    const onFocusTyping = () => inputRef.current?.focus();
     input.addEventListener('blur', onBlur);
+    window.addEventListener('focusTyping', onFocusTyping);
     return () => {
       input.removeEventListener('blur', onBlur);
+      window.removeEventListener('focusTyping', onFocusTyping);
       if (blurTimeout !== null) window.clearTimeout(blurTimeout);
     };
   }, []);
@@ -590,253 +481,145 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, quoteId, onCompl
 
   // -- rendering -------------------------------------------------------------
 
-  const renderChar = (char: string, index: number) => {
-    const isTyped = index < cursor;
-    const isCurrent = index === cursor;
-    const hasError = errors.has(index);
-    const typedChar = typedChars[index];
-
-    let state = 'pending';
-    if (isCurrent) state = 'current';
-    else if (isTyped) state = hasError ? 'error' : 'correct';
-
-    const isGhostPacer = index === ghostCursor && index > cursor;
-    // A plain space inside an inline-block collapses to nothing; the
-    // non-breaking space keeps the gap between words.
-    const displayChar = char === ' ' ? ' ' : char;
-    const shown = isTyped && typedChar ? (hasError ? (typedChar === ' ' ? ' ' : typedChar) : displayChar) : displayChar;
-
-    return (
-      <span
-        key={`qc_${index}`}
-        className={`quote-char font-mono ${state}${isGhostPacer ? ' ghost-pacer' : ''}`}
-        data-state={state}
-      >
-        {shown}
-      </span>
-    );
-  };
-
-  const renderRange = (start: number, end: number): React.ReactNode[] => {
-    const nodes: React.ReactNode[] = [];
-    let word: React.ReactNode[] = [];
-    let wordKey = start;
-    const flush = () => {
-      if (word.length) {
-        nodes.push(<span key={`w${wordKey}`} className="quote-word">{word}</span>);
-        word = [];
-      }
-    };
-    // A space rides along with the word before it, so the unit that wraps is
-    // "word " and a trailing space can never sit alone on a line of its own
-    // (which read as a blank line between chunks).
-    for (let i = start; i < end; i++) {
-      const ch = activeQuote[i] ?? '';
-      if (word.length === 0) wordKey = i;
-      word.push(renderChar(ch === ' ' ? ' ' : ch, i));
-      if (ch === ' ') flush();
-    }
-    flush();
-    return nodes;
-  };
-
-  // Once the completion card is up the column can be taller than a short
-  // viewport, so it scrolls; the bottom padding clears the fixed stats bar.
-  const containerClass = isComplete
-    ? 'quote-stage quote-stage-complete flex flex-col items-center w-full px-4 sm:px-6 pt-24 pb-48 gap-8 max-h-[100dvh] overflow-y-auto overscroll-contain'
-    : 'quote-stage flex flex-col items-center justify-center w-full px-4 sm:px-6 py-8 pb-24';
+  const runs = useMemo(() => typedRuns(activeQuote, cursor, errors), [activeQuote, cursor, errors]);
+  const pace = ghostCursor > cursor && ghostCursor < activeQuote.length ? ghostCursor : -1;
+  const credit = useMemo(() => splitSource(active.source), [active.source]);
 
   const shareCard = () => {
-    try {
-      downloadShareCard({
-        mode: 'quote',
-        timeSec: startTime && endTime ? (endTime.getTime() - startTime.getTime()) / 1000 : 0,
-        words: activeQuote.split(/\s+/).filter(Boolean).length,
-        wpm: wpmValue,
-        accuracy: accuracyValue,
-        ...(completion?.streak ? { streak: completion.streak } : {}),
-        quote: activeQuote,
-        ...(active.author ? { author: active.author } : {}),
-        bestWpm: !!completion?.personalBest,
-      });
-    } catch (e) {
-      console.error('Share card failed', e);
-    }
+    downloadShareCard({
+      timeSec: elapsedSec,
+      wpm: wpmValue,
+      accuracy: accuracyValue,
+      ...(completion?.streak ? { streak: completion.streak } : {}),
+      quote: activeQuote,
+      ...(active.author ? { author: active.author } : {}),
+      ...(active.source ? { source: active.source } : {}),
+      bestWpm: !!completion?.personalBest,
+    }).catch((e: unknown) => console.error('Share card failed', e));
   };
 
   return (
-    <div className={containerClass}>
+    <div className={`quote-stage${isComplete ? ' is-complete' : ''}`}>
       <div role="status" aria-live="polite" className="sr-only">
         {progressAnnouncement ?? ''}
       </div>
       {storageWarning && (
-        <div
-          className="absolute top-4 left-1/2 -translate-x-1/2 max-w-md px-4 py-3 z-50 bg-love/20 border border-love/40 rounded-lg text-love text-sm shadow-lg backdrop-blur-sm"
-          role="alert"
-        >
-          <div className="flex items-start gap-3">
-            <p className="flex-1 font-medium">{storageWarning}</p>
-            <Button onClick={() => setStorageWarning(null)} variant="ghost" size="icon" className="h-6 w-6 text-love/70 hover:text-love" aria-label="Dismiss warning">
-              <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </Button>
-          </div>
+        <div className="notice notice-warn" role="alert">
+          <p>{storageWarning}</p>
+          <button type="button" className="notice-close" onClick={() => setStorageWarning(null)} aria-label="Dismiss warning">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
         </div>
       )}
-      <div className="w-full max-w-4xl">
-        {/* Quote display. Tapping anywhere on the card focuses the input so
-            on-screen keyboards open; it is the only way touch devices can type. */}
-        {/* The card itself is not a control: the keyboard-reachable element
-            is the input inside it. The handlers only forward taps to it. */}
-        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-        <div
-          ref={cardRef}
-          className="glass quote-card relative rounded-2xl px-5 pt-6 pb-6 sm:px-8 sm:pt-8 sm:pb-7 mb-6"
-          // Both: pointerdown so iOS treats it as the gesture that may open
-          // the keyboard, click because a tap on a non-focusable box would
-          // otherwise move focus to the body right after.
-          onPointerDown={focusInput}
-          onClick={focusInput}
+      {/* Tapping anywhere on the passage focuses the input so on-screen
+          keyboards open; it is the only way touch devices can type. The
+          passage itself is not a control: the keyboard-reachable element is
+          the input inside it, and the handlers only forward taps to it. */}
+      {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions */}
+      <div
+        className="passage"
+        data-size={sizeFor(activeQuote.length)}
+        // Both: pointerdown so iOS treats it as the gesture that may open the
+        // keyboard, click because a tap on a non-focusable box would otherwise
+        // move focus to the body right after.
+        onPointerDown={focusInput}
+        onClick={focusInput}
+      >
+        <input
+          ref={inputRef}
+          type="text"
+          className="quote-input"
+          onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
+          onBeforeInput={handleBeforeInput}
+          onInput={handleInput}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
+          data-typing-surface="quote"
+          aria-label="Type the quote shown here"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          inputMode="text"
+          enterKeyHint="done"
+        />
+        <p
+          key={activeQuote}
+          ref={textRef}
+          className={`passage-text${replaced ? ' is-next' : ''}`}
+          data-cursor={cursor}
+          data-errors={errors.size}
         >
-          <input
-            ref={inputRef}
-            type="text"
-            className="quote-input"
-            onKeyDown={handleKeyDown}
-            onKeyUp={handleKeyUp}
-            onBeforeInput={handleBeforeInput}
-            onInput={handleInput}
-            onCompositionStart={handleCompositionStart}
-            onCompositionEnd={handleCompositionEnd}
-            data-typing-surface="quote"
-            aria-label="Type the quote shown here"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            inputMode="text"
-            enterKeyHint="done"
-          />
-          <div key={activeQuote} className="quote-body text-xl sm:text-2xl leading-relaxed select-none">
-            {chunks.length === 0 && renderRange(0, activeQuote.length)}
-            {chunks.length > 0 && chunks.map((c) => (
-              <div key={c.start} className="quote-line">
-                {renderRange(c.start, c.end)}
-              </div>
-            ))}
-          </div>
-          {active.author && (
-            <div className="text-right text-muted text-base sm:text-lg mt-5">
-              <span aria-hidden="true">—</span> {active.author}
-            </div>
+          {runs.map(run => (
+            <span key={run.key} className={`q-${run.kind}${run.fresh ? ' q-fresh' : ''}`}>{run.text}</span>
+          ))}
+          {cursor < activeQuote.length && (
+            <span ref={nowRef} className="q-now">{activeQuote[cursor]}</span>
           )}
-          <div
-            className="quote-progress-track mt-6"
-            role="progressbar"
-            aria-label="Quote progress"
-            aria-valuenow={progressPct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <div className="quote-progress-fill" style={{ width: `${progressPct}%` }} />
-          </div>
-          {showTapHint && (
-            <button
-              type="button"
-              className="quote-tap-hint"
-              onClick={focusInput}
-            >
-              Tap to start typing
-            </button>
+          {pace === -1 ? (
+            activeQuote.slice(cursor + 1)
+          ) : (
+            <>
+              {activeQuote.slice(cursor + 1, pace)}
+              <span className="q-pace">{activeQuote[pace]}</span>
+              {activeQuote.slice(pace + 1)}
+            </>
           )}
+          {!isComplete && <span ref={caretRef} className="passage-caret" aria-hidden="true" />}
+        </p>
+        {(active.author || credit.title) && (
+          <p className="passage-credit">
+            {active.author && active.author !== 'Proverb' && <span className="credit-author">{active.author}</span>}
+            {credit.title && <cite>{credit.title}</cite>}
+            {credit.detail && <span className="credit-detail">{credit.detail}</span>}
+          </p>
+        )}
+        <div
+          className="passage-meter"
+          role="progressbar"
+          aria-label="Quote progress"
+          aria-valuenow={progressPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <i style={{ transform: `scaleX(${progressPct / 100})` }} />
         </div>
-
-        {isComplete && (
-          <div className="glass rounded-2xl p-6 sm:p-8 text-center completion-pulse">
-            <div className="stagger-fade-in">
-              <h2 className="text-2xl font-sans text-tint mb-1">
-                Breathe. Begin again.
-              </h2>
-              <p className="text-sm text-muted mb-6">
-                {completion?.personalBest ? 'A new personal best.' : completion && completion.streak > 1 ? `Day ${completion.streak} in a row.` : 'One more done.'}
-              </p>
-              <div className="flex items-stretch justify-center gap-10 mb-6">
-                <div>
-                  <div className="text-xs uppercase tracking-widest text-muted/80 mb-1">WPM</div>
-                  <div className="text-5xl font-mono text-tint tabular-nums leading-none">
-                    <AnimatedNumber value={wpmValue} showImprovement={true} />
-                  </div>
-                </div>
-                <div className="w-px self-stretch bg-tint/20" aria-hidden="true" />
-                <div>
-                  <div className="text-xs uppercase tracking-widest text-muted/80 mb-1">Accuracy</div>
-                  <div className="text-5xl font-mono text-tint2 tabular-nums leading-none">
-                    <AnimatedNumber value={accuracyValue} format={(v) => `${Math.round(v)}%`} />
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-left text-sm mb-6">
-                <div className="rounded-xl border border-tint/15 bg-surface/40 p-4">
-                  <div className="text-xs uppercase tracking-widest text-muted/80 mb-2">Mistakes</div>
-                  <div className="font-mono text-text/90">Wrong key: {errorCounts.slip}</div>
-                  <div className="font-mono text-text/90">Skipped: {errorCounts.skip}</div>
-                  <div className="font-mono text-text/90">Extra: {errorCounts.extra}</div>
-                </div>
-                <div className="rounded-xl border border-tint/15 bg-surface/40 p-4">
-                  <div className="text-xs uppercase tracking-widest text-muted/80 mb-2">This sitting</div>
-                  <div className="font-mono text-text/90">Characters: {sittingTotal + totalTyped}</div>
-                  <div className="font-mono text-text/90">Correct: {sittingCorrect + correctChars}</div>
-                  <div className="font-mono text-text/90">Time: {Math.floor((sittingTimeSec) / 60)}:{String(sittingTimeSec % 60).padStart(2, '0')}</div>
-                </div>
-              </div>
-              {showAudioHint && (
-                <div className="mb-5 flex items-center justify-center gap-3 text-sm text-muted">
-                  <span>Sound is available. Press Ctrl+M or the speaker button.</span>
-                  <button type="button" className="text-tint hover:text-text underline underline-offset-2" onClick={() => setShowAudioHint(false)}>
-                    Got it
-                  </button>
-                </div>
-              )}
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <Button
-                  onClick={handleReset}
-                  className="px-6 py-2.5 rounded-xl bg-tint/20 hover:bg-tint/35 border border-tint/60 text-tint font-sans font-semibold text-base shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--theme-accent)_50%,transparent)] transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
-                >
-                  Type again
-                </Button>
-                <Button
-                  onClick={() => window.dispatchEvent(new CustomEvent('newQuote'))}
-                  variant="outline"
-                  className="border-tint2/45 text-tint2 hover:bg-tint2/15"
-                >
-                  New quote
-                </Button>
-                <Button onClick={shareCard} variant="outline" className="border-tint/35 text-tint hover:bg-tint/15 flex items-center gap-1.5">
-                  <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                    <polyline points="16 6 12 2 8 6"/>
-                    <line x1="12" y1="2" x2="12" y2="15"/>
-                  </svg>
-                  <span>Share card</span>
-                </Button>
-                <Button
-                  onClick={() => window.dispatchEvent(new CustomEvent('toggleProgress', { detail: true }))}
-                  variant="ghost"
-                  className="text-muted hover:bg-overlay/50 hover:text-text"
-                >
-                  Progress
-                </Button>
-                <Button
-                  onClick={() => toggleAutoAdvance(!autoAdvance)}
-                  variant="ghost"
-                  className={autoAdvance ? 'text-tint2 hover:bg-tint2/10' : 'text-muted hover:bg-overlay/50 hover:text-text'}
-                >
-                  {autoAdvance ? 'Auto next: on' : 'Auto next: off'}
-                </Button>
-              </div>
-            </div>
-          </div>
+        {showTapHint && (
+          <button type="button" className="quote-tap-hint" onClick={focusInput}>
+            Tap to start typing
+          </button>
         )}
       </div>
+
+      {isComplete && (
+        <QuoteResult
+          wpm={wpmValue}
+          accuracy={accuracyValue}
+          seconds={elapsedSec}
+          mistakes={describeMistakes(errorCounts)}
+          personalBest={!!completion?.personalBest}
+          streak={completion?.streak ?? 0}
+          showAudioHint={showAudioHint}
+          autoAdvance={autoAdvance}
+          onDismissAudioHint={() => setShowAudioHint(false)}
+          onNext={() => window.dispatchEvent(new CustomEvent('newQuote'))}
+          onAgain={handleReset}
+          onSave={shareCard}
+          onProgress={() => window.dispatchEvent(new CustomEvent('toggleProgress', { detail: true }))}
+          onToggleAutoAdvance={() => updateSettings({ autoAdvanceQuotes: !autoAdvance })}
+        />
+      )}
+
+      {customOpen && (
+        <CustomTextDialog
+          onClose={() => { setCustomOpen(false); inputRef.current?.focus(); }}
+          onSubmit={(text) => {
+            setCustomOpen(false);
+            window.dispatchEvent(new CustomEvent('loadCustomQuote', { detail: { text } }));
+          }}
+        />
+      )}
     </div>
   );
 };

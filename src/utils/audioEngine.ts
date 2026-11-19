@@ -8,7 +8,6 @@
 
 import type { AmbientSoundscape, Settings, SwitchSoundProfile } from './storage';
 
-export type { AmbientSoundscape, SwitchSoundProfile };
 
 // ---------------------------------------------------------------------------
 // Key acoustics: where a key sits on the board decides its pan and pitch

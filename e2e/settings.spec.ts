@@ -1,17 +1,18 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { localJSON, markSeen, finishOneQuote, open } from './helpers';
+import { localJSON, markSeen, finishOneQuote, readQuote, open } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await markSeen(page);
 });
 
-async function openSettings(page: Page) {
+async function openSettings(page: Page, tab?: string) {
   await page.keyboard.press('Escape');
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(dialog.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  if (tab) await dialog.getByRole('tab', { name: tab }).click();
   return dialog;
 }
 
@@ -35,7 +36,7 @@ test('sound toggled with Ctrl+M survives a reload, both on and off', async ({ pa
 
 test('quote filters persist and take effect', async ({ page }) => {
   await open(page, '/quote/');
-  const dialog = await openSettings(page);
+  const dialog = await openSettings(page, 'Quote');
   await dialog.getByRole('button', { name: 'Short', exact: true }).click();
   await dialog.getByRole('button', { name: 'Stoic', exact: true }).click();
   await expect(dialog.getByRole('button', { name: 'Short', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -49,19 +50,18 @@ test('quote filters persist and take effect', async ({ page }) => {
   for (let i = 0; i < 5; i++) {
     await page.getByRole('button', { name: 'New quote' }).click();
     await page.waitForTimeout(150);
-    const chars = await page.locator('.quote-body .quote-char').count();
-    expect(chars).toBeLessThanOrEqual(60);
+    expect((await readQuote(page)).length).toBeLessThanOrEqual(60);
   }
 
   await page.reload();
-  const again = await openSettings(page);
+  const again = await openSettings(page, 'Quote');
   await expect(again.getByRole('button', { name: 'Short', exact: true })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('backup downloads a file that restores', async ({ page }) => {
   await open(page, '/quote/');
   await finishOneQuote(page);
-  const dialog = await openSettings(page);
+  const dialog = await openSettings(page, 'Your data');
 
   const downloadPromise = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'Back up everything' }).click();
@@ -88,7 +88,7 @@ test('backup downloads a file that restores', async ({ page }) => {
 
 test('a bad backup file is refused with a plain message', async ({ page }) => {
   await open(page, '/quote/');
-  const dialog = await openSettings(page);
+  const dialog = await openSettings(page, 'Your data');
   await page.setInputFiles('input[type="file"]', {
     name: 'nope.json',
     mimeType: 'application/json',
@@ -121,9 +121,38 @@ test('theme choice persists and repaints the ambient scene', async ({ page }) =>
 test('caret style and font apply on first paint after a reload', async ({ page }) => {
   await open(page, '/quote/');
   const dialog = await openSettings(page);
-  await dialog.getByLabel('Caret style').click();
-  await page.getByRole('option', { name: /Block/ }).click();
+  await dialog.getByLabel('Caret style').selectOption('block');
+  await dialog.getByLabel('Typing font').selectOption('JetBrains Mono');
   await page.keyboard.press('Escape');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-caret', 'block');
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.querySelector('astro-island .passage-text')!).fontFamily)).toContain('JetBrains Mono');
+  // The font is one the site ships, so it actually loads.
+  await expect.poll(() => page.evaluate(() => document.fonts.check('24px "JetBrains Mono"'))).toBe(true);
+});
+
+test('the paper theme is a real light theme and stays readable', async ({ page }) => {
+  await open(page, '/quote/');
+  await page.getByRole('button', { name: /theme, toggle theme/ }).click();
+  await page.getByRole('menu', { name: 'Color themes' }).getByRole('button', { name: 'Washi' }).click();
+  await expect(page.locator('html')).toHaveClass(/theme-washi/);
+  const { scheme, ink, paper } = await page.evaluate(() => {
+    const root = getComputedStyle(document.documentElement);
+    return { scheme: root.colorScheme, ink: root.getPropertyValue('--rp-text').trim(), paper: root.getPropertyValue('--rp-base').trim() };
+  });
+  expect(scheme).toBe('light');
+  // Dark ink on a pale ground: the palette flips, not just the accent.
+  const luminance = (hex: string) => parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16);
+  expect(luminance(ink)).toBeLessThan(200);
+  expect(luminance(paper)).toBeGreaterThan(600);
+});
+
+test('settings are reachable by keyboard: arrows move between tabs', async ({ page }) => {
+  await open(page, '/quote/');
+  const dialog = await openSettings(page);
+  await dialog.getByRole('tab', { name: 'Look' }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(dialog.getByRole('tab', { name: 'Quote' })).toHaveAttribute('aria-selected', 'true');
+  await expect(dialog.getByRole('tab', { name: 'Quote' })).toBeFocused();
+  await expect(dialog.getByRole('group', { name: 'Quote length' })).toBeVisible();
 });

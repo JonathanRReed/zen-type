@@ -1,0 +1,84 @@
+/* ==========================================================================
+   Zen mode: one writing line, and the words that leave it.
+   ========================================================================== */
+
+@layer components {
+  .zen-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    overflow: hidden;
+  }
+
+  .zen-canvas {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* The writing line. No box: a rule to write on, type in the passage face,
+     set in the middle so the word in hand is where the eye already is. */
+  .zen-line {
+    position: absolute;
+    left: 50%;
+    bottom: calc(8.5rem + env(safe-area-inset-bottom));
+    width: min(92vw, 38rem);
+    padding: 0.6rem 0.25rem 0.75rem;
+    border: 0;
+    border-bottom: 1px solid var(--ink-line);
+    border-radius: 0;
+    background: transparent;
+    color: var(--ink);
+    caret-color: var(--theme-accent);
+    font-family: var(--typing-font);
+    font-size: clamp(1.375rem, 1.1rem + 1.1vw, 1.875rem);
+    line-height: 1.3;
+    letter-spacing: var(--typing-tracking, -0.005em);
+    text-align: center;
+    transform: translateX(-50%);
+    transition: border-color 0.35s var(--ease-out);
+  }
+
+  .zen-line::placeholder {
+    color: var(--ink-faint);
+    opacity: 1;
+  }
+
+  .zen-line:focus,
+  .zen-line:focus-visible {
+    outline: none;
+    box-shadow: none;
+    border-bottom-color: color-mix(in oklab, var(--ink) 46%, transparent);
+  }
+
+  /* A word just left: the rule takes the accent for a moment. */
+  .zen-line[data-typing='true'] {
+    border-bottom-color: var(--theme-accent);
+    transition-duration: 0.08s;
+  }
+
+  .flow-timer {
+    position: absolute;
+    top: calc(5rem + env(safe-area-inset-top));
+    left: 50%;
+    font-family: var(--voice-font);
+    font-size: 1.5rem;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: var(--ink-soft);
+    transform: translateX(-50%);
+  }
+
+  .result-figures-sm dd {
+    font-size: clamp(2.25rem, 1.8rem + 2vw, 3rem);
+  }
+
+  html[data-motion='off'] .zen-line {
+    transition: none;
+  }
+
+  @media (max-width: 760px) {
+    .zen-line {
+      bottom: calc(7.75rem + env(safe-area-inset-bottom));
+    }
+  }
+}

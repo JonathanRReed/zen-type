@@ -1,24 +1,18 @@
 ---
-import "../styles/globals.css";
+import AppLayout from "../layouts/AppLayout.astro";
 import QuoteTyper from "../components/QuoteTyper";
-import StatsBar from "../components/StatsBar";
-import PauseMenu from "../components/PauseMenu";
-import HelpSheet from "../components/HelpSheet";
-import ArchiveOverlay from "../components/ArchiveOverlay";
-import SiteFooter from "../components/SiteFooter";
-import SiteHeader from "../components/SiteHeader";
-import GlobalShortcuts from "../components/GlobalShortcuts";
-import ProgressOverlay from "../components/ProgressOverlay";
-import FirstRunHint from "../components/FirstRunHint";
-import ErrorBoundary from "../components/ErrorBoundary";
-import SEO from "../components/SEO.astro";
-import AmbientLayer from "../components/AmbientLayer";
+import PassageBoot from "../components/PassageBoot.astro";
+import Shelf from "../components/Shelf.astro";
+import NotesFoot from "../components/NotesFoot.astro";
 import { loadQuotes, pickQuote } from "../utils/quotes";
+import { THEME_NAMES } from "../utils/storage";
 
 const quotes = await loadQuotes();
-const randomQuote = pickQuote(quotes);
+const quote = pickQuote(quotes);
+const writers = new Set(quotes.filter((q) => q.author !== "Proverb").map((q) => q.author)).size;
 const siteUrl = "https://zentype.jonathanrreed.com";
 const homeUrl = `${siteUrl}/`;
+const themeList = THEME_NAMES.join(", ");
 
 const webApplicationJsonLd = {
 	"@context": "https://schema.org",
@@ -42,11 +36,12 @@ const webApplicationJsonLd = {
 		availability: "https://schema.org/InStock",
 	},
 	featureList: [
-		"Quote typing test with live WPM and accuracy on 322 public-domain quotes",
+		`Quote typing test with live WPM and accuracy on ${quotes.length} public-domain quotes`,
+		"Custom text practice with any passage you paste in",
 		"Free-flow Zen Mode with drafts and an optional timed flow",
 		"Progress calendar, day streak, and session history",
 		"Synthesized keyboard sounds and ambient beds, off by default",
-		"Eight themes with WebGL ambient scenes and reduced-motion support",
+		`${THEME_NAMES.length} themes with WebGL ambient scenes and reduced-motion support`,
 		"Backup and restore of all data as one file; nothing leaves the browser",
 	],
 	creator: { "@id": `${homeUrl}#creator` },
@@ -55,262 +50,104 @@ const webApplicationJsonLd = {
 };
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<SEO
-			title="Mindful Typing Test and Practice for Focus | Zen Typer"
-			description="Zen Typer is a free mindful typing test with Zen quotes, live WPM and accuracy, and a free-flow writing mode. No account, and sessions stay in your browser."
-			canonical={homeUrl}
-			jsonLd={webApplicationJsonLd}
-			keywords={[
-				"typing test",
-				"mindful typing test",
-				"typing practice",
-				"typing trainer",
-				"WPM test",
-				"typing accuracy",
-			]}
-			breadcrumbItems={[
-				{ name: "Mindful typing test", url: homeUrl },
-			]}
-		/>
-		<!-- Developer Console Easter Egg -->
-		<script>
-			(function () {
-				if (typeof window === "undefined") return;
+<AppLayout
+	mode="quote"
+	heading="Mindful Typing Test and Practice"
+	seo={{
+		title: "Mindful Typing Test and Practice for Focus | Zen Typer",
+		description:
+			"Zen Typer is a free mindful typing test with Zen quotes, live WPM and accuracy, and a free-flow writing mode. No account, and sessions stay in your browser.",
+		canonical: homeUrl,
+		jsonLd: webApplicationJsonLd,
+		keywords: ["typing test", "mindful typing test", "typing practice", "typing trainer", "WPM test", "typing accuracy"],
+		breadcrumbItems: [{ name: "Mindful typing test", url: homeUrl }],
+	}}
+>
+	<QuoteTyper client:only="react" quote={quote.text} author={quote.author} source={quote.source ?? ""} quoteId={quote.id} />
+	<PassageBoot text={quote.text} author={quote.author} source={quote.source ?? ""} />
 
-				const ascii = `
-    ___  ________  ________     
-   |\\  \\|\\   __  \\|\\   __  \\    
-   \\ \\  \\ \\  \\|\\  \\ \\  \\|\\  \\   
- __ \\ \\  \\ \\   _  _\\ \\   _  _\\  
-|\\  \\\\_\\  \\ \\  \\\\  \\\\ \\  \\\\  \\|
-\\ \\________\\ \\__\\\\ _\\\\ \\__\\\\ _\\
- \\|________|\\|__|\\|__|\\|__|\\|__|
-				`;
+	<section slot="notes" class="notes" aria-labelledby="home-notes-heading">
+		<div class="notes-inner">
+			<header class="notes-head">
+				<h2 id="home-notes-heading">A mindful typing test for focus, speed, and accuracy.</h2>
+				<p>
+					Zen Typer is a browser typing test built around short passages from old books, with a second mode that is
+					just a blank page for open writing. It runs entirely on your own machine.
+				</p>
+			</header>
 
-				console.log(ascii);
-				console.log("Hey there. Interested in code?");
-				console.log(
-					"Check out my GitHub: https://github.com/JonathanRReed",
-				);
-				console.log("Most of my sites repos are open source.");
-			})();
-		</script>
-	</head>
-	<body>
-		<ErrorBoundary>
-			<a
-				href="#quote-app"
-				class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-iris focus:text-base focus:rounded-lg focus:shadow-lg"
-			>
-				Skip to main content
-			</a>
-			<main
-				id="quote-app"
-				tabindex="-1"
-				class="relative w-full h-screen supports-[height:100dvh]:h-dvh overflow-hidden stats-cq-host"
-			>
-				<h1 class="sr-only">Mindful Typing Test and Practice</h1>
-				<SiteHeader client:only="react" mode="quote" />
-				<div class="pointer-events-none fixed inset-0 z-0 theme-layer" aria-hidden="true"></div>
-				<AmbientLayer client:only="react" transition:persist="ambient" />
-
-				<div
-					class="relative z-10 flex w-full items-center justify-center px-6 h-full"
-				>
-					<div class="w-full max-w-4xl">
-						<QuoteTyper
-							client:only="react"
-							quote={randomQuote.text}
-							author={randomQuote.author}
-							quoteId={randomQuote.id}
-							onComplete={(summary) => {
-								const completeEvent = new CustomEvent(
-									"quoteComplete",
-									{ detail: summary },
-								);
-								window.dispatchEvent(completeEvent);
-							}}
-						/>
-						<!--
-							First-paint stand-in for the client:only typing surface above.
-							QuoteTyper renders nothing on the server, so without this the
-							viewport stays blank until React hydrates and LCP is pushed
-							behind the whole island bundle. This mirrors the hydrated card,
-							carries the same build-time quote, and is retired by CSS the
-							moment the island drops its `ssr` flag (see .quote-boot in
-							globals.css). Must stay the element directly after the island.
-						-->
-						<div
-							class="quote-boot absolute inset-0 flex flex-col items-center justify-center px-12 pt-12 pb-24"
-						>
-							<div class="w-full max-w-4xl">
-								<div
-									class="glass quote-card rounded-2xl px-8 pt-8 pb-7 mb-6"
-								>
-									<p
-										class="quote-boot-text font-mono text-2xl leading-relaxed"
-									>
-										{randomQuote.text}
-									</p>
-									<p class="text-right text-muted text-lg mt-5">
-										<span aria-hidden="true">—</span>
-										{randomQuote.author}
-									</p>
-									<div class="quote-progress-track mt-6">
-										<div
-											class="quote-progress-fill"
-											style="width: 0%"
-										>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
+			<dl class="notes-grid">
+				<div>
+					<dt>How the test works</dt>
+					<dd>
+						One passage at a time. The timer starts on your first keystroke and stops on the final character, so
+						reading the quote first costs you nothing. Backspace rewinds to the last mistake instead of one
+						character at a time.
+					</dd>
 				</div>
+				<div>
+					<dt>How are WPM and accuracy calculated?</dt>
+					<dd>
+						Words per minute is your correct characters divided by five, then divided by the elapsed minutes, using
+						the standard five-character word. Accuracy is correct characters divided by every character you typed.
+						Mistakes are sorted into wrong keys, early spaces, and missed spaces so you can see the pattern, not
+						just the score.
+					</dd>
+				</div>
+				<div>
+					<dt>What is stored</dt>
+					<dd>
+						Settings, session stats, the day streak, your last 500 sessions, and Zen Mode drafts are written to your
+						browser's local storage and IndexedDB. There is no account and no sync, so clearing site data for this
+						domain removes them. The <a href="/privacy/">privacy notice</a> has the full detail.
+					</dd>
+				</div>
+				<div>
+					<dt>Two modes</dt>
+					<dd>
+						A <a href="/quote/">quote typing test</a> that measures you, and a <a href="/zen/">free-flow canvas</a> called Zen Mode that does not.
+					</dd>
+				</div>
+				<div>
+					<dt>Your own text</dt>
+					<dd>
+						Paste a paragraph you are learning, a speech, or the opening of a book, and practice on that instead.
+						It is never saved or sent anywhere.
+					</dd>
+				</div>
+				<div>
+					<dt>Live while you type</dt>
+					<dd>Words per minute, accuracy, elapsed time, and a day streak, in one quiet line you can switch off.</dd>
+				</div>
+				<div>
+					<dt>{THEME_NAMES.length} themes</dt>
+					<dd>{themeList}. Each is a scene drawn live, and each holds still when you ask for reduced motion.</dd>
+				</div>
+				<div>
+					<dt>Sound, if you want it</dt>
+					<dd>
+						Keyboard switches and ambient rain, wind, or fire, synthesized in the browser and off until you turn
+						them on.
+					</dd>
+				</div>
+				<div>
+					<dt>Take it with you</dt>
+					<dd>Back everything up to one file and restore it anywhere. Free, no account, nothing sent to a server.</dd>
+				</div>
+			</dl>
 
-				<StatsBar client:only="react" mode="quote" />
-
-				<PauseMenu
-					client:only="react"
-					mode="quote"
-					data-pause-menu
-				/>
-
-				<HelpSheet client:only="react" isOpen={false} onClose={() => {}} />
-				<ArchiveOverlay client:only="react" />
-				<SiteFooter client:only="react" />
-				<!-- Documented Ctrl/Cmd shortcuts (Help: Notes & Drafts, mute) -->
-				<GlobalShortcuts client:only="react" />
-				<ProgressOverlay client:only="react" />
-				<FirstRunHint client:only="react" mode="quote" />
-			</main>
-		</ErrorBoundary>
-
-		<!--
-			`relative z-10` is load-bearing, not decoration. `.theme-layer` is
-			`fixed inset-0 z-0` with an opaque theme gradient, so a static
-			(z-index: auto) section paints in the in-flow background phase —
-			underneath it — and this copy would be readable by crawlers but
-			invisible to humans. z-10 matches the app's own content wrapper and
-			puts this section above the theme layer in the root stacking context.
-
-			pb-40 (was pb-28) is the same concern: the fixed `.stats-bar` sits at
-			z-40 and, at max scroll, clipped the last 34px of the tallest column.
-			160px of bottom padding lets the final row clear it.
-		-->
-		<section
-			class="relative z-10 mx-auto max-w-5xl px-6 pb-40 pt-16 seo-body"
-			aria-labelledby="home-seo-heading"
-		>
-			<div class="grid gap-10 border-t border-iris/15 pt-10">
-				<div class="space-y-4">
-					<p class="text-sm font-medium text-foam">Typing practice</p>
-					<h2
-						id="home-seo-heading"
-						class="max-w-2xl text-3xl font-semibold text-text md:text-4xl"
-					>
-						A mindful typing test for focus, speed, and accuracy.
-					</h2>
-					<p class="max-w-2xl leading-7 seo-body md:text-lg">
-						Zen Typer is a browser typing test built around short Zen
-						quotes, with a second mode that is just a blank canvas for
-						open writing. It runs entirely on your own machine.
+			<section class="notes-shelf" aria-labelledby="shelf-heading">
+				<div class="notes-shelf-head">
+					<h3 id="shelf-heading">On the shelf</h3>
+					<p>
+						{quotes.length} passages from {writers} writers and a handful of proverbs, every one from a public-domain
+						edition with its source named. The number is how many passages each contributes.
 					</p>
-					<ul class="max-w-2xl space-y-2 text-sm leading-6 seo-body">
-						<li>
-							322 quotes from 22 writers, every one from a public-domain
-							edition with its source named.
-						</li>
-						<li>
-							Two modes: a timed quote test, and a free-flow canvas
-							called Zen Mode.
-						</li>
-						<li>
-							Live while you type: words per minute, accuracy, elapsed
-							time, and a day streak.
-						</li>
-						<li>
-							8 themes (Void, Forest, Ocean, Cosmic, Ember, Sakura,
-							Aurora, Glacier).
-						</li>
-						<li>
-							Optional keyboard sounds and ambient rain, wind, or fire,
-							synthesized in the browser and off until you turn them on.
-						</li>
-						<li>
-							Back everything up to one file and restore it anywhere.
-							Free, no account, and nothing is sent to a server.
-						</li>
-					</ul>
-					<div class="flex flex-wrap gap-4 text-sm">
-						<a class="text-foam transition-colors hover:text-text" href="/quote/">
-							Quote typing test
-						</a>
-						<a class="text-foam transition-colors hover:text-text" href="/zen/">
-							Free-flow typing practice
-						</a>
-						<a class="text-foam transition-colors hover:text-text" href="/about/">
-							About
-						</a>
-						<a class="text-foam transition-colors hover:text-text" href="/contact/">
-							Contact
-						</a>
-					</div>
 				</div>
-				<div class="grid gap-6 border-t border-iris/15 pt-8 text-sm leading-6 md:grid-cols-3">
-					<div>
-						<h3 class="font-semibold text-text">How the test works</h3>
-						<p>
-							A Zen quote is shown one character at a time. The timer
-							starts on your first keystroke and stops on the final
-							character, so reading the quote first costs you nothing.
-							Backspace rewinds to the last mistake instead of one
-							character at a time.
-						</p>
-					</div>
-					<div>
-						<h3 class="font-semibold text-text">
-							How are WPM and accuracy calculated?
-						</h3>
-						<p>
-							Words per minute is your correct characters divided by five,
-							then divided by the elapsed minutes, using the standard
-							five-character word. Accuracy is correct characters divided
-							by every character you typed. Mistakes are grouped as slips,
-							skips, and extras so you can see the pattern, not just the
-							score.
-						</p>
-					</div>
-					<div>
-						<h3 class="font-semibold text-text">What is stored</h3>
-						<p>
-							Settings, session stats, the day streak, your last 500
-							sessions, and Zen Mode drafts are written to your browser's
-							local storage and IndexedDB. There is no account and no sync,
-							so clearing site data for this domain removes them. See the
-							<a class="text-foam transition-colors hover:text-text" href="/privacy/">privacy notice</a>
-							for the full detail.
-						</p>
-					</div>
-				</div>
-			</div>
-		</section>
+				<Shelf />
+			</section>
 
-		<script>
-			import { registerHomeShortcuts } from "../utils/home-shortcuts";
-
-			// Attach once; ClientRouter preserves listeners via persist markers.
-			const unregisterHomeShortcuts = registerHomeShortcuts();
-			document.addEventListener("astro:before-swap", () => {
-				unregisterHomeShortcuts();
-			});
-			document.addEventListener("astro:after-swap", () => {
-				registerHomeShortcuts();
-			});
-		</script>
-	</body>
-</html>
+			<NotesFoot current="/" />
+		</div>
+	</section>
+</AppLayout>

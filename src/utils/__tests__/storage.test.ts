@@ -17,6 +17,8 @@ import {
   STORAGE_KEYS,
   HISTORY_LIMIT,
   DEFAULT_SETTINGS,
+  THEME_NAMES,
+  FONT_OPTIONS,
   __resetStoragePersistenceStateForTests,
 } from '../storage';
 
@@ -80,8 +82,23 @@ describe('normalizeSettings', () => {
   });
 
   it('keeps every known theme', () => {
-    for (const theme of ['Void', 'Cosmic', 'Aurora', 'Ocean', 'Glacier', 'Forest', 'Ember', 'Sakura'] as const) {
+    expect(THEME_NAMES).toHaveLength(9);
+    for (const theme of THEME_NAMES) {
       expect(normalizeSettings({ theme }).theme).toBe(theme);
+    }
+  });
+
+  it('moves fonts that were never shipped onto ones that are', () => {
+    expect(normalizeSettings({ fontFamily: 'Nebula Sans' }).fontFamily).toBe('Newsreader');
+    expect(normalizeSettings({ fontFamily: 'Inter' }).fontFamily).toBe('Hanken Grotesk');
+    expect(normalizeSettings({ fontFamily: 'Fira Code' }).fontFamily).toBe('JetBrains Mono');
+    expect(normalizeSettings({ fontFamily: 'Comic Sans MS' }).fontFamily).toBe('Newsreader');
+    expect(normalizeSettings({}).fontFamily).toBe('Newsreader');
+  });
+
+  it('keeps every font that is offered', () => {
+    for (const fontFamily of FONT_OPTIONS) {
+      expect(normalizeSettings({ fontFamily }).fontFamily).toBe(fontFamily);
     }
   });
 });

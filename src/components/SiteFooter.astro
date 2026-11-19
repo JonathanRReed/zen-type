@@ -1,0 +1,23 @@
+---
+// The quiet line along the bottom of the app: the three keys worth knowing on
+// the left, the way out to the rest of the site on the right. Plain HTML, so
+// it is there on first paint and costs no script.
+interface Props {
+	mode: "zen" | "quote";
+}
+const { mode } = Astro.props;
+---
+
+<footer class="foot">
+	<ul class="hints" aria-label="Keyboard shortcuts">
+		<li><kbd>Tab</kbd> {mode === "quote" ? "Zen mode" : "Quote mode"}</li>
+		<li><kbd>Esc</kbd> Menu</li>
+		<li><kbd>Ctrl H</kbd> Shortcuts</li>
+	</ul>
+	<nav aria-label="Site" class="foot-links">
+		<a href="/about/">About</a>
+		<a href="/whats-new/">What's new</a>
+		<a href="/privacy/">Privacy</a>
+		<a href="https://jonathanrreed.com/" target="_blank" rel="noopener noreferrer">Jonathan R. Reed</a>
+	</nav>
+</footer>

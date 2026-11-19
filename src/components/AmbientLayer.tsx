@@ -18,6 +18,7 @@ const BASE_BY_THEME: Record<ThemeName, [number, number, number]> = {
   Forest: [0.024, 0.078, 0.063],
   Ember: [0.086, 0.039, 0.024],
   Sakura: [0.114, 0.075, 0.133],
+  Washi: [0.937, 0.914, 0.863],
 };
 
 function readPalette(theme: ThemeName): AmbientPalette {

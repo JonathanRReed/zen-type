@@ -39,7 +39,9 @@ test('the 404 page is real and noindexed', async ({ page }) => {
 
 test('the What\'s new page links back into the app', async ({ page }) => {
   await page.goto('/whats-new/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Zen Typer 1.0');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText("What's new");
+  await expect(page.getByRole('heading', { level: 2, name: 'Zen Typer 1.1' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Zen Typer 1.0' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Quote mode' })).toHaveAttribute('href', '/quote/');
   await expect(page.getByRole('link', { name: 'Zen mode' })).toHaveAttribute('href', '/zen/');
 });
@@ -58,4 +60,37 @@ test('Tab switches mode from the typing surface', async ({ page }) => {
   await expect(page.locator('[data-typing-surface="zen"]')).toBeFocused({ timeout: 10_000 });
   await page.keyboard.press('Tab');
   await page.waitForURL('**/quote/');
+});
+
+test('the fonts the page is set in are shipped with it', async ({ page }) => {
+  const fontRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.resourceType() === 'font') fontRequests.push(request.url());
+  });
+  await page.goto('/about/');
+  await page.evaluate(() => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('20px Newsreader'))).toBe(true);
+  expect(await page.evaluate(() => document.fonts.check('16px "Hanken Grotesk"'))).toBe(true);
+  // Same origin only: the content security policy allows nothing else.
+  for (const url of fontRequests) expect(new URL(url).origin).toBe(new URL(page.url()).origin);
+  // And only the faces this page uses, not the optional typing fonts.
+  expect(fontRequests.some(url => /literata|jetbrains|atkinson/.test(url))).toBe(false);
+});
+
+test('the home page lists the books the passages come from', async ({ page }) => {
+  await page.goto('/');
+  const shelf = page.locator('.shelf li');
+  expect(await shelf.count()).toBeGreaterThan(15);
+  await expect(page.locator('.shelf')).toContainText('The Book of Tea');
+  await expect(page.locator('.shelf')).toContainText('tr. James Legge');
+});
+
+test('scrolling into the notes hides the fixed app chrome', async ({ page }) => {
+  await open(page, '/');
+  await expect(page.locator('header.masthead')).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, window.innerHeight));
+  await expect(page.locator('html')).toHaveAttribute('data-below', 'on');
+  await expect(page.locator('header.masthead')).toBeHidden();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(page.locator('header.masthead')).toBeVisible();
 });

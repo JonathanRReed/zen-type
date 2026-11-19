@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { OutlineItem } from '../../lib/textMetrics';
-import { Button } from '@/components/ui/button';
+import { IconClose } from '../icons';
+import PaneResizer from './PaneResizer';
 
 interface ResizableOutlineProps {
   items: OutlineItem[];
@@ -8,89 +9,84 @@ interface ResizableOutlineProps {
   onClose: () => void;
 }
 
+const MIN = 200;
+const MAX = 500;
+
 const ResizableOutline: React.FC<ResizableOutlineProps> = ({ items, onItemClick, onClose }) => {
   const [width, setWidth] = useState(280);
   const [isDragging, setIsDragging] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
       if (containerRef.current) {
-        const newWidth = e.clientX - (containerRef.current.getBoundingClientRect().left);
-        setWidth(Math.max(200, Math.min(500, newWidth)));
+        const newWidth = e.clientX - containerRef.current.getBoundingClientRect().left;
+        setWidth(Math.max(MIN, Math.min(MAX, newWidth)));
       }
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setIsDragging(false);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
     };
   }, [isDragging]);
 
   return (
-    <div
+    <aside
       ref={containerRef}
-      className="h-full bg-surface/30 backdrop-blur-sm border-r border-muted/20 flex flex-col relative"
-      style={{ width: `${width}px` }}
+      className="draft-pane draft-pane-start"
+      style={{ '--pane-w': `${width}px` } as React.CSSProperties}
+      aria-labelledby="draft-outline-title"
     >
-      <div className="p-3 border-b border-muted/20 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-text">Outline</h3>
-        <Button
-          onClick={onClose}
-          variant="ghost"
-          size="icon"
-          className="text-muted hover:text-text transition-colors"
-          aria-label="Close outline"
-        >
-          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </Button>
+      <div className="draft-pane-head">
+        <h3 id="draft-outline-title" className="draft-pane-title">Outline</h3>
+        <button type="button" className="sheet-close" onClick={onClose} aria-label="Close outline">
+          <IconClose />
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {items.length === 0 ? (
-          <div className="p-4 text-sm text-muted/60 text-center">
-            No outline items found. Add headings with # or structured paragraphs.
-          </div>
-        ) : (
-          <nav className="p-4 space-y-1" aria-label="Document outline">
+      {items.length === 0 ? (
+        <p className="draft-pane-note">
+          Start a line with <code>#</code> to make a heading. Short paragraphs that end in a full stop show up here too.
+        </p>
+      ) : (
+        <nav aria-label="Outline">
+          <ul className="outline-list">
             {items.map((item) => (
-              <Button
-                key={`${item.startIndex}_${item.text}`}
-                onClick={() => onItemClick(item.startIndex)}
-                variant="ghost"
-                className={`w-full justify-start text-left px-3 py-2 rounded-lg text-sm transition-colors hover:bg-overlay/40 ${
-                  item.level > 0 ? 'text-foam font-medium' : 'text-text/70'
-                }`}
-                style={{ paddingLeft: `${(item.level || 0) * 12 + 12}px` }}
-              >
-                <span className="line-clamp-2">{item.text}</span>
-              </Button>
+              <li key={`${item.startIndex}_${item.text}`}>
+                <button
+                  type="button"
+                  onClick={() => onItemClick(item.startIndex)}
+                  className={`outline-item${item.level > 0 ? ' is-heading' : ''}`}
+                  style={{ '--depth': Math.max(0, item.level - 1) } as React.CSSProperties}
+                >
+                  <span>{item.text}</span>
+                </button>
+              </li>
             ))}
-          </nav>
-        )}
-      </div>
+          </ul>
+        </nav>
+      )}
 
-      {/* Resize handle */}
-      <Button
-        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-iris/40 transition-colors border-0 bg-transparent p-0"
-        onMouseDown={() => setIsDragging(true)}
-        aria-label="Resize outline panel"
-        type="button"
-        variant="ghost"
+      <PaneResizer
+        label="Resize outline"
+        value={width}
+        min={MIN}
+        max={MAX}
+        dragging={isDragging}
+        onStart={() => setIsDragging(true)}
+        onStep={delta => setWidth(w => Math.max(MIN, Math.min(MAX, w + delta)))}
       />
-    </div>
+    </aside>
   );
 };
 

@@ -1,0 +1,1208 @@
+/* ==========================================================================
+   The app surface: masthead, typing stage, tally, footer, sheets.
+
+   One idea runs through all of it. The passage is the page; everything else
+   is marginalia. So the chrome has no boxes of its own: it is type, set small,
+   at the edges, over the scene.
+   ========================================================================== */
+
+@layer components {
+  /* ---------- stage ------------------------------------------------------ */
+
+  .stage {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  /* Scrims: the scenes run from near-black (Void) to bright amber (Ember's
+     floor) and pale ice (Glacier's sky). These keep the small type at the top
+     and bottom edges readable on all of them without boxing it in. */
+  .stage::before,
+  .stage::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .stage::before {
+    top: 0;
+    height: 7.5rem;
+    background: linear-gradient(to bottom, color-mix(in oklab, var(--scene-floor) 58%, transparent), transparent);
+  }
+
+  .stage::after {
+    bottom: 0;
+    height: 12rem;
+    background: linear-gradient(to top, color-mix(in oklab, var(--scene-floor) 80%, transparent), transparent);
+  }
+
+  /* ---------- masthead --------------------------------------------------- */
+
+  .masthead {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: max(1rem, env(safe-area-inset-top)) max(clamp(0.75rem, 2.4vw, 2rem), env(safe-area-inset-right)) 0.75rem max(clamp(0.75rem, 2.4vw, 2rem), env(safe-area-inset-left));
+  }
+
+  .masthead-start,
+  .masthead-end {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .masthead-start {
+    gap: clamp(0.5rem, 2.4vw, 2rem);
+  }
+
+  .masthead-end {
+    gap: 0.125rem;
+  }
+
+  .masthead-rule {
+    width: 1px;
+    height: 1.25rem;
+    margin: 0 0.5rem;
+    background: var(--ink-ghost);
+  }
+
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    padding: 0 0.25rem;
+    border-radius: 0.6rem;
+    color: var(--ink);
+    font-family: var(--voice-font);
+    font-size: 1.3125rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  .wordmark svg {
+    flex: none;
+  }
+
+  .modes {
+    display: flex;
+    gap: 0.125rem;
+  }
+
+  .modes a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 0.7rem;
+    border-radius: 0.6rem;
+    font-size: 0.9375rem;
+    color: var(--ink-faint);
+    transition: color 0.2s var(--ease-out);
+  }
+
+  .modes a:hover {
+    color: var(--ink);
+  }
+
+  .modes a[aria-current='page'] {
+    color: var(--ink);
+  }
+
+  .modes a[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 0.7rem;
+    right: 0.7rem;
+    bottom: 0.55rem;
+    height: 1px;
+    background: var(--theme-accent);
+  }
+
+  /* Header actions: text where there is room, a glyph where there is not. */
+  .act {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    padding: 0 0.75rem;
+    border-radius: 0.65rem;
+    color: var(--ink-soft);
+    font-size: 0.9375rem;
+    white-space: nowrap;
+    transition: color 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
+  }
+
+  .act:hover,
+  .act[aria-expanded='true'] {
+    color: var(--ink);
+    background: var(--ink-wash);
+  }
+
+  .act:active {
+    transform: translateY(1px);
+  }
+
+  .act svg {
+    flex: none;
+  }
+
+  .act-icon {
+    width: 2.75rem;
+    padding: 0;
+  }
+
+  .act[aria-pressed='true'] {
+    color: var(--theme-accent);
+  }
+
+  .swatch {
+    display: block;
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--swatch-a, var(--theme-accent)) 0 50%, var(--swatch-b, var(--theme-accent-2)) 50% 100%);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 34%, transparent);
+  }
+
+  .theme-picker {
+    position: relative;
+  }
+
+  .theme-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 50;
+    display: grid;
+    width: 15.5rem;
+    max-height: calc(100dvh - 5.5rem);
+    padding: 0.4rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation: sheet-in 0.18s var(--ease-out) both;
+  }
+
+  .theme-option {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 0.75rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.55rem;
+    text-align: left;
+    color: var(--ink-soft);
+    transition: background-color 0.15s var(--ease-out), color 0.15s var(--ease-out);
+  }
+
+  .theme-option:hover,
+  .theme-option:focus-visible {
+    color: var(--ink);
+    background: var(--ink-wash);
+  }
+
+  .theme-option .swatch {
+    grid-row: span 2;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .theme-option-name {
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  .theme-option-note {
+    grid-column: 2;
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    color: var(--ink-faint);
+  }
+
+  .theme-option-check {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    color: var(--theme-accent);
+  }
+
+  /* ---------- passage ---------------------------------------------------- */
+
+  .quote-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Anchored from the top, not centred: finishing a quote adds the result
+       underneath, and a centred column would jump upward to make room. */
+    justify-content: flex-start;
+    padding: clamp(5.5rem, 29vh, 19rem) clamp(1.25rem, 6vw, 4rem) 9.5rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .quote-stage::-webkit-scrollbar {
+    display: none;
+  }
+
+  .passage,
+  .result {
+    width: 100%;
+    max-width: 43rem;
+  }
+
+  .passage {
+    position: relative;
+    cursor: text;
+  }
+
+  .passage-text {
+    position: relative;
+    margin: 0;
+    font-family: var(--typing-font);
+    font-size: clamp(1.5rem, 1.05rem + 1.85vw, 2.3rem);
+    line-height: 1.38;
+    letter-spacing: var(--typing-tracking, -0.005em);
+    font-variant-ligatures: none;
+    font-optical-sizing: auto;
+    text-wrap: pretty;
+    color: var(--ink-faint);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* A passage that replaces another one eases in. The first does not: it
+     takes over from the identical server-rendered text, and a fade there
+     would be a blink. */
+  .passage-text.is-next {
+    animation: passage-in 0.5s var(--ease-out) both;
+  }
+
+  .passage[data-size='long'] .passage-text {
+    font-size: clamp(1.25rem, 1rem + 1vw, 1.625rem);
+    line-height: 1.5;
+  }
+
+  .passage[data-size='longer'] .passage-text {
+    font-size: clamp(1.0625rem, 0.95rem + 0.5vw, 1.25rem);
+    line-height: 1.6;
+  }
+
+  .q-done {
+    color: var(--ink);
+  }
+
+  .q-miss {
+    color: var(--rp-love);
+    background: color-mix(in oklab, var(--rp-love) 16%, transparent);
+    border-radius: 0.12em;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--rp-love) 75%, transparent);
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.2em;
+  }
+
+  .q-fresh.q-done {
+    animation: ink-set 0.22s var(--ease-out) both;
+  }
+
+  .q-fresh.q-miss {
+    animation: ink-miss 0.24s var(--ease-out) both;
+  }
+
+  .q-now {
+    color: var(--ink-soft);
+  }
+
+  /* Target-pace marker: a quiet underline that walks ahead of the caret. */
+  .q-pace {
+    box-shadow: inset 0 -0.08em 0 0 color-mix(in oklab, var(--theme-accent-2) 80%, transparent);
+  }
+
+  /* The caret. One element. QuoteTyper writes its position as a transform
+     (the top-left of the character about to be typed) and the character's
+     size as --cw / --ch; the caret setting on <html> decides its shape, and
+     each shape places itself inside that box with margins. */
+  .passage-caret {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: max(2px, 0.065em);
+    height: calc(var(--ch, 1.3em) * 0.78);
+    margin: calc(var(--ch, 1.3em) * 0.12) 0 0 -0.04em;
+    border-radius: 1px;
+    background: var(--theme-accent);
+    box-shadow: 0 0 0.55em color-mix(in oklab, var(--theme-accent) 65%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.085s cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .passage-caret.is-idle {
+    animation: caret-blink 1.15s steps(1, end) infinite;
+  }
+
+  html[data-caret='block'] .passage-caret {
+    width: max(var(--cw, 0.5em), 0.28em);
+    height: calc(var(--ch, 1.3em) * 0.82);
+    margin: calc(var(--ch, 1.3em) * 0.1) 0 0;
+    border-radius: 0.14em;
+    background: color-mix(in oklab, var(--theme-accent) 34%, transparent);
+    box-shadow: none;
+  }
+
+  html[data-caret='underline'] .passage-caret {
+    width: max(var(--cw, 0.5em), 0.28em);
+    height: max(2px, 0.07em);
+    margin: calc(var(--ch, 1.3em) * 0.86) 0 0;
+  }
+
+  html[data-caret='glow'] .passage-caret {
+    width: max(var(--cw, 0.5em), 0.28em);
+    height: calc(var(--ch, 1.3em) * 0.82);
+    margin: calc(var(--ch, 1.3em) * 0.1) 0 0;
+    border-radius: 0.18em;
+    background: color-mix(in oklab, var(--theme-accent) 22%, transparent);
+    box-shadow: 0 0 1.1em 0.15em color-mix(in oklab, var(--theme-accent) 55%, transparent);
+  }
+
+  html[data-caret='block'] .q-now,
+  html[data-caret='glow'] .q-now {
+    color: var(--ink);
+  }
+
+  .passage-credit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.7rem;
+    margin: 1.35rem 0 0;
+    font-family: var(--voice-font);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+
+  .passage-credit cite {
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  .credit-author {
+    color: var(--ink);
+  }
+
+  .credit-detail {
+    color: var(--ink-faint);
+  }
+
+  .passage-meter {
+    height: 1px;
+    margin-top: 1.5rem;
+    background: var(--ink-ghost);
+  }
+
+  .passage-meter > i {
+    display: block;
+    height: 100%;
+    background: var(--theme-accent);
+    box-shadow: 0 0 10px color-mix(in oklab, var(--theme-accent) 55%, transparent);
+    transform-origin: left center;
+    transition: transform 0.25s var(--ease-out);
+  }
+
+  .quote-stage.is-complete .passage-meter {
+    visibility: hidden;
+    margin-top: 0;
+  }
+
+  /* The hidden input the quote surface types into. It sits at the top of the
+     passage so that when a phone scrolls the focused field into view, the
+     passage comes with it. Opacity, not display:none, so focus() still opens
+     the on-screen keyboard. 16px stops iOS zooming on focus. */
+  .quote-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    font-size: 16px;
+    caret-color: transparent;
+    pointer-events: none;
+  }
+
+  .quote-tap-hint {
+    display: inline-flex;
+    align-items: center;
+    height: 2.75rem;
+    margin-top: 1.5rem;
+    padding: 0 1.15rem;
+    border-radius: 0.7rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--ink-inverse);
+    background: var(--ink);
+    animation: rise-in 0.3s var(--ease-out) both;
+  }
+
+  /* Server-rendered stand-in for the client:only quote surface. It is the LCP
+     element: it paints with CSS alone, so first paint does not wait for the
+     React island. Deliberately no entry animation; an opacity-0 start would
+     defer the very paint this exists to produce. */
+  astro-island:not([ssr]) + .quote-boot {
+    display: none;
+  }
+
+  /* Where :has() is available, hold it until the island has actually painted
+     its own passage, so hydration never exposes a blank frame in between. */
+  @supports selector(:has(*)) {
+    astro-island:not([ssr]):not(:has(.passage)) + .quote-boot {
+      display: flex;
+    }
+  }
+
+  /* ---------- result ----------------------------------------------------- */
+
+  .result {
+    margin-top: 2rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--ink-ghost);
+    animation: rise-in 0.45s var(--ease-out) both;
+  }
+
+  .result-figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem clamp(1.75rem, 6vw, 3.75rem);
+    margin: 0;
+  }
+
+  .result-figures > div {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  .result-figures dd {
+    margin: 0;
+    font-family: var(--voice-font);
+    font-size: clamp(2.75rem, 2rem + 3vw, 4.25rem);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: var(--ink);
+  }
+
+  .animated-number {
+    display: inline-block;
+  }
+
+  .result-figures dd small {
+    margin-left: 0.1em;
+    font-size: 0.42em;
+    letter-spacing: 0;
+    color: var(--ink-faint);
+  }
+
+  .result-figures dt {
+    margin-top: 0.55rem;
+    font-size: 0.875rem;
+    color: var(--ink-faint);
+  }
+
+  .result-note,
+  .result-hint {
+    margin: 1.35rem 0 0;
+    font-family: var(--voice-font);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+
+  .result-note em {
+    font-style: normal;
+    color: var(--rp-gold);
+  }
+
+  .result-hint {
+    margin-top: 0.4rem;
+    color: var(--ink-faint);
+  }
+
+  .result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.25rem;
+    margin-top: 1.5rem;
+    margin-left: -0.15rem;
+  }
+
+  /* ---------- buttons, links, fields -------------------------------------- */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: 0.7rem;
+    color: var(--ink-soft);
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition: color 0.2s var(--ease-out), background-color 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
+  }
+
+  .btn:hover {
+    color: var(--ink);
+    background: var(--ink-wash);
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  .btn-primary {
+    padding: 0 1.1rem;
+    font-weight: 600;
+    color: var(--ink-inverse);
+    background: var(--ink);
+  }
+
+  .btn-primary:hover {
+    color: var(--ink-inverse);
+    background: color-mix(in oklab, var(--ink) 88%, var(--theme-accent));
+  }
+
+  .btn-outline {
+    border: 1px solid var(--ink-line);
+    color: var(--ink);
+  }
+
+  .btn-outline:hover {
+    border-color: color-mix(in oklab, var(--ink) 42%, transparent);
+  }
+
+  .btn-danger {
+    color: var(--rp-love);
+  }
+
+  .btn-danger:hover {
+    color: var(--rp-love);
+    background: color-mix(in oklab, var(--rp-love) 14%, transparent);
+  }
+
+  .btn-block {
+    width: 100%;
+  }
+
+  /* A text toggle that shows its state with a small lamp, not a second label. */
+  .btn-toggle::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1.5px var(--ink-faint);
+    transition: background-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+  }
+
+  .btn-toggle[aria-pressed='true'] {
+    color: var(--ink);
+  }
+
+  .btn-toggle[aria-pressed='true']::before {
+    background: var(--theme-accent);
+    box-shadow: 0 0 0.5rem color-mix(in oklab, var(--theme-accent) 70%, transparent);
+  }
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid color-mix(in oklab, currentColor 32%, transparent);
+    border-radius: 0.3rem;
+    font-family: var(--ui-font);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.35;
+    white-space: nowrap;
+  }
+
+  .link-button {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--ink-faint);
+    text-underline-offset: 0.2em;
+  }
+
+  .link-button:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .field {
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--ink-line);
+    border-radius: 0.65rem;
+    background: color-mix(in oklab, var(--scene-floor) 45%, transparent);
+    color: var(--ink);
+    font-size: 1rem;
+    line-height: 1.5;
+    transition: border-color 0.2s var(--ease-out);
+  }
+
+  .field::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .field:hover {
+    border-color: color-mix(in oklab, var(--ink) 36%, transparent);
+  }
+
+  .field-area {
+    min-height: 9rem;
+    resize: vertical;
+    font-family: var(--typing-font);
+    font-size: 1.125rem;
+  }
+
+  /* ---------- tally ------------------------------------------------------ */
+
+  .stats-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(3.4rem + env(safe-area-inset-bottom));
+    z-index: 30;
+    pointer-events: none;
+  }
+
+  .tally {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem clamp(1.1rem, 4vw, 2.75rem);
+    margin: 0;
+    padding: 0 1rem;
+  }
+
+  .tally > div {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: baseline;
+    gap: 0.45rem;
+  }
+
+  .tally dd {
+    margin: 0;
+    font-family: var(--voice-font);
+    font-size: 1.5rem;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: var(--ink);
+  }
+
+  .tally dd.is-streak {
+    color: var(--rp-gold);
+  }
+
+  .tally dt {
+    font-size: 0.8125rem;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- foot ------------------------------------------------------- */
+
+  .foot {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem max(clamp(1rem, 2.6vw, 2.25rem), env(safe-area-inset-right)) max(0.9rem, env(safe-area-inset-bottom)) max(clamp(1rem, 2.6vw, 2.25rem), env(safe-area-inset-left));
+    font-size: 0.8125rem;
+    color: var(--ink-faint);
+  }
+
+  .hints,
+  .foot-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.15rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .hints li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .foot-links a {
+    padding: 0.35rem 0;
+    transition: color 0.2s var(--ease-out);
+  }
+
+  .foot-links a:hover {
+    color: var(--ink);
+  }
+
+  /* ---------- focus mode -------------------------------------------------- */
+
+  /* While keys are landing the chrome steps back. It never disappears, and
+     any pointer move or keyboard focus brings it straight back. */
+  .masthead,
+  .foot {
+    transition: opacity 0.5s var(--ease-out);
+  }
+
+  html[data-typing='on'] .masthead:not(:focus-within):not(:hover),
+  html[data-typing='on'] .foot:not(:focus-within):not(:hover) {
+    opacity: 0.3;
+  }
+
+  /* Scrolled down into the notes below the app: the fixed chrome belongs to
+     the stage, so it leaves with it. */
+  html[data-below='on'] .masthead,
+  html[data-below='on'] .foot,
+  html[data-below='on'] .stats-bar,
+  html[data-below='on'] .first-run-hint {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s var(--ease-out), visibility 0s linear 0.25s;
+  }
+
+  /* A finished quote shows its own figures. The running tally would only
+     repeat them, and on a short window it would sit on top of the buttons. */
+  .stats-bar {
+    transition: opacity 0.3s var(--ease-out), visibility 0s;
+  }
+
+  .stage:has(.quote-stage.is-complete) .stats-bar {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s var(--ease-out), visibility 0s linear 0.2s;
+  }
+
+  /* Where the result can be taller than the window, the footer steps aside
+     too. Its links are repeated at the end of the notes below. */
+  @media (max-width: 760px), (max-height: 620px) {
+    .stage:has(.quote-stage.is-complete) .foot {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  /* With an on-screen keyboard open, everything pinned to the bottom lifts
+     above it: the tally sits just over the keys, the footer hides, and the
+     passage moves to the top of what is still visible. */
+  html[data-kb='open'] .stats-bar {
+    bottom: calc(var(--kb-inset, 0px) + 0.6rem);
+  }
+
+  html[data-kb='open'] .foot {
+    display: none;
+  }
+
+  html[data-kb='open'] .quote-stage {
+    padding-top: 5rem;
+    padding-bottom: calc(var(--kb-inset, 0px) + 4rem);
+  }
+
+  /* ---------- notices ---------------------------------------------------- */
+
+  .first-run-hint {
+    position: fixed;
+    top: calc(4.75rem + env(safe-area-inset-top));
+    left: 50%;
+    z-index: 35;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    padding: 0.4rem 0.4rem 0.4rem 0.9rem;
+    border-radius: 0.7rem;
+    font-size: 0.875rem;
+    color: var(--ink-soft);
+    background: color-mix(in oklab, var(--scene-floor) 70%, transparent);
+    box-shadow: 0 0 0 1px var(--ink-ghost);
+    transform: translateX(-50%);
+    animation: hint-in 0.5s var(--ease-out) 0.4s both;
+  }
+
+  .first-run-hint button,
+  .notice-close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    color: var(--ink-faint);
+  }
+
+  .first-run-hint button:hover,
+  .notice-close:hover {
+    color: var(--ink);
+    background: var(--ink-wash);
+  }
+
+  .notice {
+    position: fixed;
+    top: calc(4.75rem + env(safe-area-inset-top));
+    left: 50%;
+    z-index: 45;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: max-content;
+    max-width: min(32rem, calc(100vw - 2rem));
+    padding: 0.7rem 0.5rem 0.7rem 1rem;
+    border-radius: 0.8rem;
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    color: var(--ink);
+    background: color-mix(in oklab, var(--scene-floor) 88%, var(--rp-love));
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--rp-love) 50%, transparent), var(--sheet-shadow);
+    transform: translateX(-50%);
+  }
+
+  .notice p {
+    margin: 0.15rem 0;
+  }
+
+  .notice-close svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* ---------- sheets ----------------------------------------------------- */
+
+  /* Every dialog is a sheet: an opaque panel in the scene's own dark, a
+     hairline edge, one radius. No glass, no noise, no inner glow. */
+  .overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: color-mix(in oklab, var(--scene-floor) 72%, transparent);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    animation: backdrop-in 0.22s var(--ease-out) both;
+  }
+
+  .overlay-dismiss {
+    position: absolute;
+    inset: 0;
+  }
+
+  .sheet {
+    border-radius: 1rem;
+    background: var(--sheet);
+    box-shadow:
+      0 0 0 1px var(--ink-ghost),
+      var(--sheet-shadow);
+    color: var(--ink);
+  }
+
+  .overlay-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 32rem;
+    max-height: min(88dvh, 52rem);
+    padding: clamp(1.25rem, 4vw, 2rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation: sheet-in 0.28s var(--ease-out) both;
+  }
+
+  .sheet-md {
+    max-width: 36rem;
+  }
+
+  .sheet-lg {
+    max-width: 44rem;
+  }
+
+  .sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .sheet-title {
+    margin: 0;
+    font-family: var(--voice-font);
+    font-size: 1.75rem;
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .sheet-lede {
+    margin: 0.6rem 0 1.25rem;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+  }
+
+  .sheet-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-top: 1rem;
+  }
+
+  .sheet-meta {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--ink-faint);
+  }
+
+  .sheet-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-left: auto;
+  }
+
+  .sheet-close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: -0.5rem -0.6rem -0.5rem 0;
+    border-radius: 0.65rem;
+    color: var(--ink-faint);
+    transition: color 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
+  }
+
+  .sheet-close:hover {
+    color: var(--ink);
+    background: var(--ink-wash);
+  }
+
+  /* ---------- motion ----------------------------------------------------- */
+
+  @keyframes passage-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes hint-in {
+    from { opacity: 0; transform: translate(-50%, -6px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+
+  @keyframes ink-set {
+    from { color: var(--ink-faint); }
+    to { color: var(--ink); }
+  }
+
+  @keyframes ink-miss {
+    0% { transform: translateX(0); }
+    35% { transform: translateX(-0.05em); }
+    70% { transform: translateX(0.05em); }
+    100% { transform: translateX(0); }
+  }
+
+  @keyframes caret-blink {
+    0%, 55% { opacity: 1; }
+    56%, 100% { opacity: 0.15; }
+  }
+
+  @keyframes backdrop-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes sheet-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.985); }
+    to { opacity: 1; transform: none; }
+  }
+
+  html[data-motion='off'] .passage-text.is-next,
+  html[data-motion='off'] .q-fresh,
+  html[data-motion='off'] .result,
+  html[data-motion='off'] .quote-tap-hint,
+  html[data-motion='off'] .first-run-hint,
+  html[data-motion='off'] .overlay-backdrop,
+  html[data-motion='off'] .overlay-card,
+  html[data-motion='off'] .theme-menu {
+    animation: none;
+  }
+
+  html[data-motion='off'] .passage-caret {
+    transition: none;
+    animation: none;
+  }
+
+  html[data-motion='off'] .masthead,
+  html[data-motion='off'] .stats-bar,
+  html[data-motion='off'] .foot,
+  html[data-motion='off'] .passage-meter > i {
+    transition: none;
+  }
+
+  /* Low-power mode: the scene is already still; skip the blur passes too. */
+  html.perf-mode .overlay-backdrop {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: color-mix(in oklab, var(--scene-floor) 92%, transparent);
+  }
+
+  /* ---------- small screens ---------------------------------------------- */
+
+  @media (max-width: 760px) {
+    /* Labels fold away to their glyphs, but stay in the accessible name. */
+    .act > span,
+    .masthead .wordmark > span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .act {
+      width: 2.75rem;
+      padding: 0;
+    }
+
+    .masthead-rule,
+    .hints {
+      display: none;
+    }
+
+    .foot {
+      justify-content: center;
+    }
+
+    .stats-bar {
+      bottom: calc(3rem + env(safe-area-inset-bottom));
+    }
+
+    .tally dd {
+      font-size: 1.25rem;
+    }
+
+    .tally dt {
+      font-size: 0.75rem;
+    }
+
+    .quote-stage {
+      padding-top: clamp(5rem, 22vh, 13rem);
+      padding-bottom: 8.5rem;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .act-roomy {
+      display: none;
+    }
+
+    /* One line each for the tally and the links, so neither lands on the other. */
+    .tally {
+      gap: 0.25rem 0.9rem;
+    }
+
+    .tally dd {
+      font-size: 1.125rem;
+    }
+
+    .tally dt {
+      font-size: 0.6875rem;
+    }
+
+    .foot-links {
+      flex-wrap: nowrap;
+      gap: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .modes a {
+      padding: 0 0.5rem;
+    }
+
+    .modes a[aria-current='page']::after {
+      left: 0.5rem;
+      right: 0.5rem;
+    }
+
+    .act,
+    .act-icon {
+      min-width: 2.5rem;
+      width: 2.5rem;
+    }
+  }
+
+  /* Short, wide viewports (a laptop with the browser half-height): pull the
+     passage up so the result still fits. */
+  @media (max-height: 620px) {
+    .quote-stage {
+      padding-top: clamp(4.5rem, 18vh, 8rem);
+      padding-bottom: 7rem;
+    }
+
+    .result {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+    }
+  }
+}

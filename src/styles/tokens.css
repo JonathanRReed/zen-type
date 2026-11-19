@@ -1,0 +1,250 @@
+/* ==========================================================================
+   Tokens and base.
+
+   Type: two families. Newsreader is the voice (the passage, headings, every
+   numeral); Hanken Grotesk is for controls. Both are self-hosted, because
+   the previous stacks named fonts the site never shipped, so most visitors
+   saw whatever their system fell back to.
+
+   Colour: every theme supplies the --rp-* palette and two accents; the ink
+   scale below is derived from them, so a new theme gets the whole interface
+   by setting a handful of variables.
+   ========================================================================== */
+
+@theme {
+  --color-base: var(--rp-base);
+  --color-surface: var(--rp-surface);
+  --color-overlay: var(--rp-overlay);
+  --color-text: var(--rp-text);
+  --color-muted: var(--rp-muted);
+  --color-subtle: var(--rp-subtle);
+  --color-love: var(--rp-love);
+  --color-gold: var(--rp-gold);
+  --color-rose: var(--rp-rose);
+  --color-pine: var(--rp-pine);
+  --color-foam: var(--rp-foam);
+  --color-iris: var(--rp-iris);
+  /* Theme-reactive accents: they shift with the active theme. */
+  --color-tint: var(--theme-accent);
+  --color-tint2: var(--theme-accent-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-line: var(--ink-line);
+  --color-ink-ghost: var(--ink-ghost);
+  --color-ink-wash: var(--ink-wash);
+  --color-sheet: var(--sheet);
+
+  --font-sans: var(--ui-font);
+  --font-serif: var(--voice-font);
+  --font-mono: var(--typing-font);
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../assets/fonts/newsreader-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../assets/fonts/newsreader-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Newsreader';
+  font-style: italic;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../assets/fonts/newsreader-latin-wght-italic.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../assets/fonts/hanken-grotesk-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Optional typing fonts. Declared here, downloaded only if chosen. */
+@font-face {
+  font-family: 'Literata';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('../assets/fonts/literata-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../assets/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('../assets/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+/* Metric-matched stand-ins, so the swap from the system font to the web font
+   moves the text as little as possible. */
+@font-face {
+  font-family: 'Newsreader Fallback';
+  src: local('Georgia');
+  /* Measured: Newsreader sets 4.6% narrower than Georgia, with an ascent of
+     0.74em and a descent of 0.26em. The overrides are scaled by size-adjust. */
+  size-adjust: 95.4%;
+  ascent-override: 77.6%;
+  descent-override: 27.3%;
+  line-gap-override: 0%;
+}
+
+:root {
+  /* Palette (Rosé Pine at its root, with a warmer ink). */
+  --rp-base: #191724;
+  --rp-surface: #1f1d2e;
+  --rp-overlay: #26233a;
+  --rp-muted: #6e6a86;
+  --rp-subtle: #908caa;
+  --rp-text: #f1ece2;
+  --rp-love: #eb6f92;
+  --rp-gold: #f6c177;
+  --rp-rose: #ea9a97;
+  --rp-pine: #3e8fb0;
+  --rp-foam: #9ccfd8;
+  --rp-iris: #c4a7e7;
+
+  --theme-accent: var(--rp-iris);
+  --theme-accent-2: var(--rp-foam);
+  --theme-gradient: linear-gradient(180deg, var(--rp-base) 0%, var(--rp-overlay) 100%);
+  /* The darkest tone of the active scene: what the scrims and sheets are cut from. */
+  --scene-floor: #05040a;
+
+  /* Ink: the one text colour, at five strengths. */
+  --ink: var(--rp-text);
+  --ink-soft: color-mix(in oklab, var(--ink) 76%, transparent);
+  --ink-faint: color-mix(in oklab, var(--ink) 52%, transparent);
+  --ink-line: color-mix(in oklab, var(--ink) 22%, transparent);
+  --ink-ghost: color-mix(in oklab, var(--ink) 12%, transparent);
+  --ink-wash: color-mix(in oklab, var(--ink) 8%, transparent);
+  /* Text on an ink-coloured surface (the primary button, a selected chip). */
+  --ink-inverse: #15131d;
+
+  --sheet: color-mix(in oklab, var(--scene-floor) 45%, var(--rp-surface));
+  --sheet-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.75);
+  --page-floor: color-mix(in oklab, var(--scene-floor) 55%, var(--rp-base));
+
+  --voice-font: 'Newsreader', 'Newsreader Fallback', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --ui-font: 'Hanken Grotesk', 'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* What you type in. Settings can point this at another family. */
+  --typing-font: var(--voice-font);
+  --typing-tracking: -0.005em;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    view-transition-name: root;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    background: var(--theme-gradient, var(--rp-base));
+    color: var(--ink);
+    font-family: var(--ui-font);
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  /* Tailwind 4 makes buttons inherit the default cursor. Keep the pointer. */
+  button:not(:disabled),
+  [role='button']:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+
+  /* One focus ring for everything interactive. */
+  :where(a, button, [role='button'], [role='tab'], input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+
+  :where(.overlay-card, .stage, .page-main):focus-visible {
+    outline: none;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--theme-accent) 45%, transparent);
+    color: var(--ink);
+  }
+
+  .skip-link {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 3000;
+    padding: 0.6rem 1rem;
+    border-radius: 0.6rem;
+    background: var(--ink);
+    color: var(--ink-inverse);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    transform: translateY(-200%);
+  }
+
+  .skip-link:focus {
+    transform: none;
+  }
+}
+
+/* High contrast: full-strength ink everywhere, firmer lines. */
+html.high-contrast {
+  --ink-soft: color-mix(in oklab, var(--ink) 94%, transparent);
+  --ink-faint: color-mix(in oklab, var(--ink) 78%, transparent);
+  --ink-line: color-mix(in oklab, var(--ink) 52%, transparent);
+  --ink-ghost: color-mix(in oklab, var(--ink) 34%, transparent);
+  --sheet: var(--scene-floor);
+}
+
+html.high-contrast :focus-visible {
+  outline-width: 3px;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --ink-soft: color-mix(in oklab, var(--ink) 94%, transparent);
+    --ink-faint: color-mix(in oklab, var(--ink) 78%, transparent);
+    --ink-line: color-mix(in oklab, var(--ink) 52%, transparent);
+    --ink-ghost: color-mix(in oklab, var(--ink) 34%, transparent);
+  }
+}

@@ -21,14 +21,8 @@ interface PauseMenuProps {
 // those to tell whether an overlay owns the keyboard, and that check has to
 // hold for the frame or two this is on screen.
 const MenuFallback = () => (
-  <div
-    className="overlay-backdrop fixed inset-0 z-[2000] flex items-center justify-center bg-base/80 backdrop-blur-md"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Paused"
-    aria-busy="true"
-  >
-    <span className="animate-pulse text-sm text-muted">Paused</span>
+  <div className="overlay-backdrop" role="dialog" aria-modal="true" aria-label="Paused" aria-busy="true">
+    <span className="sheet-meta">Paused</span>
   </div>
 );
 

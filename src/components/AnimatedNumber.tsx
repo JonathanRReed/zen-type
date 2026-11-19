@@ -1,115 +1,37 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 interface AnimatedNumberProps {
-    value: number;
-    /** Format function for display (e.g., adding % suffix) */
-    format?: (value: number) => string;
-    /** Duration of animation in ms */
-    duration?: number;
-    /** CSS class name */
-    className?: string;
-    /** Show improvement glow when value increases */
-    showImprovement?: boolean;
+  value: number;
+  /** How long the count takes, in milliseconds. */
+  duration?: number;
 }
 
-/**
- * AnimatedNumber - Smoothly animates between number values.
- * Features a subtle pop animation and optional improvement glow.
- */
-const defaultFormat = (v: number) => String(Math.round(v));
+// Counts up to a whole number. Under reduced motion (the system setting or
+// the app's own) it shows the number at once.
+const AnimatedNumber: React.FC<AnimatedNumberProps> = ({ value, duration = 500 }) => {
+  const [shown, setShown] = useState(0);
+  const fromRef = useRef(0);
 
-const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
-    value,
-    format = defaultFormat,
-    duration = 300,
-    className = '',
-    showImprovement = true,
-}) => {
-    const [displayValue, setDisplayValue] = useState(value);
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [isImproving, setIsImproving] = useState(false);
-    const previousValueRef = useRef(value);
-    const animationRef = useRef<number | null>(null);
+  useEffect(() => {
+    const from = fromRef.current;
+    fromRef.current = value;
+    const still = document.documentElement.getAttribute('data-motion') === 'off'
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still || from === value) {
+      setShown(value);
+      return;
+    }
+    const startedAt = performance.now();
+    let frame = requestAnimationFrame(function tick(now) {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      // Ease out: quick at first, settling into the final figure.
+      setShown(from + (value - from) * (1 - Math.pow(1 - progress, 3)));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [value, duration]);
 
-    useEffect(() => {
-        const previousValue = previousValueRef.current;
-
-        // Skip animation if value hasn't changed
-        if (previousValue === value) return;
-
-        // Check for reduced motion: the OS setting or the app's own toggle.
-        // (The app flag used to be ignored here, so in-app Reduced Motion
-        // still animated the count-ups.)
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        let appReducedMotion = false;
-        try {
-            const raw = localStorage.getItem('zt.settings');
-            appReducedMotion = !!raw && !!(JSON.parse(raw) as { reducedMotion?: boolean }).reducedMotion;
-        } catch {
-            appReducedMotion = false;
-        }
-
-        if (prefersReducedMotion || appReducedMotion) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setDisplayValue(value);
-            previousValueRef.current = value;
-            return;
-        }
-
-        // Determine if this is an improvement
-        const improving = showImprovement && value > previousValue;
-        setIsImproving(improving);
-        setIsUpdating(true);
-
-        const startTime = performance.now();
-        const startValue = previousValue;
-        const endValue = value;
-
-        const animate = (currentTime: number) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-
-            // Ease out cubic for smooth deceleration
-            const eased = 1 - Math.pow(1 - progress, 3);
-
-            const current = startValue + (endValue - startValue) * eased;
-            setDisplayValue(current);
-
-            if (progress < 1) {
-                animationRef.current = requestAnimationFrame(animate);
-            } else {
-                setDisplayValue(endValue);
-                previousValueRef.current = endValue;
-
-                // Remove updating class after animation
-                setTimeout(() => {
-                    setIsUpdating(false);
-                    setIsImproving(false);
-                }, 150);
-            }
-        };
-
-        animationRef.current = requestAnimationFrame(animate);
-
-        return () => {
-            if (animationRef.current) {
-                cancelAnimationFrame(animationRef.current);
-            }
-        };
-    }, [value, duration, showImprovement]);
-
-    const classes = [
-        'animated-number',
-        className,
-        isUpdating ? 'updating' : '',
-        isImproving ? 'improving' : '',
-    ].filter(Boolean).join(' ');
-
-    return (
-        <span className={classes}>
-            {format(displayValue)}
-        </span>
-    );
+  return <span className="animated-number">{Math.round(shown)}</span>;
 };
 
 export default AnimatedNumber;

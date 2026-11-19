@@ -1,259 +1,77 @@
 ---
-import "../styles/globals.css";
+import AppLayout from "../layouts/AppLayout.astro";
 import QuoteTyper from "../components/QuoteTyper";
-import StatsBar from "../components/StatsBar";
-import PauseMenu from "../components/PauseMenu";
-import HelpSheet from "../components/HelpSheet";
-import ArchiveOverlay from "../components/ArchiveOverlay";
-import SiteFooter from "../components/SiteFooter";
-import SiteHeader from "../components/SiteHeader";
-import GlobalShortcuts from "../components/GlobalShortcuts";
-import ProgressOverlay from "../components/ProgressOverlay";
-import FirstRunHint from "../components/FirstRunHint";
-import ErrorBoundary from "../components/ErrorBoundary";
-import SEO from "../components/SEO.astro";
-import AmbientLayer from "../components/AmbientLayer";
+import PassageBoot from "../components/PassageBoot.astro";
+import NotesFoot from "../components/NotesFoot.astro";
 import { loadQuotes, pickQuote } from "../utils/quotes";
 
-// Load a random quote at build time
 const quotes = await loadQuotes();
-const randomQuote = pickQuote(quotes);
+const quote = pickQuote(quotes);
 const siteUrl = "https://zentype.jonathanrreed.com";
-const homeUrl = `${siteUrl}/`;
 const quoteUrl = `${siteUrl}/quote/`;
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<SEO
-			title="Quote Mode | Zen Typer Typing Speed Practice"
-			description="Take a mindful typing test on short Zen quotes with live WPM, accuracy tracking, and an error breakdown. No account, and your stats stay in the browser."
-			canonical={quoteUrl}
-			keywords={[
-				"typing test",
-				"typing speed test",
-				"WPM test",
-				"typing accuracy",
-				"Zen quotes",
-				"typing practice",
-			]}
-			breadcrumbItems={[
-				{ name: "Mindful typing test", url: homeUrl },
-				{ name: "Zen quote typing test", url: quoteUrl },
-			]}
-		/>
-	</head>
-	<body>
-		<ErrorBoundary>
-			<a
-				href="#quote-app"
-				class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-iris focus:text-base focus:rounded-lg focus:shadow-lg"
-			>
-				Skip to main content
-			</a>
-			<main
-				id="quote-app"
-				tabindex="-1"
-				class="relative w-full h-screen supports-[height:100dvh]:h-dvh overflow-hidden stats-cq-host"
-			>
-				<h1 class="sr-only">
-					Zen Quote Typing Test for Speed and Accuracy
-				</h1>
-				<SiteHeader client:only="react" mode="quote" />
-				<div class="pointer-events-none fixed inset-0 z-0 theme-layer" aria-hidden="true"></div>
-				<AmbientLayer client:only="react" transition:persist="ambient" />
+<AppLayout
+	mode="quote"
+	heading="Zen Quote Typing Test for Speed and Accuracy"
+	seo={{
+		title: "Quote Mode | Zen Typer Typing Speed Practice",
+		description:
+			"Take a mindful typing test on short Zen quotes with live WPM, accuracy tracking, and an error breakdown. No account, and your stats stay in the browser.",
+		canonical: quoteUrl,
+		keywords: ["typing test", "typing speed test", "WPM test", "typing accuracy", "Zen quotes", "typing practice"],
+		breadcrumbItems: [
+			{ name: "Mindful typing test", url: `${siteUrl}/` },
+			{ name: "Zen quote typing test", url: quoteUrl },
+		],
+	}}
+>
+	<QuoteTyper client:only="react" quote={quote.text} author={quote.author} source={quote.source ?? ""} quoteId={quote.id} />
+	<PassageBoot text={quote.text} author={quote.author} source={quote.source ?? ""} />
 
-				<div
-					class="relative z-10 flex w-full items-center justify-center px-6 h-full"
-				>
-					<div class="w-full max-w-4xl">
-						<QuoteTyper
-							client:only="react"
-							quote={randomQuote.text}
-							author={randomQuote.author}
-							quoteId={randomQuote.id}
-							onComplete={(summary) => {
-								// Handle completion
-								const completeEvent = new CustomEvent(
-									"quoteComplete",
-									{ detail: summary },
-								);
-								window.dispatchEvent(completeEvent);
-							}}
-						/>
-						<!--
-							First-paint stand-in for the client:only typing surface above.
-							Same pattern as index.astro: QuoteTyper renders nothing on
-							the server, so without this the viewport stays blank until
-							React hydrates. Retired by CSS the moment the island drops
-							its `ssr` flag (see .quote-boot in globals.css). Must stay
-							the element directly after the island.
-						-->
-						<div
-							class="quote-boot absolute inset-0 flex flex-col items-center justify-center px-12 pt-12 pb-24"
-						>
-							<div class="w-full max-w-4xl">
-								<div
-									class="glass quote-card rounded-2xl px-8 pt-8 pb-7 mb-6"
-								>
-									<p
-										class="quote-boot-text font-mono text-2xl leading-relaxed"
-									>
-										{randomQuote.text}
-									</p>
-									<p class="text-right text-muted text-lg mt-5">
-										<span aria-hidden="true">—</span>
-										{randomQuote.author}
-									</p>
-									<div class="quote-progress-track mt-6">
-										<div
-											class="quote-progress-fill"
-											style="width: 0%"
-										>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
+	<section slot="notes" class="notes" aria-labelledby="quote-notes-heading">
+		<div class="notes-inner">
+			<header class="notes-head">
+				<h2 id="quote-notes-heading">A Zen quote typing test with WPM and accuracy.</h2>
+				<p>
+					Each round is one short passage with live accuracy feedback and WPM tracking. It is built for clean
+					repetition, not for winning a race.
+				</p>
+			</header>
+
+			<dl class="notes-grid">
+				<div>
+					<dt>What you type</dt>
+					<dd>
+						{quotes.length} passages from Marcus Aurelius, Epictetus, Lao Tzu, Thoreau, Emerson, Okakura's Book of
+						Tea, and others, each with its book and translator named under it. Filter them by length or by subject
+						in Settings, or paste in a text of your own.
+					</dd>
 				</div>
-
-				<StatsBar client:only="react" mode="quote" />
-
-				<PauseMenu
-					client:only="react"
-					mode="quote"
-					data-pause-menu
-				/>
-
-				<HelpSheet client:only="react" isOpen={false} onClose={() => {}} />
-				<ArchiveOverlay client:only="react" />
-				<SiteFooter client:only="react" />
-				<!-- Documented Ctrl/Cmd shortcuts (Help: Notes & Drafts, mute) -->
-				<GlobalShortcuts client:only="react" />
-				<ProgressOverlay client:only="react" />
-				<FirstRunHint client:only="react" mode="quote" />
-			</main>
-		</ErrorBoundary>
-
-		<!--
-			`relative z-10` is load-bearing. `.theme-layer` is `fixed inset-0 z-0`
-			with an opaque gradient, so a static section would paint underneath it
-			and be readable by crawlers but invisible to humans. pb-40 clears the
-			fixed `.stats-bar` at z-40 on the last row.
-		-->
-		<section
-			class="relative z-10 mx-auto max-w-5xl px-6 pb-40 pt-16 seo-body"
-			aria-labelledby="quote-seo-heading"
-		>
-			<div
-				class="grid gap-8 border-t border-iris/15 pt-10 md:grid-cols-[1.1fr_0.9fr]"
-			>
-				<div class="space-y-4">
-					<p class="text-sm font-medium text-foam">Quote mode</p>
-					<h2
-						id="quote-seo-heading"
-						class="max-w-2xl text-3xl font-semibold text-text md:text-4xl"
-					>
-						A Zen quote typing test with WPM and accuracy.
-					</h2>
-					<p class="max-w-2xl leading-7 seo-body md:text-lg">
-						Each round is one short passage with live accuracy feedback
-						and WPM tracking. It is built for clean repetition, not for
-						winning a race.
-					</p>
+				<div>
+					<dt>What you see at the end</dt>
+					<dd>
+						Words per minute, accuracy, and the time it took, with your mistakes counted as wrong keys, early
+						spaces, and missed spaces. Enter brings the next passage.
+					</dd>
 				</div>
-				<div class="space-y-5 text-sm leading-6">
-					<div>
-						<h3 class="font-semibold text-text">What it measures</h3>
-						<p>
-							Speed, accuracy, and completion, plus mistakes grouped as
-							slips, skips, and extras so you can see the pattern instead
-							of one number. A cleaner run with fewer corrections usually
-							tells you more than one fast burst.
-						</p>
-					</div>
-					<div>
-						<h3 class="font-semibold text-text">What is kept</h3>
-						<p>
-							Settings and session stats are written to your browser and
-							nowhere else. No account, no sync. The
-							<a class="text-foam transition-colors hover:text-text" href="/privacy/">privacy notice</a>
-							has the detail.
-						</p>
-					</div>
-					<div class="flex flex-wrap gap-4">
-						<a class="text-foam transition-colors hover:text-text" href="/">
-							Mindful typing practice
-						</a>
-						<a class="text-foam transition-colors hover:text-text" href="/zen/">
-							Free-flow typing practice
-						</a>
-					</div>
+				<div>
+					<dt>Setting a pace</dt>
+					<dd>
+						Choose a target speed in Settings and a quiet marker walks through the passage at that pace, so you
+						can practice holding a rhythm instead of sprinting.
+					</dd>
 				</div>
-			</div>
-		</section>
+				<div>
+					<dt>Where the numbers go</dt>
+					<dd>
+						Into your browser and nowhere else. The Progress view keeps a calendar of the days you practiced and
+						a line of your recent speeds. The <a href="/privacy/">privacy notice</a> has the detail.
+					</dd>
+				</div>
+			</dl>
 
-		<script>
-			let isPaused = false;
-			document.addEventListener("keydown", (e) => {
-				const ae = document.activeElement;
-				// Tab switches mode only from the typing surface. See index.astro
-				// for why the old "not in any input" check never fired.
-				const onTypingSurface = !!(
-					ae && ae.hasAttribute && ae.hasAttribute("data-typing-surface")
-				);
-				// The typing surface keeps focus while an overlay is open, so
-				// without this guard Tab would navigate away from a paused
-				// session instead of moving into the pause menu.
-				const overlayOpen = !!document.querySelector(
-					'[role="dialog"], .overlay-backdrop',
-				);
-				if (
-					onTypingSurface &&
-					!overlayOpen &&
-					e.key === "Tab" &&
-					!e.ctrlKey &&
-					!e.metaKey &&
-					!e.shiftKey
-				) {
-					e.preventDefault();
-					window.location.assign("/zen/");
-				}
-
-				// Esc for pause menu
-				if (e.key === "Escape") {
-					e.preventDefault();
-					isPaused = !isPaused;
-					document.documentElement.dataset.paused = String(isPaused);
-					const pauseEvent = new CustomEvent("togglePause", {
-						detail: isPaused,
-					});
-					window.dispatchEvent(pauseEvent);
-				}
-			});
-
-			// Track the menu's real state. The header button and the Resume
-			// button both dispatch `togglePause` on their own, so without this
-			// `isPaused` drifted and the next Escape spent itself undoing the
-			// drift instead of opening the menu. zen.astro already does this.
-			window.addEventListener("togglePause", function (event) {
-				let detail;
-				if (
-					typeof event === "object" &&
-					event !== null &&
-					"detail" in event
-				) {
-					detail = /** @type {CustomEvent<boolean | undefined>} */ (
-						event
-					).detail;
-				}
-				isPaused = typeof detail === "boolean" ? detail : !isPaused;
-				document.documentElement.dataset.paused = String(isPaused);
-			});
-
-			// Quote completion is handled within QuoteTyper (stats persisted + event dispatched)
-		</script>
-	</body>
-</html>
+			<NotesFoot current="/quote/" />
+		</div>
+	</section>
+</AppLayout>

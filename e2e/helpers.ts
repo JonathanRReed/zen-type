@@ -13,9 +13,9 @@ export async function open(page: Page, path: string): Promise<void> {
 
 /** The quote on screen, as plain text. */
 export async function readQuote(page: Page): Promise<string> {
-  await expect(page.locator('.quote-body .quote-char').first()).toBeVisible();
-  const chars = await page.locator('.quote-body .quote-char').allTextContents();
-  return chars.join('').replace(/\u00a0/g, ' ');
+  const passage = page.locator('astro-island .passage-text');
+  await expect(passage).toBeVisible();
+  return (await passage.textContent() ?? '').replace(/\u00a0/g, ' ');
 }
 
 /** Type the whole quote through the keyboard, like a person would. */
@@ -26,7 +26,7 @@ export async function typeQuote(page: Page, text: string, delay = 4): Promise<vo
 export async function finishOneQuote(page: Page): Promise<string> {
   const text = await readQuote(page);
   await typeQuote(page, text);
-  await expect(page.locator('.completion-pulse')).toBeVisible();
+  await expect(page.locator('.result')).toBeVisible();
   return text;
 }
 
@@ -45,4 +45,11 @@ export async function markSeen(page: Page): Promise<void> {
       localStorage.setItem('zt.hints', JSON.stringify({ ...hints, firstRun: true }));
     } catch { /* ignore */ }
   });
+}
+
+/** How far the typist has got, and how many uncorrected mistakes stand. */
+export async function expectProgress(page: Page, cursor: number, errors = 0): Promise<void> {
+  const passage = page.locator('astro-island .passage-text');
+  await expect(passage).toHaveAttribute('data-cursor', String(cursor));
+  await expect(passage).toHaveAttribute('data-errors', String(errors));
 }

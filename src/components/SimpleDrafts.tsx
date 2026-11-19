@@ -1,4 +1,5 @@
 import React, { Suspense, lazy } from 'react';
+import { createPortal } from 'react-dom';
 
 // DraftManager pulls in Dexie, the whole draft editor tree, and the grammar +
 // text-metrics helpers. The overlay is closed at first paint on every page, so
@@ -12,22 +13,24 @@ interface SimpleDraftsProps {
 }
 
 const SimpleDrafts: React.FC<SimpleDraftsProps> = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
-  return (
+  // Rendered into <body>: the app stage isolates its own stacking context, so
+  // a fixed screen left inside it sat under the notes that follow the stage
+  // and showed them through on a phone.
+  return createPortal(
     <Suspense
       fallback={
-        <div
-          className="overlay-backdrop fixed inset-0 z-[1000] flex items-center justify-center glass-theme"
-          role="status"
-          aria-live="polite"
-        >
-          <span className="animate-pulse text-sm text-muted">Opening drafts…</span>
+        // The drafts stylesheet arrives with the screen itself, so the
+        // moment before it does borrows the dialog backdrop.
+        <div className="overlay-backdrop" role="status" aria-live="polite">
+          <span className="sheet-meta">Opening your drafts…</span>
         </div>
       }
     >
       <DraftManager isOpen={isOpen} onClose={onClose} />
-    </Suspense>
+    </Suspense>,
+    document.body,
   );
 };
 

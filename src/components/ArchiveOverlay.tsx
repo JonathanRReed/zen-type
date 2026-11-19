@@ -1,81 +1,26 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import SimpleDrafts from './SimpleDrafts';
 
-// Overlay that shows the local drafts viewer.
-// Opens/closes via `toggleArchive` CustomEvent or the global helper.
-
+// Notes and drafts. Opens on a `toggleArchive` event: `true` opens, `false`
+// closes, no detail flips it (that is what Ctrl/Cmd+D sends).
 const ArchiveOverlay: React.FC = () => {
   const [open, setOpen] = useState(false);
 
-  const clearPendingFlag = useCallback(() => {
-    try { localStorage.removeItem('zt.openArchiveNext'); } catch {}
+  const close = useCallback(() => {
+    setOpen(false);
+    window.dispatchEvent(new CustomEvent('focusTyping'));
   }, []);
 
-  const openOverlay = useCallback(() => {
-    clearPendingFlag();
-    setOpen(true);
-  }, [clearPendingFlag]);
-
-  const closeOverlay = useCallback(() => {
-    clearPendingFlag();
-    setOpen(false);
-  }, [clearPendingFlag]);
-
-  // Open if header requested before mount
-  useEffect(() => {
-    let timer: number | null = null;
-    try {
-      const pending = localStorage.getItem('zt.openArchiveNext');
-      if (pending === '1') {
-        timer = window.setTimeout(openOverlay, 0);
-      }
-    } catch {
-      // ignore localStorage errors
-    }
-    return () => {
-      if (timer !== null) {
-        window.clearTimeout(timer);
-      }
-    };
-  }, [openOverlay]);
-
-  // Imperative global open helper for reliability (used by header/pause buttons)
-  useEffect(() => {
-    (window as any).openLibraryOverlay = () => openOverlay();
-    return () => {
-      try { delete (window as any).openLibraryOverlay; } catch {}
-    };
-  }, [openOverlay]);
-
-  // Open/close handler via event (stable listener)
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (typeof detail === 'boolean') {
-        if (detail) {
-          openOverlay();
-        } else {
-          closeOverlay();
-        }
-        return;
-      }
-      if (detail && typeof detail === 'object') {
-        openOverlay();
-        return;
-      }
-      setOpen(prev => !prev);
-      clearPendingFlag();
+      setOpen(prev => (typeof detail === 'boolean' ? detail : !prev));
     };
-    window.addEventListener('toggleArchive', handler as EventListener);
-    return () => window.removeEventListener('toggleArchive', handler as EventListener);
-  }, [openOverlay, closeOverlay, clearPendingFlag]);
+    window.addEventListener('toggleArchive', handler);
+    return () => window.removeEventListener('toggleArchive', handler);
+  }, []);
 
-  return (
-    <SimpleDrafts
-      isOpen={open}
-      onClose={closeOverlay}
-    />
-  );
+  return <SimpleDrafts isOpen={open} onClose={close} />;
 };
 
 export default ArchiveOverlay;

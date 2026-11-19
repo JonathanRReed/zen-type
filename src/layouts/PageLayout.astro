@@ -1,0 +1,59 @@
+---
+import "../styles/globals.css";
+import SEO, { type Props as SEOProps } from "../components/SEO.astro";
+import NotesFoot from "../components/NotesFoot.astro";
+
+// The reading pages (about, what's new, privacy, contact, subprocessors,
+// 404). Set like a page in a book: one column, a serif, no card.
+interface Props {
+	seo: SEOProps;
+	title: string;
+	lede?: string;
+}
+
+const { seo, title, lede } = Astro.props;
+const path = Astro.url.pathname.endsWith("/") ? Astro.url.pathname : `${Astro.url.pathname}/`;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<SEO {...seo} />
+	</head>
+	<body class="page">
+		<a href="#content" class="skip-link">Skip to content</a>
+		<header class="page-head">
+			<a class="wordmark" href="/" aria-label="Zen Typer home">
+				<svg viewBox="0 0 32 26" width="26" height="21" aria-hidden="true" focusable="false">
+					<rect x="1" y="5" width="11" height="5" rx="1.6" fill="#7a7c9c"></rect>
+					<rect x="20" y="5" width="11" height="5" rx="1.6" fill="#a678e6"></rect>
+					<rect x="1" y="16" width="11" height="5" rx="1.6" fill="#e0527f"></rect>
+					<rect x="20" y="16" width="11" height="5" rx="1.6" fill="#f0b24d"></rect>
+					<rect x="15.1" y="1" width="1.8" height="24" rx="0.9" fill="currentColor"></rect>
+				</svg>
+				<span>Zen Typer</span>
+			</a>
+			<nav aria-label="Primary" class="page-nav">
+				<a href="/quote/">Quote mode</a>
+				<a href="/zen/">Zen mode</a>
+				<a href="/about/" aria-current={path === "/about/" ? "page" : undefined}>About</a>
+				<a href="/whats-new/" aria-current={path === "/whats-new/" ? "page" : undefined}>What's new</a>
+			</nav>
+		</header>
+
+		<main id="content" class="page-main" tabindex="-1">
+			<article class="prose">
+				<header class="prose-head">
+					<h1>{title}</h1>
+					{lede && <p class="prose-lede">{lede}</p>}
+					<slot name="lede" />
+				</header>
+				<slot />
+			</article>
+		</main>
+
+		<div class="page-foot">
+			<NotesFoot current={path} />
+		</div>
+	</body>
+</html>

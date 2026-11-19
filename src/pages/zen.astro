@@ -1,237 +1,65 @@
 ---
-import "../styles/globals.css";
+import AppLayout from "../layouts/AppLayout.astro";
 import ZenCanvas from "../components/ZenCanvas";
-import StatsBar from "../components/StatsBar";
-import PauseMenu from "../components/PauseMenu";
-import HelpSheet from "../components/HelpSheet";
-import ArchiveOverlay from "../components/ArchiveOverlay";
-import SiteFooter from "../components/SiteFooter";
-import SiteHeader from "../components/SiteHeader";
-import GlobalShortcuts from "../components/GlobalShortcuts";
-import ProgressOverlay from "../components/ProgressOverlay";
-import FirstRunHint from "../components/FirstRunHint";
-import ErrorBoundary from "../components/ErrorBoundary";
-import SEO from "../components/SEO.astro";
-import AmbientLayer from "../components/AmbientLayer";
+import NotesFoot from "../components/NotesFoot.astro";
 
 const siteUrl = "https://zentype.jonathanrreed.com";
-const homeUrl = `${siteUrl}/`;
 const zenUrl = `${siteUrl}/zen/`;
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<SEO
-			title="Zen Mode | Free-Flow Typing Practice"
-			description="Zen Mode is free-flow typing practice. Words drift up the canvas as you commit them, and session stats stay local to your browser. No account needed."
-			canonical={zenUrl}
-			keywords={[
-				"typing practice",
-				"free-flow typing",
-				"mindful typing",
-				"typing trainer",
-				"focused writing",
-				"writing practice",
-			]}
-			breadcrumbItems={[
-				{ name: "Mindful typing test", url: homeUrl },
-				{ name: "Free-flow typing practice", url: zenUrl },
-			]}
-		/>
-		<!-- Developer Console Easter Egg -->
-		<script>
-			(function () {
-				if (typeof window === "undefined") return;
+<AppLayout
+	mode="zen"
+	heading="Free-Flow Typing Practice for Focused Writing"
+	seo={{
+		title: "Zen Mode | Free-Flow Typing Practice",
+		description:
+			"Zen Mode is free-flow typing practice. Words drift up the canvas as you commit them, and session stats stay local to your browser. No account needed.",
+		canonical: zenUrl,
+		keywords: ["typing practice", "free-flow typing", "mindful typing", "typing trainer", "focused writing", "writing practice"],
+		breadcrumbItems: [
+			{ name: "Mindful typing test", url: `${siteUrl}/` },
+			{ name: "Free-flow typing practice", url: zenUrl },
+		],
+	}}
+>
+	<ZenCanvas client:only="react" maxTokens={160} />
 
-				const ascii = `
-    ___  ________  ________     
-   |\\  \\|\\   __  \\|\\   __  \\    
-   \\ \\  \\ \\  \\|\\  \\ \\  \\|\\  \\   
- __ \\ \\  \\ \\   _  _\\ \\   _  _\\  
-|\\  \\\\_\\  \\ \\  \\\\  \\\\ \\  \\\\  \\|
-\\ \\________\\ \\__\\\\ _\\\\ \\__\\\\ _\\
- \\|________|\\|__|\\|__|\\|__|\\|__|
-				`;
+	<section slot="notes" class="notes" aria-labelledby="zen-notes-heading">
+		<div class="notes-inner">
+			<header class="notes-head">
+				<h2 id="zen-notes-heading">Typing practice for focused writing sessions.</h2>
+				<p>
+					Zen Mode turns typing practice into an open writing flow. Words rise through the page as you finish
+					them while a quiet line tracks pace and time without breaking focus.
+				</p>
+			</header>
 
-				console.log(ascii);
-				console.log("Hey there. Interested in code?");
-				console.log(
-					"Check out my GitHub: https://github.com/JonathanRReed",
-				);
-				console.log("Most of my sites repos are open source.");
-			})();
-		</script>
-	</head>
-	<body>
-		<ErrorBoundary>
-			<!-- Skip to main content link for accessibility -->
-			<a
-				href="#zen-app"
-				class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-iris focus:text-base focus:rounded-lg focus:shadow-lg"
-			>
-				Skip to main content
-			</a>
-			<main
-				id="zen-app"
-				tabindex="-1"
-				class="relative w-full h-screen supports-[height:100dvh]:h-dvh overflow-hidden stats-cq-host"
-			>
-				<h1 class="sr-only">
-					Free-Flow Typing Practice for Focused Writing
-				</h1>
-				<SiteHeader client:only="react" mode="zen" />
-
-				<!-- Main canvas -->
-				<!-- Theme background layers (behind tokens) -->
-				<div class="pointer-events-none fixed inset-0 z-0 theme-layer" aria-hidden="true"></div>
-				<AmbientLayer client:only="react" transition:persist="ambient" />
-
-				<ZenCanvas
-					client:only="react"
-					
-					maxTokens={160}
-				/>
-
-				<!-- Stats bar -->
-				<StatsBar client:only="react" mode="zen" />
-
-				<!-- Pause menu -->
-				<PauseMenu
-					client:only="react"
-					mode="zen"
-					data-pause-menu
-				/>
-
-				<!-- Help sheet -->
-				<HelpSheet client:only="react" isOpen={false} onClose={() => {}} />
-
-				<!-- Archive overlay (hidden by default) -->
-				<ArchiveOverlay client:only="react" />
-				<SiteFooter client:only="react" />
-				<!-- Documented Ctrl/Cmd shortcuts (Help: Notes & Drafts, mute) -->
-				<GlobalShortcuts client:only="react" />
-				<ProgressOverlay client:only="react" />
-				<FirstRunHint client:only="react" mode="zen" />
-			</main>
-		</ErrorBoundary>
-
-		<!--
-			`relative z-10` is load-bearing. `.theme-layer` is `fixed inset-0 z-0`
-			with an opaque gradient, so a static section would paint underneath it
-			and be readable by crawlers but invisible to humans. pb-40 clears the
-			fixed `.stats-bar` at z-40 on the last row.
-		-->
-		<section
-			class="relative z-10 mx-auto max-w-5xl px-6 pb-40 pt-16 seo-body"
-			aria-labelledby="zen-seo-heading"
-		>
-			<div
-				class="grid gap-8 border-t border-iris/15 pt-10 md:grid-cols-[1.1fr_0.9fr]"
-			>
-				<div class="space-y-4">
-					<p class="text-sm font-medium text-foam">Free-flow mode</p>
-					<h2
-						id="zen-seo-heading"
-						class="max-w-2xl text-3xl font-semibold text-text md:text-4xl"
-					>
-						Typing practice for focused writing sessions.
-					</h2>
-					<p class="max-w-2xl leading-7 seo-body md:text-lg">
-						Zen Mode turns typing practice into an open writing flow.
-						Words move through the canvas while local stats track pace
-						and session progress without breaking focus.
-					</p>
+			<dl class="notes-grid">
+				<div>
+					<dt>How it works</dt>
+					<dd>
+						Each word you finish lifts off the line and drifts away, so there is a sense of progress without
+						turning the page into a scoreboard. Good for warmups, note fragments, and early drafting where
+						getting words down matters more than polishing them.
+					</dd>
 				</div>
-				<div class="space-y-5 text-sm leading-6">
-					<div>
-						<h3 class="font-semibold text-text">How it works</h3>
-						<p>
-							Each committed word becomes part of a moving canvas, so you
-							get a sense of progress without turning the page into a
-							scoreboard. Good for warmups, note fragments, and early
-							drafting where seeing words pile up matters more than
-							polishing a final document.
-						</p>
-					</div>
-					<div>
-						<h3 class="font-semibold text-text">What is kept</h3>
-						<p>
-							Drafts and archives stay in your browser. It is not a
-							replacement for a full editor, just a low-friction place to
-							start. The
-							<a class="text-foam transition-colors hover:text-text" href="/privacy/">privacy notice</a>
-							has the detail.
-						</p>
-					</div>
-					<div class="flex flex-wrap gap-4">
-						<a class="text-foam transition-colors hover:text-text" href="/">
-							Mindful typing test
-						</a>
-						<a class="text-foam transition-colors hover:text-text" href="/quote/">
-							Quote typing test
-						</a>
-					</div>
+				<div>
+					<dt>What is kept</dt>
+					<dd>
+						Everything you write is saved as a draft in your browser, with its earlier versions. It is not a
+						replacement for a full editor, just a low-friction place to start. The <a href="/privacy/">privacy notice</a> has the detail.
+					</dd>
 				</div>
-			</div>
-		</section>
+				<div>
+					<dt>A timer, if it helps</dt>
+					<dd>
+						Set three, five, or ten minutes in Settings and a chime tells you when the time is up. Leave it off
+						and the page stays open as long as you do.
+					</dd>
+				</div>
+			</dl>
 
-		<script>
-			let isPaused = false;
-
-			document.addEventListener("keydown", (e) => {
-				const el = document.activeElement;
-				// Tab switches mode only from the typing surface. See index.astro
-				// for why the old "not in any input" check never fired.
-				const onTypingSurface = !!(
-					el && el.hasAttribute && el.hasAttribute("data-typing-surface")
-				);
-				// The typing surface keeps focus while an overlay is open, so
-				// without this guard Tab would navigate away from a paused
-				// session instead of moving into the pause menu.
-				const overlayOpen = !!document.querySelector(
-					'[role="dialog"], .overlay-backdrop',
-				);
-				if (
-					onTypingSurface &&
-					!overlayOpen &&
-					e.key === "Tab" &&
-					!e.ctrlKey &&
-					!e.metaKey &&
-					!e.shiftKey
-				) {
-					e.preventDefault();
-					window.location.assign("/quote/");
-				}
-				if (e.key === "Escape") {
-					e.preventDefault();
-					isPaused = !isPaused;
-					window.dispatchEvent(
-						new CustomEvent("togglePause", { detail: isPaused }),
-					);
-				}
-			});
-
-			// Handle pause menu state changes
-			window.addEventListener("togglePause", function (event) {
-				let detail;
-				if (
-					typeof event === "object" &&
-					event !== null &&
-					"detail" in event
-				) {
-					detail = /** @type {CustomEvent<boolean | undefined>} */ (
-						event
-					).detail;
-				}
-				isPaused = typeof detail === "boolean" ? detail : !isPaused;
-				document.documentElement.dataset.paused = String(isPaused);
-				// Update the pause menu component
-				const pauseMenu = document.querySelector("[data-pause-menu]");
-				if (pauseMenu) {
-					pauseMenu.setAttribute("data-is-open", isPaused.toString());
-				}
-			});
-		</script>
-	</body>
-</html>
+			<NotesFoot current="/zen/" />
+		</div>
+	</section>
+</AppLayout>

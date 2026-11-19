@@ -1,0 +1,275 @@
+/* ==========================================================================
+   Themes.
+
+   Each theme sets its accents, its scene floor, and a static gradient. The
+   gradient is what paints before the ambient canvas mounts and what stays
+   when WebGL is unavailable. The moving scene is drawn by AmbientLayer
+   (src/lib/ambient/shader.ts), one fragment shader with every theme in it.
+   ========================================================================== */
+
+.theme-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--theme-gradient, linear-gradient(180deg, var(--rp-base), var(--rp-overlay)));
+}
+
+.ambient-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s var(--ease-out);
+}
+
+.ambient-layer.is-ready {
+  opacity: 1;
+}
+
+html[data-motion='off'] .ambient-layer {
+  transition: none;
+}
+
+/* Forest: twilight canopy */
+html.theme-forest {
+  --scene-floor: #02060a;
+  --forest-0: #02060a;
+  --forest-1: #061410;
+  --forest-2: #0b2119;
+  --forest-4: #1b4635;
+  --moss: #4f9876;
+  --leaf: #8cc4a4;
+  --emerald: #3fb388;
+  --jade: #66c8a0;
+  --dawn-amber: #d1a478;
+  --theme-accent: var(--emerald);
+  --theme-accent-2: var(--dawn-amber);
+  --theme-gradient: linear-gradient(180deg, color-mix(in oklab, #0d1f15 65%, var(--rp-pine) 35%) 0%, color-mix(in oklab, #1a2e22 45%, var(--rp-foam) 55%) 100%);
+}
+
+html.theme-forest .theme-layer {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.55) 100%),
+    radial-gradient(ellipse 70% 55% at 50% -8%, color-mix(in oklab, var(--dawn-amber) 30%, transparent) 0%, transparent 65%),
+    radial-gradient(ellipse 95% 65% at 50% 18%, color-mix(in oklab, var(--forest-4) 85%, var(--emerald) 15%) 0%, transparent 70%),
+    radial-gradient(ellipse 120% 80% at 50% 55%, color-mix(in oklab, var(--forest-2) 90%, var(--emerald) 10%) 0%, var(--forest-1) 75%),
+    linear-gradient(180deg, color-mix(in oklab, var(--forest-2) 70%, var(--moss) 30%) 0%, color-mix(in oklab, var(--forest-1) 90%, var(--emerald) 10%) 45%, var(--forest-0) 100%);
+}
+
+/* Ocean: abyssal caustic */
+html.theme-ocean {
+  --scene-floor: #020812;
+  --ocean-0: #020812;
+  --ocean-1: #061624;
+  --ocean-3: #0f4058;
+  --ocean-4: #165876;
+  --seafoam: #8fc8d1;
+  --aqua: #6fb0c0;
+  --cyan: #4f9bb0;
+  --teal: #3e8798;
+  --deep: #030c18;
+  --theme-accent: var(--seafoam);
+  --theme-accent-2: var(--rp-iris);
+  --theme-gradient: radial-gradient(ellipse at 50% 50%, color-mix(in oklab, #0c1e2e 70%, #1a3d5a 30%) 0%, color-mix(in oklab, #081422 60%, #0f2844 40%) 100%);
+}
+
+html.theme-ocean .theme-layer {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% 55%, transparent 50%, rgba(0, 0, 0, 0.6) 100%),
+    radial-gradient(ellipse 80% 55% at 50% -6%, color-mix(in oklab, var(--seafoam) 38%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 100% 60% at 50% 15%, color-mix(in oklab, var(--ocean-4) 80%, var(--cyan) 20%) 0%, transparent 75%),
+    radial-gradient(ellipse 90% 35% at 50% 112%, color-mix(in oklab, var(--teal) 32%, transparent) 0%, transparent 80%),
+    linear-gradient(180deg, color-mix(in oklab, var(--ocean-3) 70%, var(--seafoam) 30%) 0%, color-mix(in oklab, var(--ocean-1) 88%, var(--cyan) 12%) 45%, var(--ocean-0) 85%, var(--deep) 100%);
+}
+
+/* Cosmic: deep-field nebula */
+html.theme-cosmic {
+  --scene-floor: #020106;
+  --cosmic-0: #020106;
+  --cosmic-1: #070414;
+  --cosmic-3: #1c1140;
+  --nebula: #b88cd9;
+  --plasma: #e07ba8;
+  --star-gold: #e6c187;
+  --theme-accent: var(--nebula);
+  --theme-accent-2: var(--rp-gold);
+  --theme-gradient: radial-gradient(ellipse at 50% 50%, color-mix(in oklab, #0a0014 80%, var(--rp-iris) 20%) 0%, color-mix(in oklab, #120825 70%, var(--rp-iris) 30%) 40%, #050008 100%);
+}
+
+html.theme-cosmic .theme-layer {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 42%, rgba(0, 0, 0, 0.7) 100%),
+    radial-gradient(ellipse 55% 38% at 72% 72%, color-mix(in oklab, var(--star-gold) 22%, transparent) 0%, transparent 75%),
+    radial-gradient(ellipse 80% 60% at 28% 28%, color-mix(in oklab, var(--nebula) 38%, transparent) 0%, transparent 80%),
+    radial-gradient(ellipse 65% 50% at 55% 45%, color-mix(in oklab, var(--plasma) 20%, transparent) 0%, transparent 85%),
+    radial-gradient(ellipse 130% 90% at 50% 50%, color-mix(in oklab, var(--cosmic-3) 70%, var(--cosmic-0) 30%) 0%, var(--cosmic-1) 70%),
+    linear-gradient(155deg, color-mix(in oklab, var(--cosmic-3) 65%, var(--nebula) 35%) 0%, color-mix(in oklab, var(--cosmic-1) 88%, var(--plasma) 12%) 45%, var(--cosmic-0) 100%);
+}
+
+/* Void: OLED indigo with an aurora ribbon */
+html.theme-void {
+  --scene-floor: #05040a;
+  --void-0: #05040a;
+  --void-1: #0b0916;
+  --void-3: #1c1838;
+  --theme-accent: var(--rp-iris);
+  --theme-accent-2: var(--rp-foam);
+  --theme-gradient: linear-gradient(180deg, color-mix(in oklab, var(--rp-base) 92%, #000000 8%) 0%, color-mix(in oklab, var(--rp-overlay) 96%, #000000 4%) 100%);
+}
+
+html.theme-void .theme-layer {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.65) 100%),
+    radial-gradient(ellipse 75% 45% at 30% 30%, color-mix(in oklab, var(--rp-iris) 32%, transparent) 0%, transparent 78%),
+    radial-gradient(ellipse 60% 40% at 72% 62%, color-mix(in oklab, var(--rp-foam) 20%, transparent) 0%, transparent 82%),
+    radial-gradient(ellipse 130% 85% at 50% 50%, color-mix(in oklab, var(--void-3) 85%, var(--rp-iris) 15%) 0%, var(--void-1) 70%),
+    linear-gradient(165deg, color-mix(in oklab, var(--void-3) 60%, var(--rp-iris) 40%) 0%, color-mix(in oklab, var(--void-1) 92%, var(--rp-iris) 8%) 50%, var(--void-0) 100%);
+}
+
+/* Ember: warm hearth */
+html.theme-ember {
+  --scene-floor: #080402;
+  --ember-0: #080402;
+  --ember-1: #160a06;
+  --ember-3: #3d1810;
+  --theme-accent: var(--rp-gold);
+  --theme-accent-2: var(--rp-rose);
+  --theme-gradient: linear-gradient(180deg, color-mix(in oklab, #2a120c 60%, var(--rp-love) 8%) 0%, #080402 100%);
+}
+
+html.theme-ember .theme-layer {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 42%, rgba(0, 0, 0, 0.72) 100%),
+    radial-gradient(ellipse 90% 55% at 50% 112%, color-mix(in oklab, var(--rp-gold) 46%, transparent) 0%, color-mix(in oklab, var(--rp-love) 30%, transparent) 38%, transparent 78%),
+    radial-gradient(ellipse 60% 45% at 78% 80%, color-mix(in oklab, var(--rp-rose) 26%, transparent) 0%, transparent 76%),
+    radial-gradient(ellipse 55% 42% at 22% 76%, color-mix(in oklab, var(--rp-love) 22%, transparent) 0%, transparent 78%),
+    linear-gradient(170deg, color-mix(in oklab, var(--ember-3) 70%, var(--rp-love) 30%) 0%, var(--ember-1) 52%, var(--ember-0) 100%);
+}
+
+/* Sakura: soft dusk pink */
+html.theme-sakura {
+  --scene-floor: #120b16;
+  --sak-0: #120b16;
+  --sak-1: #1d1322;
+  --sak-2: #2a1b30;
+  --theme-accent: var(--rp-rose);
+  --theme-accent-2: var(--rp-iris);
+  --theme-gradient: linear-gradient(180deg, color-mix(in oklab, #2a1b30 60%, var(--rp-rose) 12%) 0%, #120b16 100%);
+}
+
+html.theme-sakura .theme-layer {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 46%, rgba(0, 0, 0, 0.58) 100%),
+    radial-gradient(ellipse 95% 55% at 50% -6%, color-mix(in oklab, var(--rp-rose) 34%, transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 45% at 24% 26%, color-mix(in oklab, var(--rp-iris) 22%, transparent) 0%, transparent 78%),
+    radial-gradient(ellipse 60% 45% at 78% 34%, color-mix(in oklab, var(--rp-love) 22%, transparent) 0%, transparent 80%),
+    linear-gradient(168deg, color-mix(in oklab, var(--sak-2) 64%, var(--rp-rose) 26%) 0%, var(--sak-1) 52%, var(--sak-0) 100%);
+}
+
+/* Aurora: polar night */
+html.theme-aurora {
+  --scene-floor: #01030a;
+  --aur-0: #01030a;
+  --aur-1: #050b18;
+  --aur-2: #0a1628;
+  --theme-accent: var(--rp-foam);
+  --theme-accent-2: var(--rp-iris);
+  --theme-gradient: linear-gradient(180deg, color-mix(in oklab, #0a1628 70%, var(--rp-pine) 14%) 0%, #01030a 100%);
+}
+
+html.theme-aurora .theme-layer {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.74) 100%),
+    radial-gradient(ellipse 120% 50% at 50% 8%, color-mix(in oklab, var(--rp-foam) 14%, transparent) 0%, transparent 60%),
+    radial-gradient(ellipse 90% 60% at 50% 0%, color-mix(in oklab, var(--rp-iris) 12%, transparent) 0%, transparent 70%),
+    linear-gradient(180deg, color-mix(in oklab, var(--aur-2) 80%, var(--rp-pine) 12%) 0%, var(--aur-1) 55%, var(--aur-0) 100%);
+}
+
+/* Glacier: icy daylight, the brightest theme */
+html.theme-glacier {
+  --scene-floor: #08141e;
+  --gla-0: #08141e;
+  --gla-1: #0e2230;
+  --gla-3: #1f4a5c;
+  --ice: color-mix(in oklab, var(--rp-foam) 70%, #ffffff 30%);
+  --theme-accent: var(--rp-foam);
+  --theme-accent-2: var(--rp-iris);
+  --theme-gradient: linear-gradient(180deg, color-mix(in oklab, #1f4a5c 65%, #ffffff 6%) 0%, #08141e 100%);
+}
+
+html.theme-glacier .theme-layer {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 50%, rgba(0, 8, 16, 0.5) 100%),
+    radial-gradient(ellipse 110% 60% at 50% -10%, color-mix(in oklab, var(--ice) 40%, transparent) 0%, transparent 64%),
+    radial-gradient(ellipse 70% 50% at 26% 22%, color-mix(in oklab, var(--rp-foam) 24%, transparent) 0%, transparent 78%),
+    radial-gradient(ellipse 70% 50% at 76% 30%, color-mix(in oklab, #bfe6ef 22%, transparent) 0%, transparent 80%),
+    linear-gradient(176deg, color-mix(in oklab, var(--gla-3) 76%, #ffffff 8%) 0%, var(--gla-1) 56%, var(--gla-0) 100%);
+}
+
+/* Washi: ink on paper. The one light theme, so it restates the palette as
+   well as the accents: paper for the surfaces, sumi for the ink, indigo for
+   the caret, and vermilion only for the sun. */
+html.theme-washi {
+  color-scheme: light;
+  --scene-floor: #e9e2d2;
+  --rp-base: #efe9dc;
+  --rp-surface: #f6f1e7;
+  --rp-overlay: #e4dccb;
+  --rp-muted: #77715f;
+  --rp-subtle: #5d584a;
+  --rp-text: #22212a;
+  --rp-love: #b3261e;
+  --rp-gold: #94610f;
+  --rp-rose: #a8483f;
+  --rp-pine: #2d5f7a;
+  --rp-foam: #2a6f78;
+  --rp-iris: #5b4a94;
+  --theme-accent: #2f4b7c;
+  --theme-accent-2: #b8402a;
+  --ink-soft: color-mix(in oklab, var(--ink) 84%, transparent);
+  --ink-faint: color-mix(in oklab, var(--ink) 64%, transparent);
+  --ink-inverse: #f6f1e7;
+  --sheet: #f7f3ea;
+  --sheet-shadow: 0 24px 60px -28px rgb(70 56 30 / 0.4);
+  --page-floor: #efe9dc;
+  --theme-gradient: linear-gradient(180deg, #f3eee2 0%, #e9e2d2 100%);
+}
+
+html.theme-washi .theme-layer {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% 50%, transparent 55%, rgb(120 100 60 / 0.12) 100%),
+    radial-gradient(circle 6vh at 80% 19%, #b8402ab8 0 97%, transparent 100%),
+    linear-gradient(180deg, #f3eee2 0%, #ebe4d4 62%, #d9d2c3 100%);
+}
+
+/* Theme swap: the outgoing scene dims and drains a little while the new one
+   comes up, so a change of palette reads as a change of light. Only active
+   while ThemeToggle has set data-transition-theme. Page navigations swap
+   instantly. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+html[data-transition-theme]::view-transition-old(root) {
+  animation: 280ms cubic-bezier(0.4, 0, 1, 1) both vt-theme-fade-out;
+}
+
+html[data-transition-theme]::view-transition-new(root) {
+  animation: 460ms cubic-bezier(0.22, 1, 0.36, 1) both vt-theme-fade-in;
+}
+
+@keyframes vt-theme-fade-out {
+  from { opacity: 1; filter: saturate(1) brightness(1); }
+  to { opacity: 0; filter: saturate(0.65) brightness(0.9); }
+}
+
+@keyframes vt-theme-fade-in {
+  from { opacity: 0; filter: saturate(1.14) brightness(1.05); }
+  to { opacity: 1; filter: saturate(1) brightness(1); }
+}

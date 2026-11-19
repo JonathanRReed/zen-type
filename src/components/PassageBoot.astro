@@ -1,0 +1,31 @@
+---
+import { splitSource } from "../utils/quotes";
+
+// First-paint stand-in for the client:only typing surface. QuoteTyper renders
+// nothing on the server, so without this the viewport stays blank until React
+// hydrates and LCP waits on the island bundle. It uses the same classes as
+// the hydrated passage and the same build-time quote, so the swap moves
+// nothing, and CSS retires it the moment the island drops its `ssr` flag
+// (see .quote-boot in app.css). Must be the element directly after the
+// island.
+interface Props {
+	text: string;
+	author?: string;
+	source?: string;
+}
+
+const { text, author, source } = Astro.props;
+const credit = splitSource(source);
+---
+
+<div class="quote-stage quote-boot" aria-hidden="true">
+	<div class="passage">
+		<p class="passage-text quote-boot-text">{text}</p>
+		<p class="passage-credit">
+			{author && author !== "Proverb" && <span class="credit-author">{author}</span>}
+			{credit.title && <cite>{credit.title}</cite>}
+			{credit.detail && <span class="credit-detail">{credit.detail}</span>}
+		</p>
+		<div class="passage-meter"><i style="transform: scaleX(0)"></i></div>
+	</div>
+</div>

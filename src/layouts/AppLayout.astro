@@ -1,0 +1,78 @@
+---
+import "../styles/globals.css";
+import SEO, { type Props as SEOProps } from "../components/SEO.astro";
+import SiteHeader from "../components/SiteHeader";
+import StatsBar from "../components/StatsBar";
+import SiteFooter from "../components/SiteFooter.astro";
+import AppOverlays from "../components/AppOverlays";
+import AmbientLayer from "../components/AmbientLayer";
+
+// The shell the three app routes share (/, /quote/, /zen/): the scene, the
+// masthead, the tally, the footer and every overlay. A page supplies only its
+// typing surface (default slot) and the notes that sit below the fold.
+interface Props {
+	seo: SEOProps;
+	mode: "quote" | "zen";
+	/** The page's one h1. Visually hidden: the passage is the headline. */
+	heading: string;
+}
+
+const { seo, mode, heading } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<SEO {...seo} />
+	</head>
+	<body>
+		<a href="#app" class="skip-link">Skip to typing</a>
+		<main id="app" tabindex="-1" class="stage" data-mode={mode}>
+			<h1 class="sr-only">{heading}</h1>
+			<SiteHeader client:only="react" mode={mode} />
+			<div class="theme-layer" aria-hidden="true"></div>
+			<AmbientLayer client:only="react" transition:persist="ambient" />
+
+			<slot />
+
+			<StatsBar client:only="react" mode={mode} />
+			<SiteFooter mode={mode} />
+			<AppOverlays client:only="react" mode={mode} />
+		</main>
+
+		<slot name="notes" />
+
+		<!-- A note for anyone who opens the console. -->
+		<script is:inline>
+			(function () {
+				if (window.__ztHello) return;
+				window.__ztHello = true;
+				console.log(
+					[
+						"    ___  ________  ________",
+						"   |\\  \\|\\   __  \\|\\   __  \\",
+						"   \\ \\  \\ \\  \\|\\  \\ \\  \\|\\  \\",
+						" __ \\ \\  \\ \\   _  _\\ \\   _  _\\",
+						"|\\  \\\\_\\  \\ \\  \\\\  \\\\ \\  \\\\  \\|",
+						"\\ \\________\\ \\__\\\\ _\\\\ \\__\\\\ _\\",
+						" \\|________|\\|__|\\|__|\\|__|\\|__|",
+					].join("\n"),
+				);
+				console.log("Hey there. Curious how this is built? The source is at https://github.com/JonathanRReed/zen-type");
+			})();
+		</script>
+
+		<script>
+			import { registerAppShortcuts } from "../utils/app-shortcuts";
+
+			// Attach once per page. ClientRouter swaps the document on
+			// navigation, so the handlers are dropped before each swap and
+			// re-attached for the page that arrives.
+			let unregister = registerAppShortcuts();
+			document.addEventListener("astro:before-swap", () => unregister());
+			document.addEventListener("astro:after-swap", () => {
+				unregister = registerAppShortcuts();
+			});
+		</script>
+	</body>
+</html>

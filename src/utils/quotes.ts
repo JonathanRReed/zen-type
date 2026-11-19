@@ -46,6 +46,41 @@ export function quoteLength(text: string): QuoteLength {
   return 'long';
 }
 
+/**
+ * Split a source line into the work and the rest, for setting the title in
+ * italics: "Meditations, trans. Meric Casaubon (1634)" becomes
+ * { title: "Meditations", detail: "tr. Meric Casaubon, 1634" }.
+ */
+export function splitSource(source?: string): { title: string; detail: string } {
+  const raw = (source ?? '').trim();
+  if (!raw) return { title: '', detail: '' };
+  const match = /^(.*?)(?:,\s*trans\.\s*(.*?))?(?:\s*\((\d{3,4})\))?$/.exec(raw);
+  if (!match) return { title: raw, detail: '' };
+  const [, title = raw, translator, year] = match;
+  const detail = [translator ? `tr. ${translator}` : '', year ?? ''].filter(Boolean).join(', ');
+  return { title: title.trim(), detail };
+}
+
+/** Longest custom passage, in characters. One text node per run keeps this cheap. */
+export const CUSTOM_TEXT_MAX = 1200;
+
+/**
+ * Make pasted text typeable on an ordinary keyboard: line breaks and runs of
+ * whitespace become single spaces, and typographic quotes, dashes, and
+ * ellipses become the characters that have keys.
+ */
+export function normalizeCustomText(raw: string): string {
+  return raw
+    .replace(/[\u2018\u2019\u201A\u2032]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+    .replace(/[\u2013\u2014\u2212]/g, '-')
+    .replace(/\u2026/g, '...')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, CUSTOM_TEXT_MAX)
+    .trim();
+}
+
 let quotesCache: Quote[] | null = null;
 
 const loadClientQuotes = async (): Promise<Quote[]> => {

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import {
   getSettings,
   recordSession,
@@ -11,9 +10,13 @@ import {
 import { useSettings } from '../hooks/useSettings';
 import { useMotionPreference } from '../hooks/useMotionPreference';
 import { useKeyboardInset } from '../hooks/useKeyboardInset';
-import { setActiveDraftId, createDraft, updateDraftBody, getDraft } from '../lib/draftStore';
-import { audioEngine } from '../utils/audioEngine';
+// The draft store brings the IndexedDB library with it. Nothing needs it
+// until the first word is written, so it loads then instead of with the page.
+const draftStore = () => import('../lib/draftStore');
+import { audio } from '../utils/audio';
 import { publishLiveStats, resetLiveStats } from '../utils/liveStats';
+import { markTyping, clearTyping } from '../utils/focusMode';
+import { IconClose } from './icons';
 
 // Zen mode: every committed word becomes a token that rises and fades on a
 // 2D canvas. The ambient scene behind it is the AmbientLayer's job; this file
@@ -22,6 +25,8 @@ import { publishLiveStats, resetLiveStats } from '../utils/liveStats';
 interface Token {
   id: number;
   text: string;
+  /** Half the rendered width, for keeping new words off the ones still low. */
+  half: number;
   x: number;
   y: number;
   vy: number;
@@ -50,11 +55,14 @@ interface Palette {
 }
 
 const FALLBACK_PALETTE: Palette = {
-  text: '#e0def4',
+  text: '#f1ece2',
   accent: '#c4a7e7',
   accent2: '#9ccfd8',
-  font: "'JetBrains Mono', ui-monospace, monospace",
+  font: "'Newsreader', Georgia, serif",
 };
+
+/** Token type size in CSS pixels: a little smaller on a phone. */
+const tokenSize = (width: number): number => (width < 640 ? 19 : 23);
 
 interface ZenCanvasProps {
   maxTokens?: number;
@@ -86,8 +94,6 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
   // Session counters. The clock starts on the first keystroke, not on mount.
   const statsRef = useRef({ words: 0, chars: 0, startedAt: 0, recordedWords: 0, recordedChars: 0, recordedAt: 0 });
   const lastStatsEmitRef = useRef(0);
-  const markersRef = useRef<number[]>([]);
-  const ghostLogRef = useRef<{ t: number; ch: string }[]>([]);
   const perfGuardRef = useRef(false);
   const frameTimesRef = useRef<number[]>([]);
 
@@ -123,10 +129,16 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
 
   useEffect(() => {
     readPalette();
-    const onTheme = () => window.setTimeout(readPalette, 60);
+    // The theme class lands a moment after the event; read once it has.
+    let timer: number | null = null;
+    const onTheme = () => {
+      if (timer !== null) window.clearTimeout(timer);
+      timer = window.setTimeout(readPalette, 60);
+    };
     window.addEventListener('themeChanged', onTheme);
     window.addEventListener('fontChanged', readPalette);
     return () => {
+      if (timer !== null) window.clearTimeout(timer);
       window.removeEventListener('themeChanged', onTheme);
       window.removeEventListener('fontChanged', readPalette);
     };
@@ -142,18 +154,20 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
   const saveDraft = useCallback(() => {
     const id = activeDraftIdRef.current;
     if (!id || !draftDirtyRef.current) return;
-    updateDraftBody(id, transcriptRef.current)
+    draftStore()
+      .then(store => store.updateDraftBody(id, transcriptRef.current))
       .then(() => { draftDirtyRef.current = false; })
       .catch(flagDraftFailure);
   }, [flagDraftFailure]);
 
   const ensureDraftInitialized = useCallback(() => {
     if (activeDraftIdRef.current || draftInitPromiseRef.current) return;
-    const title = `Zen session, ${new Date().toLocaleString()}`;
-    draftInitPromiseRef.current = createDraft(title)
-      .then((draft) => {
+    const title = `Zen session, ${new Date().toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+    draftInitPromiseRef.current = draftStore()
+      .then(async (store) => {
+        const draft = await store.createDraft(title);
         activeDraftIdRef.current = draft.id;
-        setActiveDraftId(draft.id);
+        store.setActiveDraftId(draft.id);
       })
       .catch((err) => {
         flagDraftFailure(err);
@@ -186,7 +200,8 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
       if (detail.id && detail.id === activeDraftIdRef.current) return;
       activeDraftIdRef.current = detail.id;
       if (detail.id) {
-        getDraft(detail.id).then(draft => { if (draft) transcriptRef.current = draft.body; }).catch(() => {});
+        const id = detail.id;
+        draftStore().then(store => store.getDraft(id)).then(draft => { if (draft) transcriptRef.current = draft.body; }).catch(() => {});
       } else {
         transcriptRef.current = '';
       }
@@ -239,6 +254,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
       window.removeEventListener('resetSession', onReset);
       flushSession();
       resetLiveStats('zen');
+      clearTyping();
     };
   }, [flushSession]);
 
@@ -281,7 +297,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
         setFlowSummary({ words: s.words, minutes: flowMinutes, wpm: Math.round((s.chars / 5) / minutesTyped) });
         setFlowCompleted(true);
         flushSession();
-        audioEngine.chime();
+        audio.chime();
       } else {
         setFlowSecondsLeft(remaining);
       }
@@ -307,33 +323,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
   // -- settings-driven events ---------------------------------------------------
 
   useEffect(() => {
-    const onToggleBreath = () => {
-      updateSettings({ breath: !getSettings().breath });
-    };
-    const onRequestGhost = (e: Event) => {
-      const { startSec, endSec } = (e as CustomEvent).detail as { startSec: number; endSec: number };
-      let text = '';
-      for (const ev of ghostLogRef.current) {
-        if (ev.t >= startSec && ev.t <= endSec && ev.ch.length > 0) text += ev.ch;
-      }
-      window.dispatchEvent(new CustomEvent('ghostText', { detail: { text } }));
-    };
-    const onRestoreGhost = (e: Event) => {
-      const { text } = (e as CustomEvent).detail as { text: string };
-      setInputValue(text);
-      inputRef.current?.focus();
-    };
     const onFocusTyping = () => inputRef.current?.focus();
-    window.addEventListener('toggleBreath', onToggleBreath);
-    window.addEventListener('requestGhost', onRequestGhost as EventListener);
-    window.addEventListener('restoreGhost', onRestoreGhost as EventListener);
     window.addEventListener('focusTyping', onFocusTyping);
-    return () => {
-      window.removeEventListener('toggleBreath', onToggleBreath);
-      window.removeEventListener('requestGhost', onRequestGhost as EventListener);
-      window.removeEventListener('restoreGhost', onRestoreGhost as EventListener);
-      window.removeEventListener('focusTyping', onFocusTyping);
-    };
+    return () => window.removeEventListener('focusTyping', onFocusTyping);
   }, []);
 
   // -- tokens -------------------------------------------------------------------
@@ -366,35 +358,64 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
     if (burstsRef.current.length > 48) burstsRef.current = burstsRef.current.slice(-48);
   }, []);
 
+  /** Where words lift off: just above the writing line. */
+  const launchY = useCallback((): number => {
+    const rect = inputRef.current?.getBoundingClientRect();
+    return rect ? rect.top - 14 : sizeRef.current.height - 200;
+  }, []);
+
   const spawnToken = useCallback((text: string) => {
-    const { width, height } = sizeRef.current;
+    const { width } = sizeRef.current;
     const s = settingsRef.current;
     const reduced = rmRef.current;
     const baseFade = reduced ? Math.max(1.8, (s.fadeSec ?? 4) * 0.6) : (s.fadeSec ?? 4);
     const lifetime = baseFade + text.length * 0.3;
     const amp = reduced ? 0 : (s.driftAmp ?? 6);
+    const y = launchY();
 
-    let x = Math.random() * width;
-    const laneStyle = s.laneStyle ?? 'soft';
-    if (laneStyle !== 'none') {
-      const lanes = [width * 0.25, width * 0.5, width * 0.75];
-      // Never the lane the previous word took: two words typed a beat apart
-      // used to land on top of each other before either had drifted.
-      let laneIndex = Math.floor(Math.random() * lanes.length);
-      if (laneIndex === lastLaneRef.current) laneIndex = (laneIndex + 1 + Math.floor(Math.random() * 2)) % lanes.length;
-      lastLaneRef.current = laneIndex;
-      const lane = lanes[laneIndex] ?? width * 0.5;
-      const jitter = laneStyle === 'tight' ? 18 : 48;
-      x = lane + (Math.random() * 2 - 1) * jitter;
+    const ctx = canvasRef.current?.getContext('2d');
+    let half = text.length * 6;
+    if (ctx) {
+      ctx.font = `${tokenSize(width)}px ${paletteRef.current.font}`;
+      half = ctx.measureText(text).width / 2;
     }
-    const pad = Math.min(48, width / 6);
-    x = Math.min(width - pad, Math.max(pad, x));
+    const pad = Math.min(48, width / 6) + half;
+    const clampX = (value: number) => Math.min(Math.max(pad, width - pad), Math.max(pad, value));
+    // A word is in the way if it is still near the line and overlaps sideways.
+    const blocked = (x: number) => tokensRef.current.some(tk => Math.abs(tk.y - y) < 34 && Math.abs(tk.x - x) < tk.half + half + 14);
+
+    const laneStyle = s.laneStyle ?? 'soft';
+    let x = clampX(Math.random() * width);
+    if (laneStyle === 'none') {
+      for (let tries = 0; tries < 6 && blocked(x); tries++) x = clampX(Math.random() * width);
+    } else {
+      // Three columns gathered around the writing line rather than spread to
+      // the edges of a wide screen, where words used to land out of sight.
+      const spread = Math.min(width * 0.27, 300);
+      const lanes = [width / 2 - spread, width / 2, width / 2 + spread];
+      const jitter = laneStyle === 'tight' ? 16 : 44;
+      // Never the lane the previous word took, and prefer one that is clear.
+      const order = [0, 1, 2].filter(i => i !== lastLaneRef.current).sort(() => Math.random() - 0.5);
+      if (lastLaneRef.current >= 0) order.push(lastLaneRef.current);
+      let laneIndex = order[0] ?? 1;
+      x = clampX((lanes[laneIndex] ?? width / 2) + (Math.random() * 2 - 1) * jitter);
+      for (const candidate of order) {
+        const cx = clampX((lanes[candidate] ?? width / 2) + (Math.random() * 2 - 1) * jitter);
+        if (!blocked(cx)) {
+          laneIndex = candidate;
+          x = cx;
+          break;
+        }
+      }
+      lastLaneRef.current = laneIndex;
+    }
 
     tokensRef.current.push({
       id: tokenIdRef.current++,
       text,
+      half,
       x,
-      y: Math.max(0, height - 200 - keyboardInset),
+      y,
       vy: Math.min(80, Math.max(30, 45 + Math.random() * 35)),
       swayAmp: amp,
       swayFreq: 0.6 + Math.random() * 0.6,
@@ -404,7 +425,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
     });
     const cap = s.performanceMode || perfGuardRef.current ? 80 : maxTokens;
     if (tokensRef.current.length > cap) tokensRef.current = tokensRef.current.slice(-cap);
-  }, [maxTokens, keyboardInset]);
+  }, [maxTokens, launchY]);
 
   const commitWord = useCallback((word: string, delimiter: string) => {
     if (!word) return;
@@ -425,22 +446,15 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
     st.words += 1;
     st.chars += word.length;
 
-    const now = (Date.now() - st.startedAt) / 1000;
-    for (const ch of word) ghostLogRef.current.push({ t: now, ch });
-    ghostLogRef.current.push({ t: now, ch: delimiter });
-    const maxWin = (s.ghostWindowMin ?? 5) * 60;
-    const cutoff = now - maxWin;
-    if (ghostLogRef.current.length > 4000) {
-      ghostLogRef.current = ghostLogRef.current.filter(ev => ev.t >= cutoff);
-    }
     markDraftDirty();
   }, [spawnToken, markDraftDirty, ensureDraftInitialized, pulseInput]);
 
   const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    const { width, height } = sizeRef.current;
+    const { width } = sizeRef.current;
+    markTyping();
     if (newValue.length > inputValue.length) {
-      emitBurst(width / 2 + (Math.random() - 0.5) * 80, height - 110 - keyboardInset);
+      emitBurst(width / 2 + (Math.random() - 0.5) * 120, launchY() + 30);
       if (!statsRef.current.startedAt) statsRef.current.startedAt = Date.now();
     }
     const lastChar = newValue[newValue.length - 1];
@@ -451,11 +465,11 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
     } else {
       setInputValue(newValue);
     }
-  }, [commitWord, emitBurst, inputValue.length, keyboardInset]);
+  }, [commitWord, emitBurst, inputValue.length, launchY]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!e.metaKey && !e.ctrlKey && !e.altKey && e.key !== 'Tab' && e.key !== 'Escape') {
-      audioEngine.keyDown(e.key, { repeat: e.repeat });
+      audio.keyDown(e.key, { repeat: e.repeat });
     }
     if (e.key === 'Enter' && inputValue.length > 0) {
       e.preventDefault();
@@ -469,7 +483,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
   }, [inputValue, commitWord, markDraftDirty]);
 
   const handleKeyUp = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    audioEngine.keyUp(e.key);
+    audio.keyUp(e.key);
   }, []);
 
   // -- animation loop -----------------------------------------------------------
@@ -494,7 +508,7 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
     ctx.clearRect(0, 0, width, height);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = `18px ${palette.font}`;
+    ctx.font = `${tokenSize(width)}px ${palette.font}`;
 
     // The particle and token records are plain mutable structs owned by
     // refs; updating them in place is the whole point of the loop.
@@ -600,12 +614,6 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
       const minutes = elapsed / 60;
       const wpm = minutes > 0.05 ? Math.round((st.chars / 5) / minutes) : 0;
       publishLiveStats('zen', { words: st.words, chars: st.chars, time: Math.floor(elapsed), wpm, startedAt: st.startedAt });
-      const every = Math.max(1, s.markersEveryMin || 0) * 60;
-      const sec = Math.floor(elapsed);
-      if (s.markersEveryMin > 0 && sec > 0 && sec % every === 0 && markersRef.current[markersRef.current.length - 1] !== sec) {
-        markersRef.current.push(sec);
-        window.dispatchEvent(new CustomEvent('markersUpdated', { detail: markersRef.current.slice() }));
-      }
       lastStatsEmitRef.current = nowMs;
     }
 
@@ -708,91 +716,79 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
 
   // -- render -------------------------------------------------------------------
 
-  const inputBottom = keyboardInset > 0 ? `${keyboardInset + 12}px` : undefined;
+  const inputStyle = keyboardInset > 0 ? { bottom: `${keyboardInset + 56}px` } : undefined;
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden">
-      <canvas ref={canvasRef} className="absolute inset-0" aria-hidden="true" />
+    <div className="zen-stage">
+      <canvas ref={canvasRef} className="zen-canvas" aria-hidden="true" />
 
       {storageWarning && (
-        <div
-          className="absolute top-4 left-1/2 -translate-x-1/2 max-w-md px-4 py-3 z-20 bg-love/20 border border-love/40 rounded-lg text-love text-sm shadow-lg backdrop-blur-sm"
-          role="alert"
-        >
-          <div className="flex items-start gap-3">
-            <p className="flex-1 font-medium">{storageWarning}</p>
-            <Button onClick={() => setStorageWarning(null)} variant="ghost" size="icon" className="h-6 w-6 text-love/70 hover:text-love" aria-label="Dismiss warning">
-              <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </Button>
-          </div>
+        <div className="notice notice-warn" role="alert">
+          <p>{storageWarning}</p>
+          <button type="button" className="notice-close" onClick={() => setStorageWarning(null)} aria-label="Dismiss warning">
+            <IconClose />
+          </button>
         </div>
       )}
 
       {flowSecondsLeft !== null && !flowCompleted && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full glass border border-tint/20 text-xs font-mono text-tint/90 flex items-center gap-2 backdrop-blur-md z-10" data-flow-countdown role="timer" aria-label="Timed flow remaining">
-          <span className="w-2 h-2 rounded-full bg-tint animate-pulse" />
-          <span>{Math.floor(flowSecondsLeft / 60)}:{(flowSecondsLeft % 60).toString().padStart(2, '0')}</span>
+        <div className="flow-timer" data-flow-countdown role="timer" aria-label="Time remaining">
+          {Math.floor(flowSecondsLeft / 60)}:{(flowSecondsLeft % 60).toString().padStart(2, '0')}
         </div>
       )}
 
       {flowCompleted && flowSummary && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-base/80 backdrop-blur-md p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="flow-complete-title"
-        >
-          <div className="glass max-w-md w-full rounded-2xl p-8 text-center border border-tint/30 completion-pulse">
-            <h2 id="flow-complete-title" className="text-2xl font-sans text-tint mb-2">Time is up</h2>
-            <p className="text-sm text-muted mb-6">Rest your hands. Read back what arrived.</p>
-            <div className="flex justify-around items-center mb-6 py-4 rounded-xl bg-surface/40 border border-tint/15">
+        <div className="overlay-backdrop" role="dialog" aria-modal="true" aria-labelledby="flow-complete-title">
+          <div className="overlay-card sheet">
+            <h2 id="flow-complete-title" className="sheet-title">Time is up</h2>
+            <p className="sheet-lede">Rest your hands. What you wrote is saved in your drafts.</p>
+            <dl className="result-figures result-figures-sm">
               <div>
-                <div className="text-xs uppercase tracking-widest text-muted/80 mb-1">Words</div>
-                <div className="text-3xl font-mono text-tint">{flowSummary.words}</div>
+                <dt>Words</dt>
+                <dd>{flowSummary.words}</dd>
               </div>
-              <div className="w-px h-8 bg-tint/20" />
               <div>
-                <div className="text-xs uppercase tracking-widest text-muted/80 mb-1">Minutes</div>
-                <div className="text-3xl font-mono text-tint2">{flowSummary.minutes}</div>
+                <dt>{flowSummary.minutes === 1 ? 'Minute' : 'Minutes'}</dt>
+                <dd>{flowSummary.minutes}</dd>
               </div>
               {settings.showStats && (
-                <>
-                  <div className="w-px h-8 bg-tint/20" />
-                  <div>
-                    <div className="text-xs uppercase tracking-widest text-muted/80 mb-1">WPM</div>
-                    <div className="text-3xl font-mono text-tint">{flowSummary.wpm}</div>
-                  </div>
-                </>
+                <div>
+                  <dt>Words a minute</dt>
+                  <dd>{flowSummary.wpm}</dd>
+                </div>
               )}
-            </div>
-            <div className="flex justify-center gap-3">
-              <Button
-                // Initial focus into a modal dialog is required practice.
-                // eslint-disable-next-line jsx-a11y/no-autofocus
-                autoFocus
-                onClick={() => {
-                  setFlowCompleted(false);
-                  // Same length again: nudge the setting so the effect restarts.
-                  const minutes = getSettings().timedFlowMinutes ?? 0;
-                  updateSettings({ timedFlowMinutes: 0 });
-                  window.setTimeout(() => updateSettings({ timedFlowMinutes: minutes || 5 }), 0);
-                  inputRef.current?.focus();
-                }}
-                className="bg-tint/90 hover:bg-tint text-base font-semibold text-[color-mix(in_oklab,var(--rp-base)_88%,black_12%)]"
-              >
-                Again
-              </Button>
-              <Button
-                onClick={() => {
-                  setFlowCompleted(false);
-                  updateSettings({ timedFlowMinutes: 0 });
-                  inputRef.current?.focus();
-                }}
-                variant="outline"
-                className="border-tint/30 text-tint hover:bg-tint/15"
-              >
-                Keep going
-              </Button>
+            </dl>
+            <div className="sheet-foot">
+              <div className="sheet-actions">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setFlowCompleted(false);
+                    updateSettings({ timedFlowMinutes: 0 });
+                    inputRef.current?.focus();
+                  }}
+                >
+                  Keep writing
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  // Initial focus into a modal dialog is required practice.
+                  // eslint-disable-next-line jsx-a11y-x/no-autofocus
+                  autoFocus
+                  onClick={() => {
+                    setFlowCompleted(false);
+                    // Same length again: nudge the setting so the effect restarts.
+                    const minutes = getSettings().timedFlowMinutes ?? 0;
+                    updateSettings({ timedFlowMinutes: 0 });
+                    window.setTimeout(() => updateSettings({ timedFlowMinutes: minutes || 5 }), 0);
+                    inputRef.current?.focus();
+                  }}
+                >
+                  Go again
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -805,14 +801,9 @@ const ZenCanvas: React.FC<ZenCanvasProps> = ({ maxTokens = 160 }) => {
         value={inputValue}
         data-typing-surface="zen"
         data-typing={isCommitting ? 'true' : undefined}
-        style={{ position: 'absolute', ...(inputBottom ? { bottom: inputBottom } : {}) }}
-        className="zen-input bottom-[12.5rem] md:bottom-[11.5rem] left-1/2 -translate-x-1/2
-                   w-[92vw] max-w-xl px-5 py-3.5 sm:px-6 sm:py-4 text-lg font-mono caret-accent
-                   backdrop-blur-soft
-                   border border-tint/30 rounded-2xl
-                   text-text placeholder-muted tracking-wide
-                   focus:outline-none focus:border-tint/50"
-        placeholder="Type freely…"
+        style={inputStyle}
+        className="zen-line"
+        placeholder="Start writing…"
         onChange={handleInput}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}

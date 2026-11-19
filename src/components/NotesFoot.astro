@@ -1,0 +1,37 @@
+---
+// The site's full set of links. The in-app footer keeps only four; the rest
+// live here, at the end of the notes and on every content page.
+interface Props {
+	current?: string;
+}
+const { current } = Astro.props;
+const links = [
+	{ href: "/", label: "Mindful typing test" },
+	{ href: "/quote/", label: "Quote typing test" },
+	{ href: "/zen/", label: "Free-flow typing practice" },
+	{ href: "/about/", label: "About" },
+	{ href: "/whats-new/", label: "What's new" },
+	{ href: "/contact/", label: "Contact" },
+	{ href: "/privacy/", label: "Privacy" },
+	{ href: "/subprocessors/", label: "Subprocessors" },
+];
+---
+
+<footer class="notes-foot">
+	<nav aria-label="Footer">
+		<ul>
+			{
+				links.map((link) => (
+					<li>
+						<a href={link.href} aria-current={current === link.href ? "page" : undefined}>
+							{link.label}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</nav>
+	<p>
+		Made by <a href="https://jonathanrreed.com/" rel="noopener">Jonathan R. Reed</a>. More of his <a href="https://jonathanrreed.com/projects/" rel="noopener">projects</a>, and <a href="https://bsky.app/profile/thereedy.bsky.social" rel="noopener">Bluesky</a>. The source is on <a href="https://github.com/JonathanRReed/zen-type" rel="noopener">GitHub</a> under the MIT license.
+	</p>
+</footer>

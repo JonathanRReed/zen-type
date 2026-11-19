@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8" />
+<title>Zen Typer social image</title>
+<!--
+  Source for public/og-image.png (1200x630). Rendered by scripts/og/render.ts:
+    bun scripts/og/render.ts
+  It shows what the app shows: a passage, half typed, with its source.
+-->
+<style>
+  @font-face { font-family: 'Newsreader'; font-weight: 200 800; src: url('../../src/assets/fonts/newsreader-latin-wght-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Newsreader'; font-style: italic; font-weight: 200 800; src: url('../../src/assets/fonts/newsreader-latin-wght-italic.woff2') format('woff2'); }
+  @font-face { font-family: 'Hanken Grotesk'; font-weight: 100 900; src: url('../../src/assets/fonts/hanken-grotesk-latin-wght-normal.woff2') format('woff2'); }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    width: 1200px; height: 630px; overflow: hidden; position: relative;
+    color: #f1ece2; font-family: 'Newsreader', Georgia, serif; -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(ellipse 140% 100% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.6) 100%),
+      radial-gradient(ellipse 70% 55% at 24% 12%, rgba(196, 167, 231, 0.36) 0%, transparent 72%),
+      radial-gradient(ellipse 55% 45% at 82% 78%, rgba(156, 207, 216, 0.2) 0%, transparent 78%),
+      linear-gradient(165deg, #2a2148 0%, #0f0c1d 52%, #05040a 100%);
+  }
+  .stars { position: absolute; inset: 0; background-image:
+      radial-gradient(1.4px 1.4px at 9% 22%, #f1ece2cc 50%, transparent 51%), radial-gradient(1px 1px at 18% 71%, #f1ece299 50%, transparent 51%),
+      radial-gradient(1.6px 1.6px at 33% 9%, #f1ece2cc 50%, transparent 51%), radial-gradient(1px 1px at 47% 88%, #f1ece280 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 58% 16%, #f1ece2b3 50%, transparent 51%), radial-gradient(1.8px 1.8px at 71% 34%, #f1ece2cc 50%, transparent 51%),
+      radial-gradient(1px 1px at 79% 62%, #f1ece299 50%, transparent 51%), radial-gradient(1.4px 1.4px at 91% 13%, #f1ece2b3 50%, transparent 51%),
+      radial-gradient(1px 1px at 95% 83%, #f1ece280 50%, transparent 51%), radial-gradient(1.2px 1.2px at 4% 91%, #f1ece280 50%, transparent 51%),
+      radial-gradient(1px 1px at 64% 71%, #f1ece266 50%, transparent 51%), radial-gradient(1.3px 1.3px at 39% 52%, #f1ece266 50%, transparent 51%); }
+  .frame { position: absolute; inset: 0; padding: 62px 84px 64px; display: flex; flex-direction: column; }
+  .mast { display: flex; align-items: center; justify-content: space-between; }
+  .wordmark { display: flex; align-items: center; gap: 14px; font-size: 32px; font-weight: 500; letter-spacing: -0.01em; }
+  .url { font: 400 20px 'Hanken Grotesk', sans-serif; color: rgba(241, 236, 226, 0.56); }
+  .passage { margin-top: 74px; font-size: 62px; line-height: 1.26; letter-spacing: -0.012em; color: rgba(241, 236, 226, 0.46); font-variant-ligatures: none; max-width: 1010px; }
+  .passage b { font-weight: 400; color: #f1ece2; }
+  .caret { display: inline-block; width: 4px; height: 0.86em; margin: 0 1px -0.08em 1px; border-radius: 2px; background: #c4a7e7; box-shadow: 0 0 22px rgba(196, 167, 231, 0.9); }
+  .credit { margin-top: 30px; font-size: 26px; color: rgba(241, 236, 226, 0.78); display: flex; gap: 16px; align-items: baseline; }
+  .credit i { color: rgba(241, 236, 226, 0.66); }
+  .credit span:last-child { color: rgba(241, 236, 226, 0.5); }
+  .foot { margin-top: auto; padding-top: 26px; border-top: 1px solid rgba(241, 236, 226, 0.16); display: flex; align-items: baseline; justify-content: space-between; }
+  .tag { font-size: 30px; }
+  .tally { display: flex; gap: 34px; font: 400 19px 'Hanken Grotesk', sans-serif; color: rgba(241, 236, 226, 0.56); }
+  .tally strong { font: 400 30px 'Newsreader', serif; color: #f1ece2; margin-right: 8px; font-variant-numeric: lining-nums tabular-nums; }
+</style>
+<body>
+  <div class="stars"></div>
+  <div class="frame">
+    <div class="mast">
+      <div class="wordmark">
+        <svg viewBox="0 0 32 26" width="44" height="36" aria-hidden="true">
+          <rect x="1" y="5" width="11" height="5" rx="1.6" fill="#7a7c9c" />
+          <rect x="20" y="5" width="11" height="5" rx="1.6" fill="#a678e6" />
+          <rect x="1" y="16" width="11" height="5" rx="1.6" fill="#e0527f" />
+          <rect x="20" y="16" width="11" height="5" rx="1.6" fill="#f0b24d" />
+          <rect x="15.1" y="1" width="1.8" height="24" rx="0.9" fill="#f1ece2" />
+        </svg>
+        Zen Typer
+      </div>
+      <div class="url">zentype.jonathanrreed.com</div>
+    </div>
+    <p class="passage"><b>The tempered light of the woods is like a perpet</b><span class="caret"></span>ual morning, and is stimulating and heroic.</p>
+    <p class="credit"><span>Ralph Waldo Emerson</span><i>Essays: Second Series</i><span>1844</span></p>
+    <div class="foot">
+      <div class="tag">A mindful typing test.</div>
+      <div class="tally"><span><strong>0:09</strong>time</span><span><strong>72</strong>wpm</span><span><strong>98%</strong>accuracy</span></div>
+    </div>
+  </div>
+</body>
+</html>

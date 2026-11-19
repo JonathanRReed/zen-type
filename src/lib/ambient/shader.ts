@@ -1,4 +1,4 @@
-// The ambient scene behind every page: one fragment shader, eight themes.
+// The ambient scene behind every page: one fragment shader, nine themes.
 // Everything is procedural (value noise, fbm, hashed particle grids), so the
 // whole scene is a few kilobytes and needs no textures.
 
@@ -11,6 +11,7 @@ export const THEME_INDEX = {
   Forest: 5,
   Ember: 6,
   Sakura: 7,
+  Washi: 8,
 } as const;
 
 export const VERT = `#version 300 es
@@ -369,6 +370,42 @@ vec3 sceneSakura(vec2 p, vec2 uv, float t, vec2 par) {
   return col;
 }
 
+// The one light scene: paper, two ranges of hills in diluted ink, a red sun.
+vec3 sceneWashi(vec2 p, vec2 uv, float t, vec2 par) {
+  float aspect = uRes.x / uRes.y;
+  // Paper: long fibres lying two ways, and a slow mottle.
+  float fibre = 0.6 * vnoise(rot(p, 0.35) * vec2(120.0, 14.0)) + 0.4 * vnoise(rot(p, -1.1) * vec2(96.0, 11.0) + 4.0);
+  vec3 col = uBase * (0.972 + 0.034 * fibre) * (0.975 + 0.05 * fbm(p * 2.4 + 3.0));
+
+  vec2 q = p + par * 0.1;
+  // The sun is stamped rather than drawn: slightly uneven at the edge.
+  vec2 sc = vec2(0.3 * aspect, 0.31) + par * 0.25;
+  float sd = length(q - sc) + 0.006 * vnoise(q * 38.0);
+  float sun = smoothstep(0.064, 0.056, sd);
+  col = mix(col, uAccent2, sun * (0.72 + 0.1 * fibre));
+
+  // Each range is darkest along its ridge and washes out below it, the way
+  // a loaded brush empties.
+  for (int i = 0; i < 2; i++) {
+    float fi = float(i);
+    float drift = t * (0.004 + 0.003 * fi);
+    float ridge = -0.12 - 0.17 * fi
+      + 0.16 * (fbm(vec2(q.x * (1.1 + 0.7 * fi) + drift + 7.0 * fi, 2.0 + fi)) - 0.5)
+      + 0.02 * vnoise(vec2(q.x * 9.0 + 3.0 * fi, 5.0));
+    float below = smoothstep(ridge + 0.01, ridge - 0.01 - 0.02 * fbm(q * 6.0 + fi), q.y);
+    float wash = smoothstep(ridge - (0.3 + 0.1 * fi), ridge, q.y);
+    float ink = below * (0.12 + 0.62 * wash * wash) * (0.5 + 0.5 * fbm(q * vec2(3.0, 5.0) + fi * 9.0 + drift));
+    col = mix(col, uText, ink * (0.2 + 0.13 * fi) * (1.0 + 0.25 * uEnergy));
+  }
+  // Mist lying in the valley between them.
+  float mist = smoothstep(0.35, 0.8, fbm(vec2(q.x * 1.3 - t * 0.01, q.y * 4.0 + 2.0)))
+    * smoothstep(0.1, -0.2, q.y) * smoothstep(-0.5, -0.25, q.y);
+  col = mix(col, uBase, mist * 0.5);
+  // A few motes of dust in the light.
+  col = mix(col, uText, particles(p + par * 0.3, 7.0, t, 1.0, 0.012, 0.1, 0.022, 0.22) * 0.09);
+  return col;
+}
+
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
   vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
@@ -383,13 +420,22 @@ void main() {
   else if (uTheme == 4) col = sceneGlacier(p, uv, t, par);
   else if (uTheme == 5) col = sceneForest(p, uv, t, par);
   else if (uTheme == 6) col = sceneEmber(p, uv, t, par);
-  else col = sceneSakura(p, uv, t, par);
+  else if (uTheme == 7) col = sceneSakura(p, uv, t, par);
+  else col = sceneWashi(p, uv, t, par);
 
-  // Cursor light, vignette, typing energy, and a dither against banding.
   vec2 cp = (uCursor - 0.5) * vec2(uRes.x / uRes.y, 1.0);
-  col += uAccent * 0.07 * exp(-5.0 * length(p - cp));
-  col *= 1.0 - 0.42 * smoothstep(0.3, 1.0, length(uv - 0.5) * 1.25);
-  col *= 1.0 + 0.07 * uEnergy;
+  if (uTheme == 8) {
+    // Paper takes light differently: the cursor lifts it a little and the
+    // edges age, but nothing is added on top.
+    col = mix(col, vec3(1.0), 0.06 * exp(-5.0 * length(p - cp)));
+    col *= 1.0 - 0.1 * smoothstep(0.3, 1.0, length(uv - 0.5) * 1.25);
+  } else {
+    // Cursor light, vignette, typing energy.
+    col += uAccent * 0.07 * exp(-5.0 * length(p - cp));
+    col *= 1.0 - 0.42 * smoothstep(0.3, 1.0, length(uv - 0.5) * 1.25);
+    col *= 1.0 + 0.07 * uEnergy;
+  }
+  // A dither against banding.
   col += (hash12(gl_FragCoord.xy + fract(t)) - 0.5) * (1.6 / 255.0);
   fragColor = vec4(max(col, 0.0), 1.0);
 }`;

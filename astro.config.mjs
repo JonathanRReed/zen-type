@@ -1,7 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 import { pageModifiedDate } from './src/utils/page-dates';
 import babel from '@rolldown/plugin-babel';
@@ -17,9 +17,6 @@ export default defineConfig({
   },
   integrations: [
     react(),
-    tailwind({
-      applyBaseStyles: false,
-    }),
     sitemap({
       // Same committed dates the JSON-LD uses, so lastmod and dateModified
       // always say the same thing for a given URL.
@@ -35,6 +32,7 @@ export default defineConfig({
     // The React Compiler runs as a Babel plugin ahead of Oxc's JSX/TS
     // transform (@astrojs/react 7 dropped its own `babel` option).
     plugins: [
+      tailwindcss(),
       babel({
         plugins: ['babel-plugin-react-compiler'],
       }),
@@ -48,9 +46,6 @@ export default defineConfig({
             }
             if (id.includes('node_modules/astro')) {
               return 'astro-vendor';
-            }
-            if (id.includes('/src/utils/')) {
-              return 'utils-vendor';
             }
           }
         }
