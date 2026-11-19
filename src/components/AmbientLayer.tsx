@@ -30,6 +30,12 @@ function readPalette(theme: ThemeName): AmbientPalette {
   };
 }
 
+// The scene moves with the display, up to 60 frames a second: at 30 the
+// drifting dust visibly stepped next to a caret moving at the screen's own
+// rate. Phones get a smaller buffer; the renderer shrinks it further by
+// itself on a GPU that cannot keep up.
+const sceneBudget = () => ({ fps: 60, scale: window.innerWidth < 720 ? 0.45 : 0.5 });
+
 const AmbientLayer: React.FC = () => {
   const settings = useSettings();
   const { reducedMotion } = useMotionPreference();
@@ -50,9 +56,8 @@ const AmbientLayer: React.FC = () => {
       (window as unknown as { __ambient?: AmbientRenderer }).__ambient = renderer;
     }
     renderer.setTheme(THEME_INDEX[theme], readPalette(theme));
-    const small = window.innerWidth < 720;
     // Configure the first frame before starting; readiness only controls its fade-in.
-    renderer.setOptions({ motion, fps: small ? 24 : 30, scale: small ? 0.45 : 0.5 });
+    renderer.setOptions({ motion, ...sceneBudget() });
     renderer.resize();
     renderer.start();
 
@@ -97,12 +102,7 @@ const AmbientLayer: React.FC = () => {
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!renderer) return;
-    const small = window.innerWidth < 720;
-    renderer.setOptions({
-      motion,
-      fps: small ? 24 : 30,
-      scale: small ? 0.45 : 0.5,
-    });
+    renderer.setOptions({ motion, ...sceneBudget() });
   }, [motion]);
 
   return (

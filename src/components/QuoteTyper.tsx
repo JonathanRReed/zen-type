@@ -560,7 +560,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, source, quoteId 
           data-errors={errors.size}
         >
           {runs.map(run => (
-            <span key={run.key} className={`q-${run.kind}${run.fresh ? ' q-fresh' : ''}`}>{run.text}</span>
+            <span key={run.key} className={`q-${run.kind}`}>{run.text}</span>
           ))}
           {cursor < activeQuote.length && (
             <span ref={nowRef} className="q-now">{activeQuote[cursor]}</span>

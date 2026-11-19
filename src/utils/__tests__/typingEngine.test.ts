@@ -74,11 +74,12 @@ describe('typedRuns', () => {
     expect(typedRuns(text, 0, new Set())).toEqual([]);
   });
 
-  it('keeps the newest character as its own run', () => {
-    const runs = typedRuns(text, 5, new Set());
-    expect(runs.map(r => r.text)).toEqual(['Stil', 'l']);
-    expect(runs.map(r => r.fresh)).toEqual([false, true]);
-    expect(runs.every(r => r.kind === 'done')).toBe(true);
+  it('is one run while every key is right, and only its text grows', () => {
+    const before = typedRuns(text, 4, new Set());
+    const after = typedRuns(text, 5, new Set());
+    expect(before.map(r => [r.key, r.text])).toEqual([['r0', 'Stil']]);
+    expect(after.map(r => [r.key, r.text])).toEqual([['r0', 'Still']]);
+    expect(after.every(r => r.kind === 'done')).toBe(true);
   });
 
   it('splits at every change between right and wrong, and loses no text', () => {
@@ -88,15 +89,14 @@ describe('typedRuns', () => {
       ['miss', 'ti'],
       ['done', 'll'],
       ['miss', ' '],
-      ['done', 'w'],
-      ['done', 'a'],
+      ['done', 'wa'],
     ]);
     expect(runs.map(r => r.text).join('')).toBe(text.slice(0, 8));
   });
 
   it('marks a wrong newest character as a miss', () => {
     const runs = typedRuns(text, 3, new Set([2]));
-    expect(runs.at(-1)).toMatchObject({ kind: 'miss', text: 'i', fresh: true });
+    expect(runs.at(-1)).toMatchObject({ kind: 'miss', text: 'i' });
   });
 });
 

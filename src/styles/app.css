@@ -323,13 +323,8 @@
     text-underline-offset: 0.2em;
   }
 
-  .q-fresh.q-done {
-    animation: ink-set 0.22s var(--ease-out) both;
-  }
-
-  .q-fresh.q-miss {
-    animation: ink-miss 0.24s var(--ease-out) both;
-  }
+  /* A typed character takes its ink at once. Fading it in looked soft and
+     read as input lag, and it repainted the passage on every frame. */
 
   .q-now {
     color: var(--ink-soft);
@@ -356,7 +351,9 @@
     box-shadow: 0 0 0.55em color-mix(in oklab, var(--theme-accent) 65%, transparent);
     opacity: 0;
     pointer-events: none;
-    transition: transform 0.085s cubic-bezier(0.2, 0.7, 0.3, 1);
+    /* Short enough that the caret is never behind the hands at speed. */
+    transition: transform 0.06s cubic-bezier(0.2, 0.8, 0.3, 1);
+    will-change: transform;
   }
 
   .passage-caret.is-idle {
@@ -1049,18 +1046,6 @@
     to { opacity: 1; transform: translate(-50%, 0); }
   }
 
-  @keyframes ink-set {
-    from { color: var(--ink-faint); }
-    to { color: var(--ink); }
-  }
-
-  @keyframes ink-miss {
-    0% { transform: translateX(0); }
-    35% { transform: translateX(-0.05em); }
-    70% { transform: translateX(0.05em); }
-    100% { transform: translateX(0); }
-  }
-
   @keyframes caret-blink {
     0%, 55% { opacity: 1; }
     56%, 100% { opacity: 0.15; }
@@ -1077,7 +1062,6 @@
   }
 
   html[data-motion='off'] .passage-text.is-next,
-  html[data-motion='off'] .q-fresh,
   html[data-motion='off'] .result,
   html[data-motion='off'] .quote-tap-hint,
   html[data-motion='off'] .first-run-hint,

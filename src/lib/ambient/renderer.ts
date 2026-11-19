@@ -10,7 +10,12 @@ export interface AmbientPalette {
 export interface AmbientOptions {
   /** 0 = static frame, 1 = full motion. */
   motion: boolean;
-  /** Frames per second to aim for while animating. */
+  /**
+   * The most frames per second to draw while animating. The loop draws on
+   * every display frame, or every second, third... one, whichever lands
+   * nearest this without going over it by much, so the cadence is always
+   * even: a 60 cap is 60 on a 60 Hz or 120 Hz screen and 72 on a 144 Hz one.
+   */
   fps: number;
   /** Render scale relative to CSS pixels (0.35..1). */
   scale: number;
@@ -19,6 +24,12 @@ export interface AmbientOptions {
 const UNIFORMS = ['uRes', 'uTime', 'uCursor', 'uEnergy', 'uTheme', 'uBase', 'uAccent', 'uAccent2', 'uText'] as const;
 const PALETTE_KEYS = ['base', 'accent', 'accent2', 'text'] as const;
 type UniformName = typeof UNIFORMS[number];
+
+/** Buffer scale and frame skipping for each step the governor can take down. */
+const QUALITY_SCALE = [1, 0.75, 0.55, 0.4, 0.4] as const;
+const FRAME_SKIP = [1, 1, 1, 1, 2] as const;
+/** Draws between the governor's looks at how the GPU is keeping up. */
+const GOVERNOR_WINDOW = 90;
 
 /**
  * Owns the WebGL2 context for the ambient canvas: compiles the scene shader,
@@ -37,6 +48,17 @@ export class AmbientRenderer {
   private completionPoll: number | null = null;
   private resizePending = false;
   private lastFrameAt = 0;
+  private lastTickAt = 0;
+  /** Recent gaps between display frames; the smallest is the refresh interval. */
+  private tickGaps: number[] = [];
+  private refreshMs = 1000 / 60;
+  /** Frames the GPU was still busy for, out of the draws tried, this window. */
+  private busyFrames = 0;
+  private triedFrames = 0;
+  /** Steps down when the GPU cannot keep up: smaller buffer first, then fewer frames. */
+  private quality = 0;
+  private compiling: { program: WebGLProgram; vs: WebGLShader; fs: WebGLShader; status: number } | null = null;
+  private compilePoll: number | null = null;
   private startAt = performance.now();
   private frozenTime = 37.0;
   private theme = 0;
@@ -49,6 +71,7 @@ export class AmbientRenderer {
   private cursor: [number, number] = [0.5, 0.5];
   private cursorTarget: [number, number] = [0.5, 0.5];
   private energy = 0;
+  private energyTarget = 0;
   private lost = false;
   private drawn = false;
   private options: AmbientOptions = { motion: true, fps: 30, scale: 0.5 };
@@ -88,7 +111,7 @@ export class AmbientRenderer {
   }
 
   get supported(): boolean {
-    return this.gl !== null && this.program !== null;
+    return this.gl !== null && (this.program !== null || this.compiling !== null);
   }
 
   private compile(): boolean {
@@ -99,25 +122,65 @@ export class AmbientRenderer {
       if (!shader) return null;
       gl.shaderSource(shader, src);
       gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.warn('[ambient] shader failed', gl.getShaderInfoLog(shader));
-        gl.deleteShader(shader);
-        return null;
-      }
       return shader;
     };
     const vs = make(gl.VERTEX_SHADER, VERT);
     const fs = make(gl.FRAGMENT_SHADER, FRAG);
-    if (!vs || !fs) return false;
-    const program = gl.createProgram();
-    if (!program) return false;
+    const program = vs && fs ? gl.createProgram() : null;
+    if (!vs || !fs || !program) return false;
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
     gl.linkProgram(program);
+    // Asking whether the program linked makes the browser wait for the
+    // compiler, and translating these scenes can take hundreds of
+    // milliseconds: a freeze right when the page is becoming usable. Where
+    // the driver can compile on another thread, ask it when it is done
+    // instead, and keep showing the CSS scene until then.
+    const parallel = gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null;
+    if (parallel && typeof requestAnimationFrame === 'function') {
+      this.compiling = { program, vs, fs, status: parallel.COMPLETION_STATUS_KHR };
+      this.pollCompile();
+      return true;
+    }
+    return this.finishCompile(program, vs, fs);
+  }
+
+  private pollCompile(): void {
+    const gl = this.gl;
+    const job = this.compiling;
+    if (!gl || !job) return;
+    if (!gl.getProgramParameter(job.program, job.status)) {
+      this.compilePoll = requestAnimationFrame(() => {
+        this.compilePoll = null;
+        this.pollCompile();
+      });
+      return;
+    }
+    this.compiling = null;
+    if (!this.finishCompile(job.program, job.vs, job.fs)) {
+      this.gl = null;
+      return;
+    }
+    // Whatever was asked for while the compiler ran is waiting to be drawn.
+    if (this.wantsLoop) this.start();
+    else this.flushDraw();
+  }
+
+  private finishCompile(program: WebGLProgram, vs: WebGLShader, fs: WebGLShader): boolean {
+    const gl = this.gl;
+    if (!gl) return false;
+    const linked = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (!linked) {
+      for (const shader of [vs, fs]) {
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          console.warn('[ambient] shader failed', gl.getShaderInfoLog(shader));
+        }
+      }
+      console.warn('[ambient] program failed', gl.getProgramInfoLog(program));
+    }
     gl.deleteShader(vs);
     gl.deleteShader(fs);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.warn('[ambient] program failed', gl.getProgramInfoLog(program));
+    if (!linked) {
       gl.deleteProgram(program);
       return false;
     }
@@ -164,7 +227,9 @@ export class AmbientRenderer {
   }
 
   bumpEnergy(amount = 0.35): void {
-    this.energy = Math.min(1, this.energy + amount);
+    // Raise what the scene eases toward, not the scene itself: a keystroke
+    // that stepped the brightness would flicker at typing speed.
+    this.energyTarget = Math.min(1, this.energyTarget + amount);
   }
 
   resize(): void {
@@ -184,7 +249,7 @@ export class AmbientRenderer {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const cssW = this.canvas.clientWidth || window.innerWidth;
     const cssH = this.canvas.clientHeight || window.innerHeight;
-    const scale = this.options.scale * dpr;
+    const scale = this.options.scale * dpr * (QUALITY_SCALE[this.quality] ?? 1);
     const width = Math.max(64, Math.min(1400, Math.round(cssW * scale)));
     const height = Math.max(64, Math.round(cssH * scale));
     return [width, height];
@@ -206,12 +271,18 @@ export class AmbientRenderer {
     return true;
   }
 
+  /** True between start() and stop() while motion is on. */
+  private wantsLoop = false;
+
   start(): void {
     if (!this.supported || this.lost) return;
     if (!this.options.motion) {
       this.renderOnce();
       return;
     }
+    this.wantsLoop = true;
+    // The loop starts once the compiler has finished; see pollCompile.
+    if (this.compiling) return;
     if (this.frame !== null) return;
     this.animating = true;
     if (this.completionPoll !== null) cancelAnimationFrame(this.completionPoll);
@@ -219,26 +290,71 @@ export class AmbientRenderer {
     // A backgrounded tab gets no animation frames. Paint one frame anyway so
     // the canvas is never a black rectangle when the tab comes forward.
     if (document.hidden || !this.drawn) this.draw((performance.now() - this.startAt) / 1000, 0);
+    this.lastTickAt = 0;
     const loop = (now: number) => {
       this.frame = null;
       if (document.hidden) {
         this.animating = false;
         return;
       }
-      const interval = 1000 / this.options.fps;
-      if (now - this.lastFrameAt >= interval - 1) {
+      this.measureRefresh(now);
+      // Draw on a whole number of display frames. A fixed 33 ms timer drifts
+      // against any screen that is not 60 or 120 Hz and lands on alternating
+      // short and long gaps, which the eye reads as a stutter.
+      const interval = this.frameInterval();
+      if (now - this.lastFrameAt >= interval - this.refreshMs / 2) {
+        const dt = this.lastFrameAt > 0 ? Math.min(0.1, (now - this.lastFrameAt) / 1000) : interval / 1000;
         this.lastFrameAt = now;
-        this.draw((now - this.startAt) / 1000, (interval) / 1000);
+        this.triedFrames++;
+        this.draw((now - this.startAt) / 1000, dt);
+        this.govern();
       }
       this.frame = requestAnimationFrame(loop);
     };
     this.frame = requestAnimationFrame(loop);
   }
 
+  /** Track the display's refresh interval from the gaps between its frames. */
+  private measureRefresh(now: number): void {
+    const gap = now - this.lastTickAt;
+    this.lastTickAt = now;
+    // Ignore the first tick and anything that is clearly a pause.
+    if (gap < 2 || gap > 50) return;
+    this.tickGaps.push(gap);
+    if (this.tickGaps.length > 12) this.tickGaps.shift();
+    // Dropped frames only ever lengthen a gap, so the shortest recent one is
+    // the screen's own interval.
+    if (this.tickGaps.length >= 6) this.refreshMs = Math.min(...this.tickGaps);
+  }
+
+  /** The gap between draws: a whole number of display frames near the cap. */
+  private frameInterval(): number {
+    const wanted = 1000 / this.options.fps;
+    const every = Math.max(1, Math.round(wanted / this.refreshMs)) * (FRAME_SKIP[this.quality] ?? 1);
+    return every * this.refreshMs;
+  }
+
+  /**
+   * If the GPU keeps being busy when the next frame is due, the scene is too
+   * heavy for this device right now. Shrink the buffer, and after that draw
+   * half as often. A soft, slow backdrop loses little at a lower resolution;
+   * a late frame takes the typing with it.
+   */
+  private govern(): void {
+    if (this.triedFrames < GOVERNOR_WINDOW) return;
+    const struggling = this.busyFrames > this.triedFrames * 0.2;
+    this.busyFrames = 0;
+    this.triedFrames = 0;
+    if (!struggling || this.quality >= QUALITY_SCALE.length - 1) return;
+    this.quality++;
+    if (this.bufferNeedsResize()) this.resizePending = true;
+  }
+
   stop(): void {
     if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.frame = null;
     this.animating = false;
+    this.wantsLoop = false;
     if (this.completionPoll !== null) cancelAnimationFrame(this.completionPoll);
     this.completionPoll = null;
     this.pendingDraw = null;
@@ -265,6 +381,7 @@ export class AmbientRenderer {
       // Poll without blocking; keep only the newest requested frame while busy.
       const status = gl.clientWaitSync(this.completion, 0, 0);
       if (status === gl.TIMEOUT_EXPIRED) {
+        if (this.animating) this.busyFrames++;
         if (!this.animating && this.completionPoll === null) {
           this.completionPoll = requestAnimationFrame(() => {
             this.completionPoll = null;
@@ -292,7 +409,10 @@ export class AmbientRenderer {
       this.cursor[0] + (this.cursorTarget[0] - this.cursor[0]) * k,
       this.cursor[1] + (this.cursorTarget[1] - this.cursor[1]) * k,
     ];
-    if (dt > 0) this.energy = Math.max(0, this.energy - dt * 0.45);
+    if (dt > 0) {
+      this.energyTarget = Math.max(0, this.energyTarget - dt * 0.45);
+      this.energy += (this.energyTarget - this.energy) * (1 - Math.pow(0.001, dt));
+    }
 
     gl.useProgram(this.program);
     gl.bindVertexArray(this.vao);
@@ -318,8 +438,12 @@ export class AmbientRenderer {
 
   dispose(): void {
     this.stop();
+    if (this.compilePoll !== null) cancelAnimationFrame(this.compilePoll);
+    this.compilePoll = null;
     const gl = this.gl;
     if (gl) {
+      if (this.compiling) gl.deleteProgram(this.compiling.program);
+      this.compiling = null;
       if (this.completion) gl.deleteSync(this.completion);
       if (this.program) gl.deleteProgram(this.program);
       if (this.vao) gl.deleteVertexArray(this.vao);

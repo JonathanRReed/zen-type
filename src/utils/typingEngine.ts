@@ -113,28 +113,23 @@ export interface Run {
   key: string;
   kind: 'done' | 'miss';
   text: string;
-  fresh: boolean;
 }
 
 /**
  * The typed part of the quote as a handful of text runs instead of one
  * element per character, so the type keeps its kerning and a long pasted text
- * costs a few nodes, not twelve hundred. The newest character is its own run,
- * which is what lets it settle in with a short animation.
+ * costs a few nodes, not twelve hundred. A run is keyed by where it starts,
+ * so a keystroke only lengthens the text of the last one: no element is
+ * added or removed for a correct key.
  */
 export function typedRuns(text: string, cursor: number, errors: ReadonlySet<number>): Run[] {
   const runs: Run[] = [];
   let start = 0;
-  const push = (end: number, fresh: boolean) => {
-    if (end <= start) return;
-    runs.push({ key: `${fresh ? 'f' : 'r'}${start}`, kind: errors.has(start) ? 'miss' : 'done', text: text.slice(start, end), fresh });
-    start = end;
-  };
-  const last = cursor - 1;
-  for (let i = 1; i < last; i++) {
-    if (errors.has(i) !== errors.has(i - 1)) push(i, false);
+  for (let i = 1; i <= cursor; i++) {
+    if (i === cursor || errors.has(i) !== errors.has(start)) {
+      runs.push({ key: `r${start}`, kind: errors.has(start) ? 'miss' : 'done', text: text.slice(start, i) });
+      start = i;
+    }
   }
-  if (last > 0) push(last, false);
-  if (cursor > 0) push(cursor, true);
   return runs;
 }
