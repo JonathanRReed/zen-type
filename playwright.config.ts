@@ -10,13 +10,16 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 1,
-  workers: 4,
+  // Give real SwiftShader browsers the hosted runner's resources, not four competing pools.
+  workers: process.env.CI ? 1 : 4,
   reporter: [['list']],
   timeout: 45_000,
   expect: { timeout: 8_000 },
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
-    trace: 'retain-on-failure',
+    // Keep the failed attempt and first retry, even when the retry passes.
+    trace: 'retain-on-failure-and-retries',
+    screenshot: 'only-on-failure',
     // Headless Chromium draws WebGL through SwiftShader, so the ambient
     // layer is exercised for real rather than skipped.
     launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { diffLines } from 'diff';
 import type { DraftSnapshot } from '../../lib/draftStore';
+import { computeTextMetrics } from '../../lib/textMetrics';
 import { useModal } from '../../hooks/useModal';
 import { IconClose } from '../icons';
 
@@ -19,10 +20,7 @@ const formatTimestamp = (ts: number) => {
   return `${day}, ${time}`;
 };
 
-const countWords = (text: string) => {
-  const trimmed = text.trim();
-  return trimmed ? trimmed.split(/\s+/).length : 0;
-};
+const DIFF_OPTIONS = { ignoreNewlineAtEof: true };
 
 const plural = (n: number, one: string, many: string) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
@@ -38,6 +36,29 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
   const closeRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
   useModal(backdropRef, onClose, isOpen);
+
+  // Line diffs are deferred while the panel is closed, then reused across
+  // its own state changes until the snapshots change or it is reopened.
+  const snapshotItems = useMemo(() => {
+    if (!isOpen) return [];
+    const reversed = [...snapshots].reverse();
+    return reversed.map((snapshot, index) => {
+      const prevSnapshot = index < reversed.length - 1 ? reversed[index + 1] : null;
+      // A draft rarely ends in a newline; without this, writing one more line
+      // reads as the old last line removed and two added.
+      const diff = prevSnapshot ? diffLines(prevSnapshot.body, snapshot.body, DIFF_OPTIONS) : null;
+      // Count lines, not changed blocks: one block can span many lines.
+      let addedLines = 0;
+      let removedLines = 0;
+      if (diff) {
+        for (const change of diff) {
+          if (change.added) addedLines += change.count ?? 1;
+          if (change.removed) removedLines += change.count ?? 1;
+        }
+      }
+      return { snapshot, addedLines, removedLines, words: computeTextMetrics(snapshot.body).words };
+    });
+  }, [isOpen, snapshots]);
 
   useEffect(() => {
     if (isOpen) closeRef.current?.focus();
@@ -83,7 +104,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
               </div>
             </div>
           </div>
-        ) : snapshots.length === 0 ? (
+        ) : snapshotItems.length === 0 ? (
           <p className="sheet-lede">
             No versions yet. One is kept every two minutes while you write, and whenever you press Ctrl+S (Cmd+S on a Mac).
           </p>
@@ -91,14 +112,7 @@ const VersionHistory: React.FC<VersionHistoryProps> = ({
           <>
             <p className="sheet-lede">Kept every two minutes while you write, and whenever you press Ctrl+S. The newest is first.</p>
             <ul className="history-list">
-              {[...snapshots].reverse().map((snapshot, index) => {
-                const prevSnapshot = index < snapshots.length - 1 ? snapshots[snapshots.length - 2 - index] : null;
-                const diff = prevSnapshot ? diffLines(prevSnapshot.body, snapshot.body) : null;
-                // Count lines, not changed blocks: one block can span many lines.
-                const addedLines = diff ? diff.reduce((n, d) => n + (d.added ? d.count ?? 1 : 0), 0) : 0;
-                const removedLines = diff ? diff.reduce((n, d) => n + (d.removed ? d.count ?? 1 : 0), 0) : 0;
-                const words = countWords(snapshot.body);
-
+              {snapshotItems.map(({ snapshot, addedLines, removedLines, words }) => {
                 return (
                   <li key={snapshot.id} className="history-item">
                     <div>

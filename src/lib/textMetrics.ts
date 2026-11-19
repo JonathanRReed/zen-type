@@ -25,10 +25,51 @@ const STOP_WORDS = new Set([
   'were', 'said', 'did', 'having', 'may', 'should', 'could', 'would'
 ]);
 
+// Single-pass computeTextMetrics to avoid string array allocations (.split(/\s+/))
+// and RegExp match allocations (.match(/[.!?]+/g)) on every editor metric update.
+// Complexity: O(N) time with O(1) auxiliary space.
 export function computeTextMetrics(text: string): TextMetrics {
-  const trimmed = text.trim();
-  
-  if (!trimmed) {
+  const chars = text.length;
+  let words = 0;
+  let inWord = false;
+  let sentences = 0;
+  let inSentenceDelimiter = false;
+
+  for (let i = 0; i < chars; i++) {
+    const ch = text.charCodeAt(i);
+
+    // Match ECMAScript WhiteSpace and LineTerminator, as trim() and /\s/ do.
+    const isWhitespace =
+      (ch >= 0x0009 && ch <= 0x000d) || ch === 0x0020 || ch === 0x00a0 ||
+      ch === 0x1680 || (ch >= 0x2000 && ch <= 0x200a) ||
+      ch === 0x2028 || ch === 0x2029 || ch === 0x202f ||
+      ch === 0x205f || ch === 0x3000 || ch === 0xfeff;
+    if (isWhitespace) {
+      if (inWord) {
+        words++;
+        inWord = false;
+      }
+    } else {
+      inWord = true;
+    }
+
+    // Sentence punctuation check: '.' (46), '!' (33), '?' (63)
+    if (ch === 46 || ch === 33 || ch === 63) {
+      if (!inSentenceDelimiter) {
+        sentences++;
+        inSentenceDelimiter = true;
+      }
+    } else {
+      inSentenceDelimiter = false;
+    }
+  }
+
+  if (inWord) {
+    words++;
+  }
+
+  // Preserve the original all-zero metrics for empty or whitespace-only text.
+  if (words === 0) {
     return {
       words: 0,
       chars: 0,
@@ -37,10 +78,10 @@ export function computeTextMetrics(text: string): TextMetrics {
     };
   }
 
-  const words = trimmed.split(/\s+/).length;
-  const chars = text.length;
-  const sentences = (trimmed.match(/[.!?]+/g) || []).length || 1;
-  
+  if (sentences === 0) {
+    sentences = 1;
+  }
+
   // Average reading speed: 200 WPM
   const readTimeMinutes = Math.ceil(words / 200);
 
@@ -52,15 +93,41 @@ export function computeTextMetrics(text: string): TextMetrics {
   };
 }
 
+// Scan the lowercased document without regex replacement or intermediate word arrays.
+// Fold before scanning: Unicode lowercasing can introduce ASCII word characters
+// (e.g. K -> k) or expand a character (İ -> i + combining dot).
 export function getKeywordFrequencies(text: string, topN: number = 10): KeywordFrequency[] {
-  const words = text.toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
-
+  text = text.toLowerCase();
   const freq = new Map<string, number>();
-  for (const word of words) {
-    freq.set(word, (freq.get(word) || 0) + 1);
+  const len = text.length;
+  let inWord = false;
+  let wordStart = 0;
+
+  for (let i = 0; i <= len; i++) {
+    const ch = i < len ? text.charCodeAt(i) : 0;
+
+    // Match \w characters: [a-zA-Z0-9_]
+    const isWordChar =
+      (ch >= 97 && ch <= 122) || // a-z
+      (ch >= 65 && ch <= 90) ||  // A-Z
+      (ch >= 48 && ch <= 57) ||  // 0-9
+      ch === 95;                 // _
+
+    if (isWordChar) {
+      if (!inWord) {
+        inWord = true;
+        wordStart = i;
+      }
+    } else if (inWord) {
+      inWord = false;
+      const wordLen = i - wordStart;
+      if (wordLen > 2) {
+        const word = text.slice(wordStart, i);
+        if (!STOP_WORDS.has(word)) {
+          freq.set(word, (freq.get(word) || 0) + 1);
+        }
+      }
+    }
   }
 
   const result: KeywordFrequency[] = [];
@@ -78,36 +145,62 @@ export interface OutlineItem {
   startIndex: number;
 }
 
+// Scan document lines incrementally when outline is enabled, avoiding a
+// document-wide line array on each editor update.
 export function extractOutline(text: string): OutlineItem[] {
-  const lines = text.split('\n');
+  if (!text) return [];
   const outline: OutlineItem[] = [];
-  let currentIndex = 0;
+  const len = text.length;
+  let lineStart = 0;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] || '';
+  while (lineStart <= len) {
+    let lineEnd = text.indexOf('\n', lineStart);
+    if (lineEnd === -1) {
+      lineEnd = len;
+    }
+
+    const line = text.slice(lineStart, lineEnd);
     const trimmed = line.trim();
 
     // Markdown-style headings
-    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
-    if (headingMatch) {
-      outline.push({
-        text: headingMatch[2] || '',
-        level: headingMatch[1]?.length || 1,
-        startIndex: currentIndex,
-      });
-    } else if (trimmed.endsWith('.') && trimmed.length > 10 && trimmed.length < 100) {
-      // First sentence of paragraphs (if next line is blank)
-      const nextLine = lines[i + 1];
-      if (!nextLine || !nextLine.trim()) {
+    let matchedHeading = false;
+    if (trimmed.startsWith('#')) {
+      const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+      if (headingMatch) {
+        matchedHeading = true;
         outline.push({
-          text: trimmed,
-          level: 0,
-          startIndex: currentIndex,
+          text: headingMatch[2] || '',
+          level: headingMatch[1]?.length || 1,
+          startIndex: lineStart,
         });
       }
     }
 
-    currentIndex += line.length + 1; // +1 for newline
+    if (!matchedHeading && trimmed.endsWith('.') && trimmed.length > 10 && trimmed.length < 100) {
+      // First sentence of paragraphs (if next line is blank)
+      let isNextBlank = true;
+      if (lineEnd < len) {
+        const nextLineStart = lineEnd + 1;
+        let nextLineEnd = text.indexOf('\n', nextLineStart);
+        if (nextLineEnd === -1) nextLineEnd = len;
+
+        const nextLine = text.slice(nextLineStart, nextLineEnd);
+        if (nextLine.trim().length > 0) {
+          isNextBlank = false;
+        }
+      }
+
+      if (isNextBlank) {
+        outline.push({
+          text: trimmed,
+          level: 0,
+          startIndex: lineStart,
+        });
+      }
+    }
+
+    if (lineEnd === len) break;
+    lineStart = lineEnd + 1;
   }
 
   return outline;
@@ -120,6 +213,78 @@ export interface SearchMatch {
   column: number;
 }
 
+// Backward-scanning line extraction helper to extract the last N lines matching line.trim().length > 10.
+// Avoids splitting the entire document into line arrays from start to finish.
+export function extractRecentLines(text: string, count: number = 50, minLength: number = 10): string[] {
+  return extractRecentLinesWithOffsets(text, count, minLength).map(line => line.text);
+}
+
+/**
+ * The same lines as extractRecentLines, each with the offset of its first
+ * character in the text, so a jump can land on the line itself.
+ */
+export function extractRecentLinesWithOffsets(
+  text: string,
+  count: number = 50,
+  minLength: number = 10,
+): Array<{ text: string; index: number }> {
+  if (!text) return [];
+  const lines: Array<{ text: string; index: number }> = [];
+  let end = text.length;
+
+  while (end > 0 && lines.length < count) {
+    const start = text.lastIndexOf('\n', end - 1);
+    const lineStart = start === -1 ? 0 : start + 1;
+    const line = text.slice(lineStart, end);
+    if (line.trim().length > minLength) {
+      lines.push({ text: line, index: lineStart });
+    }
+    if (start === -1) break;
+    end = start;
+  }
+
+  return lines.reverse();
+}
+
+/**
+ * Extract a short preview string from the first non-empty line of text.
+ * Scans line by line without splitting the entire document into line arrays.
+ */
+export function getDraftPreview(text: string, maxLength: number = 140): string {
+  if (!text) return '';
+  let lineStart = 0;
+  const len = text.length;
+
+  while (lineStart < len) {
+    let lineEnd = text.indexOf('\n', lineStart);
+    if (lineEnd === -1) lineEnd = len;
+
+    // Fast check for non-whitespace in the current line segment
+    let hasNonWhitespace = false;
+    for (let i = lineStart; i < lineEnd; i++) {
+      const ch = text.charCodeAt(i);
+      if (ch !== 32 && ch !== 9 && ch !== 13) {
+        hasNonWhitespace = true;
+        break;
+      }
+    }
+
+    if (hasNonWhitespace) {
+      const line = text.slice(lineStart, lineEnd).trim();
+      if (line.length > 0) {
+        if (line.length > maxLength) {
+          return `${line.slice(0, maxLength).trim()}…`;
+        }
+        return line;
+      }
+    }
+
+    lineStart = lineEnd + 1;
+  }
+
+  return '';
+}
+
 export function findInText(text: string, query: string, caseSensitive: boolean = false): SearchMatch[] {
   if (!query) return [];
 
@@ -128,12 +293,22 @@ export function findInText(text: string, query: string, caseSensitive: boolean =
   const matches: SearchMatch[] = [];
 
   let index = 0;
+  let line = 0;
+  let lastNewlineIndex = -1;
+  let scanIndex = 0;
+
   while ((index = searchText.indexOf(searchQuery, index)) !== -1) {
-    // Calculate line and column
-    const before = text.substring(0, index);
-    const lines = before.split('\n');
-    const line = lines.length - 1;
-    const column = (lines[lines.length - 1] || '').length;
+    // Single-pass incremental line & column tracking instead of O(N) substring + split
+    while (scanIndex < index) {
+      if (text[scanIndex] === '\n') {
+        line++;
+        lastNewlineIndex = scanIndex;
+      }
+      scanIndex++;
+    }
+
+    // substring(0, index) previously clamped offsets to the source length.
+    const column = Math.min(index, text.length) - (lastNewlineIndex + 1);
 
     matches.push({
       index,
@@ -147,3 +322,4 @@ export function findInText(text: string, query: string, caseSensitive: boolean =
 
   return matches;
 }
+

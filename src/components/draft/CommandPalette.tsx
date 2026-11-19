@@ -34,7 +34,9 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
+  // Closed palettes need neither search items nor a Fuse index.
   const searchItems = useMemo<SearchItem[]>(() => {
+    if (!isOpen) return [];
     const items: SearchItem[] = [];
 
     outlineItems.forEach(item => {
@@ -58,24 +60,24 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
     });
 
     return items;
-  }, [outlineItems, recentLines]);
+  }, [isOpen, outlineItems, recentLines]);
 
-  const fuse = useMemo(
-    () =>
-      new Fuse(searchItems, {
-        keys: ['text'],
-        threshold: 0.3,
-        includeScore: true,
-      }),
-    [searchItems]
-  );
+  const fuse = useMemo(() => {
+    if (!isOpen || searchItems.length === 0) return null;
+    return new Fuse(searchItems, {
+      keys: ['text'],
+      threshold: 0.3,
+      includeScore: true,
+    });
+  }, [isOpen, searchItems]);
 
   const filteredItems = useMemo(() => {
+    if (!isOpen) return [];
     if (!query.trim()) {
       return searchItems.slice(0, 10);
     }
-    return fuse.search(query).map(result => result.item).slice(0, 10);
-  }, [query, fuse, searchItems]);
+    return fuse ? fuse.search(query).map(result => result.item).slice(0, 10) : [];
+  }, [isOpen, query, fuse, searchItems]);
 
   useEffect(() => {
     if (!isOpen || !inputRef.current) {
@@ -93,7 +95,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
   useEffect(() => {
     listRef.current
       ?.querySelector<HTMLElement>(`#cmd-palette-option-${selectedIndex}`)
-      ?.scrollIntoView({ block: 'nearest' });
+      ?.scrollIntoView?.({ block: 'nearest' });
   }, [selectedIndex]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

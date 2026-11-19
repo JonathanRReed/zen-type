@@ -17,6 +17,7 @@ export interface AmbientOptions {
 }
 
 const UNIFORMS = ['uRes', 'uTime', 'uCursor', 'uEnergy', 'uTheme', 'uBase', 'uAccent', 'uAccent2', 'uText'] as const;
+const PALETTE_KEYS = ['base', 'accent', 'accent2', 'text'] as const;
 type UniformName = typeof UNIFORMS[number];
 
 /**
@@ -30,6 +31,11 @@ export class AmbientRenderer {
   private uniforms = new Map<UniformName, WebGLUniformLocation | null>();
   private vao: WebGLVertexArrayObject | null = null;
   private frame: number | null = null;
+  private animating = false;
+  private completion: WebGLSync | null = null;
+  private pendingDraw: { time: number; dt: number } | null = null;
+  private completionPoll: number | null = null;
+  private resizePending = false;
   private lastFrameAt = 0;
   private startAt = performance.now();
   private frozenTime = 37.0;
@@ -44,7 +50,6 @@ export class AmbientRenderer {
   private cursorTarget: [number, number] = [0.5, 0.5];
   private energy = 0;
   private lost = false;
-  private dirty = true;
   private drawn = false;
   private options: AmbientOptions = { motion: true, fps: 30, scale: 0.5 };
   /** Called after the first frame lands, so the canvas can fade in over the CSS. */
@@ -68,6 +73,8 @@ export class AmbientRenderer {
       e.preventDefault();
       this.lost = true;
       this.stop();
+      // Context loss already invalidates all of its GPU resources.
+      this.completion = null;
     });
     canvas.addEventListener('webglcontextrestored', () => {
       this.lost = false;
@@ -119,26 +126,37 @@ export class AmbientRenderer {
     for (const name of UNIFORMS) this.uniforms.set(name, gl.getUniformLocation(program, name));
     this.vao = gl.createVertexArray();
     gl.bindVertexArray(this.vao);
-    this.dirty = true;
     return true;
   }
 
   setOptions(options: Partial<AmbientOptions>): void {
-    const wasMotion = this.options.motion;
+    const previous = this.options;
     this.options = { ...this.options, ...options };
-    if (options.scale !== undefined) this.resize();
-    if (wasMotion !== this.options.motion) {
-      this.dirty = true;
-      if (this.options.motion) this.start(); else this.renderOnce();
+    const resized = previous.scale !== this.options.scale && this.bufferNeedsResize();
+    // Initial configuration must not paint with incomplete theme/size settings.
+    if (!this.drawn) {
+      if (resized) this.resizeBuffer();
+      return;
+    }
+    if (resized) this.resizePending = true;
+    if (this.options.motion) {
+      if (resized) this.draw((performance.now() - this.startAt) / 1000, 0);
+      if (!previous.motion) this.start();
+    } else if (previous.motion || resized) {
+      this.renderOnce();
     }
   }
 
   setTheme(theme: number, palette: AmbientPalette): void {
+    const unchanged = theme === this.theme && PALETTE_KEYS.every(key =>
+      palette[key].every((value, index) => value === this.palette[key][index]),
+    );
+    if (unchanged) return;
     this.theme = theme;
     this.palette = palette;
-    this.dirty = true;
+    if (!this.drawn) return;
     if (!this.options.motion) this.renderOnce();
-    else if (this.drawn) this.draw((performance.now() - this.startAt) / 1000, 0);
+    else this.draw((performance.now() - this.startAt) / 1000, 0);
   }
 
   setCursor(x: number, y: number): void {
@@ -150,24 +168,42 @@ export class AmbientRenderer {
   }
 
   resize(): void {
-    const gl = this.gl;
-    if (!gl) return;
+    if (!this.bufferNeedsResize()) return;
+    if (!this.drawn) {
+      this.resizeBuffer();
+      return;
+    }
+    this.resizePending = true;
+    // Queue the replacement promptly, but keep the old buffer until the GPU
+    // can draw its replacement rather than clearing it to black while busy.
+    if (!this.options.motion) this.renderOnce();
+    else this.draw((performance.now() - this.startAt) / 1000, 0);
+  }
+
+  private bufferSize(): [number, number] {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const cssW = this.canvas.clientWidth || window.innerWidth;
     const cssH = this.canvas.clientHeight || window.innerHeight;
     const scale = this.options.scale * dpr;
     const width = Math.max(64, Math.min(1400, Math.round(cssW * scale)));
     const height = Math.max(64, Math.round(cssH * scale));
-    if (this.canvas.width !== width || this.canvas.height !== height) {
-      this.canvas.width = width;
-      this.canvas.height = height;
-    }
+    return [width, height];
+  }
+
+  private bufferNeedsResize(): boolean {
+    const [width, height] = this.bufferSize();
+    return this.canvas.width !== width || this.canvas.height !== height;
+  }
+
+  private resizeBuffer(): boolean {
+    const gl = this.gl;
+    if (!gl) return false;
+    const [width, height] = this.bufferSize();
+    if (this.canvas.width === width && this.canvas.height === height) return false;
+    this.canvas.width = width;
+    this.canvas.height = height;
     gl.viewport(0, 0, width, height);
-    this.dirty = true;
-    // Changing the buffer size clears it to black. Repaint straight away
-    // rather than waiting on an animation frame that a hidden tab never gets.
-    if (!this.options.motion) this.renderOnce();
-    else if (this.drawn) this.draw((performance.now() - this.startAt) / 1000, 0);
+    return true;
   }
 
   start(): void {
@@ -177,12 +213,18 @@ export class AmbientRenderer {
       return;
     }
     if (this.frame !== null) return;
+    this.animating = true;
+    if (this.completionPoll !== null) cancelAnimationFrame(this.completionPoll);
+    this.completionPoll = null;
     // A backgrounded tab gets no animation frames. Paint one frame anyway so
     // the canvas is never a black rectangle when the tab comes forward.
     if (document.hidden || !this.drawn) this.draw((performance.now() - this.startAt) / 1000, 0);
     const loop = (now: number) => {
       this.frame = null;
-      if (document.hidden) return;
+      if (document.hidden) {
+        this.animating = false;
+        return;
+      }
       const interval = 1000 / this.options.fps;
       if (now - this.lastFrameAt >= interval - 1) {
         this.lastFrameAt = now;
@@ -196,6 +238,10 @@ export class AmbientRenderer {
   stop(): void {
     if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.frame = null;
+    this.animating = false;
+    if (this.completionPoll !== null) cancelAnimationFrame(this.completionPoll);
+    this.completionPoll = null;
+    this.pendingDraw = null;
   }
 
   /** One frame with the clock frozen: reduced motion and low-power mode. */
@@ -207,8 +253,39 @@ export class AmbientRenderer {
   }
 
   private draw(time: number, dt: number): void {
+    this.pendingDraw = { time, dt };
+    this.flushDraw();
+  }
+
+  private flushDraw(): void {
     const gl = this.gl;
-    if (!gl || !this.program) return;
+    if (!gl || !this.program || this.lost || !this.pendingDraw) return;
+    if (this.completion) {
+      // A timestamp cap alone can still queue expensive software-GPU work.
+      // Poll without blocking; keep only the newest requested frame while busy.
+      const status = gl.clientWaitSync(this.completion, 0, 0);
+      if (status === gl.TIMEOUT_EXPIRED) {
+        if (!this.animating && this.completionPoll === null) {
+          this.completionPoll = requestAnimationFrame(() => {
+            this.completionPoll = null;
+            this.flushDraw();
+          });
+        }
+        return;
+      }
+      // WAIT_FAILED must not leave the canvas permanently stuck either.
+      gl.deleteSync(this.completion);
+      this.completion = null;
+    }
+    if (this.completionPoll !== null) cancelAnimationFrame(this.completionPoll);
+    this.completionPoll = null;
+    const { time, dt } = this.pendingDraw;
+    this.pendingDraw = null;
+    // Resizing clears the canvas, so defer it together with the replacement draw.
+    if (this.resizePending) {
+      this.resizeBuffer();
+      this.resizePending = false;
+    }
     // Ease the cursor and decay the energy in frame-rate independent steps.
     const k = dt > 0 ? 1 - Math.pow(0.02, dt) : 1;
     this.cursor = [
@@ -229,7 +306,10 @@ export class AmbientRenderer {
     gl.uniform3fv(this.uniforms.get('uAccent2') ?? null, this.palette.accent2);
     gl.uniform3fv(this.uniforms.get('uText') ?? null, this.palette.text);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    this.dirty = false;
+    this.completion = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    // Submit the fence even when a static frame has no next animation tick.
+    // A null fence falls back to the previous best-effort rendering behavior.
+    if (this.completion) gl.flush();
     if (!this.drawn) {
       this.drawn = true;
       this.onFirstFrame?.();
@@ -240,6 +320,7 @@ export class AmbientRenderer {
     this.stop();
     const gl = this.gl;
     if (gl) {
+      if (this.completion) gl.deleteSync(this.completion);
       if (this.program) gl.deleteProgram(this.program);
       if (this.vao) gl.deleteVertexArray(this.vao);
       const ext = gl.getExtension('WEBGL_lose_context');
@@ -247,20 +328,38 @@ export class AmbientRenderer {
     }
     this.gl = null;
     this.program = null;
+    this.completion = null;
   }
 }
 
-/** Resolve a CSS colour (any syntax) to 0..1 rgb via a probe element. */
+let sharedProbe: HTMLSpanElement | null = null;
+
+function getSharedProbe(): HTMLSpanElement | null {
+  if (typeof document === 'undefined' || !document.body) return null;
+  if (!sharedProbe || sharedProbe.ownerDocument !== document) {
+    sharedProbe = document.createElement('span');
+    sharedProbe.style.position = 'absolute';
+    sharedProbe.style.opacity = '0';
+    sharedProbe.style.pointerEvents = 'none';
+    sharedProbe.style.visibility = 'hidden';
+  }
+  if (!sharedProbe.isConnected) document.body.appendChild(sharedProbe);
+  return sharedProbe;
+}
+
+/**
+ * Resolve a CSS colour (any syntax) to 0..1 rgb via a single reused probe element.
+ * Reusing the probe element avoids DOM node allocation and insertion/removal layout thrashing.
+ */
 export function resolveColor(cssValue: string, fallback: [number, number, number]): [number, number, number] {
   if (typeof document === 'undefined') return fallback;
-  const probe = document.createElement('span');
+  const probe = getSharedProbe();
+  if (!probe) return fallback;
+  // Invalid assignments otherwise leave the previous successful color intact.
+  probe.style.color = '';
   probe.style.color = cssValue;
-  probe.style.position = 'absolute';
-  probe.style.opacity = '0';
-  probe.style.pointerEvents = 'none';
-  document.body.appendChild(probe);
+  if (!probe.style.color) return fallback;
   const rgb = getComputedStyle(probe).color;
-  document.body.removeChild(probe);
   const m = rgb.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/);
   if (!m) return fallback;
   return [Number(m[1]) / 255, Number(m[2]) / 255, Number(m[3]) / 255];

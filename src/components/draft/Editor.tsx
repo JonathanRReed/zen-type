@@ -102,6 +102,8 @@ const Editor: React.FC<EditorProps> = ({
         const range = document.createRange();
         range.setStart(node, remaining);
         range.setEnd(node, Math.min(len, remaining + 1));
+        // Layout is not always available (a detached tree, a test DOM).
+        if (typeof range.getClientRects !== 'function') return null;
         const rect = range.getClientRects()[0] ?? range.getBoundingClientRect();
         const box = layer.getBoundingClientRect();
         return rect.top - box.top + layer.scrollTop;
@@ -128,10 +130,18 @@ const Editor: React.FC<EditorProps> = ({
   // search had run, re-selected the match after every keystroke in the draft.)
   const match = searchMatches[currentMatchIndex];
   const matchIndex = match?.index;
+  const matchLength = match?.length ?? 0;
   useEffect(() => {
     if (matchIndex === undefined) return;
+    // While the find field has focus, park the selection on the match so
+    // closing find leaves the caret there. Never while the draft itself is
+    // being typed in: that would move the caret under the typist.
+    const textarea = textareaRef.current;
+    if (textarea && document.activeElement !== textarea) {
+      textarea.setSelectionRange(matchIndex, matchIndex + matchLength);
+    }
     scrollToOffset(matchIndex);
-  }, [matchIndex, scrollToOffset]);
+  }, [matchIndex, matchLength, scrollToOffset]);
 
   // Move the caret (or select a range) and bring it into view. Sent by the
   // outline, the jump palette, and the find bar when it closes.

@@ -15,7 +15,7 @@ import {
   type Draft,
   type DraftPrefs,
 } from '../../lib/draftStore';
-import { computeTextMetrics, extractOutline, getKeywordFrequencies, findInText, type SearchMatch } from '../../lib/textMetrics';
+import { computeTextMetrics, extractOutline, getKeywordFrequencies, findInText, getDraftPreview, extractRecentLinesWithOffsets, type SearchMatch } from '../../lib/textMetrics';
 import { checkGrammar } from '../../lib/grammar';
 import Editor from './Editor';
 import ToolsPanel from './ToolsPanel';
@@ -323,29 +323,34 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
     saveDraftPrefs({ ...current, ...updates });
   }, []);
 
-  // Computed values
+  // Derived text work is keyed on the body, not on `currentDraft`. Changing
+  // the title, tags, scratchpad, snapshots or sync timestamps makes a new
+  // draft object, and none of that should re-run metrics, grammar checks,
+  // outline extraction, keyword counts or search over unchanged text.
+  const draftBody = currentDraft?.body;
+
   const metrics = useMemo(() => {
-    return currentDraft ? computeTextMetrics(currentDraft.body) : null;
-  }, [currentDraft]);
+    return draftBody !== undefined ? computeTextMetrics(draftBody) : null;
+  }, [draftBody]);
 
   const outline = useMemo(() => {
-    return currentDraft && prefs.outline ? extractOutline(currentDraft.body) : [];
-  }, [currentDraft, prefs.outline]);
+    return draftBody && prefs.outline ? extractOutline(draftBody) : [];
+  }, [draftBody, prefs.outline]);
 
   const grammarIssues = useMemo(() => {
-    return currentDraft && prefs.grammar ? checkGrammar(currentDraft.body) : [];
-  }, [currentDraft, prefs.grammar]);
+    return draftBody && prefs.grammar ? checkGrammar(draftBody) : [];
+  }, [draftBody, prefs.grammar]);
 
   const keywordFrequencies = useMemo(() => {
-    return currentDraft && prefs.keywordHighlighter ? getKeywordFrequencies(currentDraft.body) : [];
-  }, [currentDraft, prefs.keywordHighlighter]);
+    return draftBody && prefs.keywordHighlighter ? getKeywordFrequencies(draftBody) : [];
+  }, [draftBody, prefs.keywordHighlighter]);
 
   const highlightedWords = useMemo(() => new Set(keywordFrequencies.map(kf => kf.word)), [keywordFrequencies]);
 
   const searchMatches = useMemo(() => {
-    if (!currentDraft || !searchQuery.trim()) return [];
-    return findInText(currentDraft.body, searchQuery, searchCaseSensitive);
-  }, [currentDraft, searchQuery, searchCaseSensitive]);
+    if (!draftBody || !searchQuery.trim()) return [];
+    return findInText(draftBody, searchQuery, searchCaseSensitive);
+  }, [draftBody, searchQuery, searchCaseSensitive]);
 
   const handleSearch = useCallback((query: string, caseSensitive: boolean) => {
     setSearchQuery(query);
@@ -406,16 +411,12 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
     updateDraft(currentDraft.id, { scratchpad }).catch(() => flagPersistError());
   }, [currentDraft, flagPersistError]);
 
+  // Only needed while the jump palette is open, so a closed palette costs
+  // nothing per keystroke. Each line keeps its real offset in the draft.
   const recentLines = useMemo<DraftLine[]>(() => {
-    if (!currentDraft) return [];
-    const lines: DraftLine[] = [];
-    let offset = 0;
-    for (const line of currentDraft.body.split('\n')) {
-      if (line.trim().length > 10) lines.push({ text: line, index: offset });
-      offset += line.length + 1;
-    }
-    return lines.slice(-50);
-  }, [currentDraft]);
+    if (!draftBody || !commandPaletteOpen || !prefs.quickJump) return [];
+    return extractRecentLinesWithOffsets(draftBody);
+  }, [draftBody, commandPaletteOpen, prefs.quickJump]);
 
   const closeTools = useCallback(() => setToolsPanelOpen(false), []);
   const closeHistory = useCallback(() => setVersionHistoryOpen(false), []);
@@ -544,15 +545,7 @@ const DraftManager: React.FC<DraftManagerProps> = ({ isOpen, onClose }) => {
               {drafts.map(draft => {
                 const isActive = currentDraft?.id === draft.id;
                 const displayTitle = draft.title.trim() || 'Untitled';
-                const previewLine = draft.body
-                  .split('\n')
-                  .map(line => line.trim())
-                  .find(line => line.length > 0);
-                const previewText = previewLine
-                  ? previewLine.length > 140
-                    ? `${previewLine.slice(0, 140).trim()}…`
-                    : previewLine
-                  : '';
+                const previewText = getDraftPreview(draft.body);
                 const tagsToShow = draft.tags.slice(0, 2);
 
                 return (

@@ -11,6 +11,8 @@ import {
   type StorageFailureDetail,
 } from '../utils/storage';
 import { useSettings } from '../hooks/useSettings';
+import { markInteractiveReady } from '../utils/interactiveReady';
+import { computeTextMetrics } from '../lib/textMetrics';
 import { useGlidingCaret } from '../hooks/useGlidingCaret';
 import { loadQuotes, pickQuote, getFallbackQuotes, splitSource, type Quote } from '../utils/quotes';
 import QuoteResult from './QuoteResult';
@@ -67,10 +69,13 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, source, quoteId 
   const composingRef = useRef(false);
   const handledKeydownAtRef = useRef(0);
   const completedAtRef = useRef<number | null>(null);
-  // Cumulative metrics across consecutive quotes in one sitting
-  const [sittingTimeSec, setSittingTimeSec] = useState(0);
-  const [sittingCorrect, setSittingCorrect] = useState(0);
-  const [sittingTotal, setSittingTotal] = useState(0);
+  // Totals across the quotes finished in this sitting. The completion marker
+  // lives with them, so the quote on screen is counted exactly once: as the
+  // quote in progress until its totals are banked, and not again after.
+  const [sitting, setSitting] = useState({
+    timeSec: 0, correct: 0, total: 0, completedAt: null as number | null,
+  });
+  const banked = isComplete && ts.endedAt !== null && sitting.completedAt === ts.endedAt;
   const quotesRef = useRef<Quote[]>([]);
   const activeRef = useRef(active);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
@@ -202,16 +207,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, source, quoteId 
   useEffect(() => {
     if (!ts.startedAt) return;
     const startedAt = ts.startedAt;
-    // Once a finished quote has been added to the sitting totals it must not
-    // be counted again as the quote in progress. (It used to be: the bar
-    // showed double the time and words until the next quote began.)
-    const banked = ts.endedAt !== null && completedAtRef.current === ts.endedAt;
     const tick = () => {
       const liveSec = banked ? 0 : Math.max(0, Math.floor(((ts.endedAt ?? Date.now()) - startedAt) / 1000));
-      const totalSec = sittingTimeSec + liveSec;
+      const totalSec = sitting.timeSec + liveSec;
       const minutes = Math.max(1 / 60, totalSec / 60);
-      const aggCorrect = sittingCorrect + (banked ? 0 : correctChars);
-      const aggTyped = sittingTotal + (banked ? 0 : totalTyped);
+      const aggCorrect = sitting.correct + (banked ? 0 : correctChars);
+      const aggTyped = sitting.total + (banked ? 0 : totalTyped);
       publishLiveStats('quote', {
         time: totalSec,
         words: Math.floor(aggCorrect / 5),
@@ -225,7 +226,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, source, quoteId 
     if (isComplete) return;
     const interval = window.setInterval(tick, 1000);
     return () => window.clearInterval(interval);
-  }, [ts.startedAt, ts.endedAt, isComplete, correctChars, totalTyped, sittingTimeSec, sittingCorrect, sittingTotal]);
+  }, [ts.startedAt, ts.endedAt, isComplete, banked, correctChars, totalTyped, sitting.timeSec, sitting.correct, sitting.total]);
 
   useEffect(() => () => { resetLiveStats('quote'); clearTyping(); }, []);
 
@@ -259,7 +260,7 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, source, quoteId 
 
     const start = new Date(ts.startedAt);
     const end = new Date(ts.endedAt);
-    const words = activeRef.current.text.split(/\s+/).filter(Boolean).length;
+    const words = computeTextMetrics(activeRef.current.text).words;
     const minutes = (end.getTime() - start.getTime()) / 1000 / 60;
     const wpm = minutes > 0 ? Math.round((ts.correct / 5) / minutes) : 0;
     const accuracy = ts.total === 0 ? 100 : Math.round((ts.correct / ts.total) * 100);
@@ -288,9 +289,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, source, quoteId 
     window.dispatchEvent(new CustomEvent('quoteComplete', { detail: summary }));
 
     const elapsed = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 1000));
-    setSittingTimeSec(prev => prev + elapsed);
-    setSittingCorrect(prev => prev + ts.correct);
-    setSittingTotal(prev => prev + ts.total);
+    setSitting(prev => ({
+      timeSec: prev.timeSec + elapsed,
+      correct: prev.correct + ts.correct,
+      total: prev.total + ts.total,
+      completedAt: ts.endedAt,
+    }));
 
     // The one-time nudge toward sound, after the first finished quote.
     try {
@@ -470,8 +474,12 @@ const QuoteTyper: React.FC<QuoteTyperProps> = ({ quote, author, source, quoteId 
   }, []);
   const showTapHint = touchIdle && cursor === 0 && !isComplete;
 
-  useEffect(() => () => {
-    if (progressTimeoutRef.current !== null) window.clearTimeout(progressTimeoutRef.current);
+  useEffect(() => {
+    const releaseReady = markInteractiveReady('typing');
+    return () => {
+      releaseReady();
+      if (progressTimeoutRef.current !== null) window.clearTimeout(progressTimeoutRef.current);
+    };
   }, []);
 
   const focusInput = () => {

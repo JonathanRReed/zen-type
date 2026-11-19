@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { getHistory, getStats, getStreak, getPracticeDays, type SessionRecord } from '../utils/storage';
 import { useSettings } from '../hooks/useSettings';
 import { useModal } from '../hooks/useModal';
+import { markInteractiveReady } from '../utils/interactiveReady';
 import { IconClose } from './icons';
 
 // Progress, built only from what this browser has recorded. Opens from the
@@ -301,7 +302,11 @@ const ProgressOverlay: React.FC = () => {
       setOpen(prev => (typeof detail === 'boolean' ? detail : !prev));
     };
     window.addEventListener('toggleProgress', handler as EventListener);
-    return () => window.removeEventListener('toggleProgress', handler as EventListener);
+    const releaseReady = markInteractiveReady('progress');
+    return () => {
+      releaseReady();
+      window.removeEventListener('toggleProgress', handler as EventListener);
+    };
   }, []);
 
   if (!open) return null;

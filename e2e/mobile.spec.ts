@@ -46,6 +46,33 @@ test('composed input from an on-screen keyboard is handled', async ({ page }) =>
   await expectProgress(page, 5);
 });
 
+test('header controls keep a 40px target, in order, on one row at 400px', async ({ page }) => {
+  await page.setViewportSize({ width: 400, height: 915 });
+  await open(page, '/quote/');
+  const header = page.locator('header.masthead');
+  // Custom text lives in the menu at this width; everything else stays out.
+  await expect(header.getByRole('button', { name: 'Custom text', exact: true })).toBeHidden();
+  const controls = [
+    header.getByRole('link', { name: 'Quote', exact: true }),
+    header.getByRole('link', { name: 'Zen', exact: true }),
+    header.getByRole('button', { name: 'New quote', exact: true }),
+    header.getByRole('button', { name: 'Enable sound effects', exact: true }),
+    header.getByRole('button', { name: 'Void theme, toggle theme', exact: true }),
+    header.getByRole('button', { name: 'Open menu', exact: true }),
+  ];
+  let previousRight = 0;
+  for (const control of controls) {
+    await expect(control).toBeVisible();
+    const box = (await control.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(40);
+    expect(box.height).toBeGreaterThanOrEqual(40);
+    expect(box.x).toBeGreaterThanOrEqual(previousRight);
+    expect(box.x + box.width).toBeLessThanOrEqual(400);
+    previousRight = box.x + box.width;
+  }
+  expect((await header.boundingBox())!.height).toBeLessThan(80);
+});
+
 test('zen mode fits and the input sits above the fold', async ({ page }) => {
   await open(page, '/zen/');
   const input = page.getByLabel('Free-flow typing input');

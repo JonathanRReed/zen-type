@@ -25,64 +25,103 @@ const COMMON_PAST_PARTICIPLES = [
   'designed', 'implemented', 'tested', 'approved', 'rejected', 'accepted',
 ];
 
+// Pre-compiled global regular expressions for performance.
+// Reusing compiled RegExp instances avoids repeated string parsing & allocation on every checkGrammar call.
+const PASSIVE_PATTERN = new RegExp(
+  `\\b(${PASSIVE_INDICATORS.join('|')})\\s+(\\w+ed|\\w+en|${COMMON_PAST_PARTICIPLES.join('|')})\\b`,
+  'gi'
+);
+
+const DUPLICATE_WORD_PATTERN = /\b(\w+)\s+\1\b/gi;
+const EXTRA_SPACE_PATTERN = /  +/g;
+const SENTENCE_DELIMITER_PATTERN = /[.!?]+/g;
+
+/**
+ * Counts the number of words in `text` between `start` (inclusive) and `end` (exclusive)
+ * without allocating intermediate substrings or word arrays.
+ */
+function countWordsInRange(text: string, start: number, end: number): number {
+  let count = 0;
+  let inWord = false;
+  for (let i = start; i < end; i++) {
+    const ch = text.charCodeAt(i);
+    // ECMAScript WhiteSpace / LineTerminator set
+    const isWhitespace =
+      (ch >= 0x0009 && ch <= 0x000d) || ch === 0x0020 || ch === 0x00a0 ||
+      ch === 0x1680 || (ch >= 0x2000 && ch <= 0x200a) ||
+      ch === 0x2028 || ch === 0x2029 || ch === 0x202f ||
+      ch === 0x205f || ch === 0x3000 || ch === 0xfeff;
+
+    if (isWhitespace) {
+      inWord = false;
+    } else if (!inWord) {
+      count++;
+      inWord = true;
+    }
+  }
+  return count;
+}
+
 export function checkGrammar(text: string): GrammarIssue[] {
   const issues: GrammarIssue[] = [];
 
-  // Check for long sentences (> 30 words)
-  const sentences = text.split(/[.!?]+/);
+  // Check for long sentences (> 30 words) using index scanning.
+  // Avoids text.split(/[.!?]+/) sentence arrays and sentence.split(/\s+/) word arrays.
+  SENTENCE_DELIMITER_PATTERN.lastIndex = 0;
   let currentIndex = 0;
+  let match: RegExpExecArray | null;
 
-  for (const sentence of sentences) {
-    const trimmed = sentence.trim();
-    if (!trimmed) {
-      currentIndex += sentence.length + 1;
-      continue;
-    }
+  while ((match = SENTENCE_DELIMITER_PATTERN.exec(text)) !== null) {
+    const sentenceEnd = match.index;
+    const sentenceLength = sentenceEnd - currentIndex;
+    const wordCount = countWordsInRange(text, currentIndex, sentenceEnd);
 
-    const words = trimmed.split(/\s+/);
-    if (words.length > 30) {
+    if (wordCount > 30) {
       issues.push({
         type: 'long-sentence',
-        message: `Long sentence (${words.length} words). Consider breaking it up.`,
+        message: `Long sentence (${wordCount} words). Consider breaking it up.`,
         startIndex: currentIndex,
-        endIndex: currentIndex + sentence.length,
+        endIndex: currentIndex + sentenceLength,
       });
     }
 
-    currentIndex += sentence.length + 1;
+    currentIndex = match.index + match[0].length;
   }
 
-  // Check for duplicate consecutive words
-  const words = text.split(/\b/);
-  for (let i = 0; i < words.length - 1; i++) {
-    const word = words[i] || '';
-    const nextWord = words[i + 1] || '';
-    
-    if (word.toLowerCase() === nextWord.toLowerCase() && /\w/.test(word)) {
-      const startIdx = words.slice(0, i).join('').length;
-      const endIdx = startIdx + word.length + nextWord.length;
-      
+  // Handle trailing sentence after last punctuation (if any)
+  if (currentIndex < text.length) {
+    const sentenceLength = text.length - currentIndex;
+    const wordCount = countWordsInRange(text, currentIndex, text.length);
+
+    if (wordCount > 30) {
       issues.push({
-        type: 'duplicate-word',
-        message: `Duplicate word: "${word}"`,
-        startIndex: startIdx,
-        endIndex: endIdx,
-        suggestion: word,
+        type: 'long-sentence',
+        message: `Long sentence (${wordCount} words). Consider breaking it up.`,
+        startIndex: currentIndex,
+        endIndex: currentIndex + sentenceLength,
       });
     }
   }
 
-  // Check for passive voice patterns
-  const lowerText = text.toLowerCase();
-  const passivePattern = new RegExp(
-    `\\b(${PASSIVE_INDICATORS.join('|')})\\s+(\\w+ed|\\w+en|${COMMON_PAST_PARTICIPLES.join('|')})\\b`,
-    'gi'
-  );
+  // Check for duplicate consecutive words using pre-compiled regex (O(N) search)
+  DUPLICATE_WORD_PATTERN.lastIndex = 0;
+  while ((match = DUPLICATE_WORD_PATTERN.exec(text)) !== null) {
+    const word = match[1] || '';
+    issues.push({
+      type: 'duplicate-word',
+      message: `Duplicate word: "${word}"`,
+      startIndex: match.index,
+      endIndex: match.index + match[0].length,
+      suggestion: word,
+    });
+  }
 
-  let match;
-  while ((match = passivePattern.exec(lowerText)) !== null) {
+  // Check for passive voice patterns directly on `text` (PASSIVE_PATTERN uses 'gi' case-insensitive matching).
+  // Avoids allocating a full-document lowercased string copy (`text.toLowerCase()`).
+  PASSIVE_PATTERN.lastIndex = 0;
+  while ((match = PASSIVE_PATTERN.exec(text)) !== null) {
     const startIndex = match.index;
-    const endIndex = startIndex + (match[0]?.length || 0);
+    const endIndex = startIndex + match[0].length;
 
     issues.push({
       type: 'passive-voice',
@@ -93,16 +132,15 @@ export function checkGrammar(text: string): GrammarIssue[] {
   }
 
   // Check for multiple consecutive spaces
-  const spacePattern = /  +/g;
-  while ((match = spacePattern.exec(text)) !== null) {
+  EXTRA_SPACE_PATTERN.lastIndex = 0;
+  while ((match = EXTRA_SPACE_PATTERN.exec(text)) !== null) {
     issues.push({
       type: 'extra-space',
       message: 'Extra spaces detected.',
       startIndex: match.index,
-      endIndex: match.index + (match[0]?.length || 0),
+      endIndex: match.index + match[0].length,
     });
   }
 
   return issues;
 }
-

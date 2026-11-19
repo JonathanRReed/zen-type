@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { deferModule, useDeferredModule, primeOnFirstInteraction } from '../utils/deferOverlay';
+import { markInteractiveReady } from '../utils/interactiveReady';
 
 // The sheet is closed on arrival on every page, so its markup lives behind a
 // dynamic import. What stays here is what has to listen from the first frame:
@@ -44,7 +45,9 @@ const HelpSheet: React.FC = () => {
     };
     window.addEventListener('toggleHelp', onToggle);
     window.addEventListener('keydown', onKey, true);
+    const releaseReady = markInteractiveReady('help');
     return () => {
+      releaseReady();
       window.removeEventListener('toggleHelp', onToggle);
       window.removeEventListener('keydown', onKey, true);
     };
